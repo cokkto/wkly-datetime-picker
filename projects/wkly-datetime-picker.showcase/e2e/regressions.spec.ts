@@ -1,5 +1,60 @@
 import { test, expect } from './fixtures';
 
+test('manual date edits follow the same calendar selection in both directions', async ({ page }) => {
+  await page.goto('/single');
+  const panel = page.getByTestId('date');
+  await panel.getByRole('button', { name: 'Now', exact: true }).click();
+  await panel.getByRole('button', { name: 'Manual date entry' }).click();
+  const year = panel.getByRole('textbox', { name: 'Year', exact: true });
+  await year.fill('2100'); await year.press('Enter');
+  const month = panel.getByRole('textbox', { name: 'Month', exact: true });
+  await month.fill('1'); await month.press('Enter');
+  const day = panel.getByRole('textbox', { name: 'Day', exact: true });
+  await day.fill('12'); await day.press('Enter');
+  await expect(panel.getByTestId('value')).toHaveText('"2100-01-12T00:00:00.000Z"');
+  await panel.getByRole('button', { name: 'Calendar view' }).click();
+  await expect(panel.getByRole('button', { name: 'Tuesday, 12 January 2100', exact: true })).toHaveClass(/selected/);
+  await panel.getByRole('button', { name: 'Wednesday, 13 January 2100', exact: true }).click();
+  await panel.getByRole('button', { name: 'Manual date entry' }).click();
+  await expect(panel.getByRole('textbox', { name: 'Day', exact: true })).toHaveValue('13');
+});
+
+test('invalid manual date retains its draft and opens the matching calendar month', async ({ page }) => {
+  await page.goto('/validation');
+  const panel = page.getByTestId('invalid-date');
+  await panel.getByRole('button', { name: 'Manual date entry' }).click();
+  const month = panel.getByRole('textbox', { name: 'Month', exact: true });
+  await month.fill('2'); await month.press('Enter');
+  await expect(panel.getByTestId('value')).toHaveText('"2100-01-31T00:00:00.000Z"');
+  await panel.getByRole('button', { name: 'Calendar view' }).click();
+  await expect(panel.locator('.week-navigation')).toContainText('February 2100');
+  await expect(panel.locator('.day.selected')).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Manual date entry' }).click();
+  const day = panel.getByRole('textbox', { name: 'Day', exact: true });
+  await expect(day).toHaveValue('31');
+  await day.fill('28'); await day.press('Enter');
+  await panel.getByRole('button', { name: 'Calendar view' }).click();
+  await expect(panel.getByRole('button', { name: 'Sunday, 28 February 2100', exact: true })).toHaveClass(/selected/);
+  await expect(panel.getByTestId('value')).toHaveText('"2100-02-28T00:00:00.000Z"');
+});
+
+test('manual range endpoints appear in the one shared calendar', async ({ page }) => {
+  await page.goto('/ranges');
+  const panel = page.getByTestId('date-range');
+  await panel.getByRole('button', { name: 'Now', exact: true }).click();
+  await panel.getByRole('button', { name: 'Manual date entry' }).click();
+  const fields = panel.locator('fieldset');
+  const start = fields.nth(0).getByRole('textbox', { name: 'Day', exact: true });
+  const end = fields.nth(1).getByRole('textbox', { name: 'Day', exact: true });
+  await start.fill('15'); await start.press('Enter');
+  await end.fill('18'); await end.press('Enter');
+  await expect(panel.getByTestId('value')).toHaveText('["2099-12-15T00:00:00.000Z","2099-12-18T00:00:00.000Z"]');
+  await panel.getByRole('button', { name: 'Calendar view' }).click();
+  await expect(panel.getByRole('button', { name: 'Tuesday, 15 December 2099', exact: true })).toHaveClass(/selected/);
+  await expect(panel.getByRole('button', { name: 'Friday, 18 December 2099', exact: true })).toHaveClass(/selected/);
+  await expect(panel.getByRole('button', { name: 'Wednesday, 16 December 2099', exact: true }).locator('..')).toHaveClass(/range/);
+});
+
 test('empty constrained range opens on selectable dates and shows one completion message', async ({ page }) => {
   await page.goto('/validation');
   const panel = page.getByTestId('range-constraints');

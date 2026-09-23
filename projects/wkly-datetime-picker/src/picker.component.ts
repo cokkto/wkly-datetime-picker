@@ -22,6 +22,7 @@ export class WklyDateTimePickerComponent extends WklyPickerInputs implements OnI
   private onChange: (value: WklyPickerValue) => void = () => {}; private onTouched: () => void = () => {}; private validatorChanged: () => void = () => {};
   private configErrors: WklyValidationError[] = []; private pendingValue: WklyPickerValue = null;
   private emittedValue: string | null = null;
+  private manualDateEndpoint = 0;
   constructor(@Inject(LOCALE_ID) private defaultLocale: string, @Inject(WKLY_CONFIG) private defaults: WklyConfiguration, @Inject(WKLY_CLOCK) private clock: WklyClock, @Inject(WKLY_LOCALIZATION) private strings: WklyStrings, @Inject(PLATFORM_ID) platform: Object, private host: ElementRef<HTMLElement>) { super(); this.browser = isPlatformBrowser(platform); }
   ngOnInit(): void { this.initialize(); }
   ngOnChanges(changes: any): void { if (this.initialized) { if (Object.keys(changes).length === 1 && changes.value && this.emittedValue === JSON.stringify(this.value)) { this.emittedValue = null; return; } const focus = this.focused; this.configure(); if (changes.value || changes.mode || changes.calendarAdapter) { this.load(this.value); this.position(this.focused, true); } else { this.check(); if (changes.viewportPreset) this.position(focus, true); else this.scrollToEpochDay(focus); } } }
@@ -92,7 +93,7 @@ export class WklyDateTimePickerComponent extends WklyPickerInputs implements OnI
     if (value !== null || !errors.some(e => e.code === 'incomplete')) errors.push(...validateSelection(value, this, this.adapter));
     this.pendingValue = errors.length ? null : value; this.report(errors);
   }
-  finish(): void { if (this.disabled) return; this.check(); if (this.presentation === 'inline' && this.canSubmit) this.commit(); }
+  finish(): void { if (this.disabled) return; if (this.viewMode === 'manual' && this.hasDate) this.positionOnManualDate(); this.check(); if (this.presentation === 'inline' && this.canSubmit) this.commit(); }
   private commit(): void { if (!this.canSubmit) return; const next = this.pendingValue; if (JSON.stringify(next) !== JSON.stringify(this.value)) { this.value = next; this.emittedValue = JSON.stringify(next); this.onChange(next); this.valueChange.emit(next); } this.onTouched(); }
   submit(reason: WklyCloseReason = 'submit'): void { this.check(); if (!this.canSubmit) return; this.commit(); if (this.presentation === 'transient') this.closed.emit(reason); }
   cancel(reason: WklyCloseReason = 'close-button'): void { if (this.disabled) return; this.load(this.value); this.onTouched(); this.closed.emit(reason); }
@@ -102,12 +103,25 @@ export class WklyDateTimePickerComponent extends WklyPickerInputs implements OnI
     if (this.hasDate && (day < this.adapter.supportedEpochDayRange[0] || day > this.adapter.supportedEpochDayRange[1])) { this.report([error('unsupported-adapter-date', day)]); return; }
     this.focused = day; this.position(day, true); this.check(); this.submit('now');
   }
-  toggleView(year = false): void { if (this.disabled || !this.hasDate) return; this.viewMode = year ? 'manual' : this.viewMode === 'calendar' ? 'manual' : 'calendar'; this.viewModeChange.emit(this.viewMode); if (this.viewMode === 'calendar') setTimeout(() => this.resetScroll()); if (year && this.browser) setTimeout(() => { const field = this.host.nativeElement.querySelector('input[aria-label="' + this.t('year') + '"]') as HTMLInputElement; if (field) { field.focus(); field.select(); } }); }
+  toggleView(year = false): void { if (this.disabled || !this.hasDate) return; this.viewMode = year ? 'manual' : this.viewMode === 'calendar' ? 'manual' : 'calendar'; if (this.viewMode === 'calendar') this.positionOnManualDate(); this.viewModeChange.emit(this.viewMode); if (this.viewMode === 'calendar') setTimeout(() => this.resetScroll()); if (year && this.browser) setTimeout(() => { const field = this.host.nativeElement.querySelector('input[aria-label="' + this.t('year') + '"]') as HTMLInputElement; if (field) { field.focus(); field.select(); } }); }
+  private positionOnManualDate(): void {
+    const draft = this.drafts[this.manualDateEndpoint];
+    if (!draft || !draft.present) return;
+    try {
+      // A valid day follows the selection. An impossible day keeps its draft
+      // fields but still shows the chosen month in the calendar.
+      const target = this.adapter.dateToEpochDay(draft.date);
+      this.focused = target; this.position(target, true);
+    } catch (_) {
+      try { const first = this.adapter.dateToEpochDay({ ...draft.date, day: 1 }); this.focused = first; this.position(first, true); } catch (_) {}
+    }
+  }
   months(draft: Draft): readonly string[] { try { return this.adapter.getMonths(draft.date.year).map(m => m.label); } catch (_) { return []; } }
   monthCount(draft: Draft): number { return this.months(draft).length || 12; }
   field(index: number, field: string, value: number | null): void {
     if (this.disabled) return; const draft = this.drafts[index]; draft.present = true;
     if (field === 'day' || field === 'year' || field === 'month') {
+      this.manualDateEndpoint = index;
       let date = { ...draft.date, [field]: value } as WklyCalendarDate;
       if (field === 'month') { let month; try { month = this.adapter.getMonths(date.year).find(m => m.month === value); } catch (_) {} date = { ...date, monthCode: month ? month.monthCode : '' }; }
       if (field === 'year' && value !== null) { try { const months = this.adapter.getMonths(value); const month = months.find(m => m.monthCode === date.monthCode); if (month) date = { ...date, month: month.month }; } catch (_) {} }
