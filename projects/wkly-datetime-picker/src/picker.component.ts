@@ -81,7 +81,7 @@ export class WklyDateTimePickerComponent extends WklyPickerInputs implements OnI
     const errors: WklyValidationError[] = this.configErrors.slice(); const values: string[] = [];
     this.drafts.slice(0, this.isRange ? 2 : 1).forEach((draft, index) => {
       const endpoint = this.isRange ? index === 0 ? 'start' : 'end' : 'single';
-      if (!draft.present) { if (this.required || this.drafts.some(d => d.present)) errors.push(error('incomplete', draft, undefined, endpoint)); return; }
+      if (!draft.present) { if ((this.required || this.drafts.some(d => d.present)) && !errors.some(e => e.code === 'incomplete')) errors.push(error('incomplete', draft, undefined, endpoint)); return; }
       if (this.hasDate) for (const e of this.adapter.validateDate(draft.date)) errors.push(error(e.code as any, draft.date, e.field, endpoint));
       if (this.hasDate && [draft.date.day, draft.date.month, draft.date.year].some(v => v === null || Number.isNaN(v))) errors.push(error('incomplete', draft.date, 'date', endpoint));
       if (this.hasTime && [draft.hour, draft.minute, this.showSeconds ? draft.second : 0].some(v => v === null)) errors.push(error('incomplete', draft, 'time', endpoint));
@@ -89,7 +89,8 @@ export class WklyDateTimePickerComponent extends WklyPickerInputs implements OnI
     });
     let value: WklyPickerValue = null;
     if (values.length === (this.isRange ? 2 : 1)) value = this.isRange ? orderedRange(values[0], values[1], (a, b) => a.localeCompare(b)) : values[0];
-    errors.push(...validateSelection(value, this, this.adapter)); this.pendingValue = errors.length ? null : value; this.report(errors);
+    if (value !== null || !errors.some(e => e.code === 'incomplete')) errors.push(...validateSelection(value, this, this.adapter));
+    this.pendingValue = errors.length ? null : value; this.report(errors);
   }
   finish(): void { if (this.disabled) return; this.check(); if (this.presentation === 'inline' && this.canSubmit) this.commit(); }
   private commit(): void { if (!this.canSubmit) return; const next = this.pendingValue; if (JSON.stringify(next) !== JSON.stringify(this.value)) { this.value = next; this.emittedValue = JSON.stringify(next); this.onChange(next); this.valueChange.emit(next); } this.onTouched(); }

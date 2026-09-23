@@ -17,6 +17,7 @@ export class DemoComponent implements OnInit {
   get diagnostics(): string { return JSON.stringify(this.value); }
   get codes(): string { return this.errors.map(e => e.code).join(', ') || 'valid'; }
   get context(): string { return `${this.locale} · ${this.adapter.calendarId} · offset ${resolveWeekOffset(this.locale, this.weekOffset, null, getLocaleFirstDayOfWeek(this.locale))} · ${this.hourCycle}`; }
+  get initialEpochDay(): number | null { return this.config.validation ? decodeIso('2099-12-16T00:00:00.000Z').epochDay : null; }
   readonly unavailableDate = (day: number) => floorMod(day + 4, 7) === 0;
   readonly unavailableTime = (seconds: number) => seconds >= 12 * 3600 && seconds < 13 * 3600;
   ngOnInit(): void { this.reset(); }

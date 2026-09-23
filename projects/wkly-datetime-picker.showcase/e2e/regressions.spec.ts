@@ -1,5 +1,20 @@
 import { test, expect } from './fixtures';
 
+test('empty constrained range opens on selectable dates and shows one completion message', async ({ page }) => {
+  await page.goto('/validation');
+  const panel = page.getByTestId('range-constraints');
+  const thursday = panel.getByRole('button', { name: 'Thursday, 17 December 2099', exact: true });
+  const friday = panel.getByRole('button', { name: 'Friday, 18 December 2099', exact: true });
+  await expect(thursday).toBeVisible();
+  await expect(thursday).toHaveAttribute('aria-disabled', 'false');
+  await expect(panel.getByTestId('validation')).toHaveText('incomplete');
+  await thursday.click();
+  await expect(panel.getByTestId('validation')).toHaveText('incomplete');
+  await friday.click();
+  await expect(panel.getByTestId('value')).toHaveText('["2099-12-17T00:00:00.000Z","2099-12-18T00:00:00.000Z"]');
+  await expect(panel.getByTestId('validation')).toHaveText('valid');
+});
+
 test('programmatic validation, required, disabled and form touched state', async ({ page }) => {
   await page.goto('/validation'); const panel = page.getByTestId('constraints');
   await panel.getByRole('button', {name:'Clear value',exact:true}).click(); await expect(panel.getByTestId('validation')).toContainText('incomplete');
