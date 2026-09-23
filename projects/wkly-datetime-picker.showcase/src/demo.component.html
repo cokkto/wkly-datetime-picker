@@ -1,23 +1,266 @@
-<article class="demo-panel" [class.dark-theme]="config.theme === 'dark'" [attr.data-testid]="config.id">
-  <div class="panel-heading"><span class="eyebrow">{{config.presentation || 'inline'}} / {{config.calendar || 'gregorian'}}</span><h2>{{config.title}}</h2><p>{{config.description}}</p></div>
-  <details class="configuration"><summary>Configure this example</summary><div class="config-grid">
-    <label>Selection mode<select [(ngModel)]="mode" (ngModelChange)="modeChanged()"><option>datetime</option><option>date</option><option>time</option><option>datetime-range</option><option>date-range</option><option>time-range</option></select></label>
-    <label>Locale<select [(ngModel)]="locale" (ngModelChange)="localeChanged()"><option>en-GB</option><option>en-US</option><option>fi-FI</option><option>ar</option><option>he-IL</option></select></label>
-    <label>Viewport preset<select [(ngModel)]="presetName" (ngModelChange)="presetChanged()"><option>full-month</option><option>full-month-and-around</option><option>weeks</option></select></label>
-    <label>Hour cycle<select [(ngModel)]="hourCycle"><option>locale</option><option>h12</option><option>h24</option><option>switchable</option></select></label>
-    <label>Week starts<select [(ngModel)]="weekOffset"><option [ngValue]="null">Locale default</option><option [ngValue]="4">Monday</option><option [ngValue]="3">Sunday</option><option [ngValue]="0">Thursday (offset 0)</option><option [ngValue]="2">Saturday</option></select></label>
-    <label>Minute step<select [(ngModel)]="minuteStep"><option [ngValue]="1">1</option><option [ngValue]="5">5</option><option [ngValue]="15">15</option><option [ngValue]="30">30</option></select></label>
-    <label class="check"><input type="checkbox" [(ngModel)]="seconds"> Show seconds</label><label class="check"><input type="checkbox" [(ngModel)]="required"> Required</label><label class="check"><input type="checkbox" [(ngModel)]="disabled" (ngModelChange)="changeDisabled()"> Disabled</label><label class="check"><input type="checkbox" [(ngModel)]="across"> Allow disabled-range crossing</label>
-    <label>Minimum UTC value<input [(ngModel)]="min" placeholder="No minimum"></label><label>Maximum UTC value<input [(ngModel)]="max" placeholder="No maximum"></label>
-    <label>Programmatic UTC value<input [(ngModel)]="programmaticValue" placeholder="ISO string, JSON tuple, or null"></label><button type="button" (click)="applyValue()">Apply value</button>
-  </div></details>
-  <div class="picker-stage" [attr.style]="'--wkly-accent-color:' + (config.color || '#176c55') + ';--wkly-size-multiplier:' + (config.size || 1)">
-    <wkly-datetime-picker *ngIf="!config.presentation || config.presentation === 'inline'" #picker [formControl]="form" [value]="value" [mode]="mode" [locale]="locale" [calendarAdapter]="adapter" [weekOffset]="weekOffset" [viewportPreset]="preset" [initialEpochDay]="initialEpochDay" [hourCycle]="hourCycle" [showSeconds]="seconds" [minuteStep]="minuteStep" [min]="min" [max]="max" [required]="required" [disabled]="disabled" [isDateDisabled]="config.validation ? unavailableDate : null" [isTimeDisabled]="config.validation ? unavailableTime : null" [allowRangeAcrossDisabled]="across" (valueChange)="commit($event)" (validationChange)="errors = $event" (viewportChange)="viewport = $event.firstVisibleAbsoluteWeek + ' … ' + $event.lastVisibleAbsoluteWeek"></wkly-datetime-picker>
-    <div *ngIf="config.presentation === 'dialog'" class="trigger-demo"><span class="trigger-icon">▣</span><p>A focused space to choose a moment.</p><button class="primary" wklyDateTimePickerDialog [mode]="mode" [value]="value" [locale]="locale" [calendarAdapter]="adapter" [weekOffset]="weekOffset" [viewportPreset]="preset" [hourCycle]="hourCycle" [showSeconds]="seconds" [minuteStep]="minuteStep" [required]="required" [disabled]="disabled" (valueChange)="commit($event)" (validationChange)="errors = $event" (closed)="lastClose = $event">Open dialog</button></div>
-    <div *ngIf="config.presentation === 'overlay'" class="trigger-demo"><label>Choose date and time<input aria-label="Choose date and time" placeholder="Select a date" wklyDateTimePickerOverlay [mode]="mode" [value]="value" [locale]="locale" [calendarAdapter]="adapter" [weekOffset]="weekOffset" [viewportPreset]="preset" [hourCycle]="hourCycle" [showSeconds]="seconds" [minuteStep]="minuteStep" [required]="required" [disabled]="disabled" (valueChange)="commit($event)" (validationChange)="errors = $event" (closed)="lastClose = $event"></label></div>
-    <div *ngIf="config.presentation === 'material'" class="trigger-demo"><mat-form-field appearance="outline"><mat-label>Material date and time</mat-label><input matInput wklyDateTimePickerOverlay #overlay="wklyOverlay" [mode]="mode" [value]="value" [locale]="locale" [calendarAdapter]="adapter" [weekOffset]="weekOffset" [viewportPreset]="preset" [hourCycle]="hourCycle" [showSeconds]="seconds" [minuteStep]="minuteStep" [required]="required" [disabled]="disabled" (valueChange)="commit($event)" (validationChange)="errors = $event" (closed)="lastClose = $event"><button matSuffix mat-button aria-label="Open Material picker" (click)="overlay.open()">▦</button></mat-form-field></div>
+<article
+  class="demo-panel"
+  [class.dark-theme]="config.theme === 'dark'"
+  [attr.data-testid]="config.id"
+>
+  <div class="panel-heading">
+    <span class="eyebrow"
+      >{{ config.presentation || "inline" }} /
+      {{ config.calendar || "gregorian" }}</span
+    >
+    <h2>{{ config.title }}</h2>
+    <p>{{ config.description }}</p>
   </div>
-  <div *ngIf="config.id.indexOf('virtual') === 0" class="jump-actions"><button (click)="picker?.scrollToValue('2099-12-16T00:00:00.000Z', {focus:true})">Jump to 2099</button><button (click)="picker?.scrollToValue('1969-12-16T00:00:00.000Z', {focus:true})">Jump before 1970</button></div>
-  <div class="diagnostics"><span class="diagnostic-label">COMMITTED VALUE · UTC</span><code data-testid="value">{{diagnostics}}</code><div class="status-line"><span [class.error-text]="errors.length" data-testid="validation">{{codes}}</span><span data-testid="emissions">{{emitted}} emissions</span></div><small data-testid="context">{{context}}</small><small *ngIf="viewport" data-testid="viewport">Absolute weeks {{viewport}}</small><small *ngIf="config.presentation && config.presentation !== 'inline'">Last close: {{lastClose}}</small><small *ngIf="config.validation">Form: {{form.status}} · {{form.touched ? 'touched' : 'untouched'}} · Sundays and 12:00–12:59 unavailable</small></div>
-  <div class="host-actions"><button type="button" (click)="reset()">Reset example</button><button type="button" (click)="clear()">Clear value</button><span>Host controls</span></div>
+  <details class="configuration">
+    <summary>Configure this example</summary>
+    <div class="config-grid">
+      <label
+        >Selection mode<select
+          [(ngModel)]="mode"
+          (ngModelChange)="modeChanged()"
+        >
+          <option>datetime</option>
+          <option>date</option>
+          <option>time</option>
+          <option>datetime-range</option>
+          <option>date-range</option>
+          <option>time-range</option>
+        </select></label
+      >
+      <label
+        >Locale<select [(ngModel)]="locale" (ngModelChange)="localeChanged()">
+          <option>en-GB</option>
+          <option>en-US</option>
+          <option>fi-FI</option>
+          <option>ar</option>
+          <option>he-IL</option>
+        </select></label
+      >
+      <label
+        >Viewport preset<select
+          [(ngModel)]="presetName"
+          (ngModelChange)="presetChanged()"
+        >
+          <option>full-month</option>
+          <option>full-month-and-around</option>
+          <option>weeks</option>
+        </select></label
+      >
+      <label
+        >Hour cycle<select [(ngModel)]="hourCycle">
+          <option>locale</option>
+          <option>h12</option>
+          <option>h24</option>
+          <option>switchable</option>
+        </select></label
+      >
+      <label
+        >Week starts<select [(ngModel)]="weekOffset">
+          <option [ngValue]="null">Locale default</option>
+          <option [ngValue]="4">Monday</option>
+          <option [ngValue]="3">Sunday</option>
+          <option [ngValue]="0">Thursday (offset 0)</option>
+          <option [ngValue]="2">Saturday</option>
+        </select></label
+      >
+      <label
+        >Minute step<select [(ngModel)]="minuteStep">
+          <option [ngValue]="1">1</option>
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="15">15</option>
+          <option [ngValue]="30">30</option>
+        </select></label
+      >
+      <label class="check"
+        ><input type="checkbox" [(ngModel)]="seconds" /> Show seconds</label
+      ><label class="check"
+        ><input type="checkbox" [(ngModel)]="showWeekNumbers" /> Show week
+        numbers</label
+      ><label class="check"
+        ><input type="checkbox" [(ngModel)]="required" /> Required</label
+      ><label class="check"
+        ><input
+          type="checkbox"
+          [(ngModel)]="disabled"
+          (ngModelChange)="changeDisabled()"
+        />
+        Disabled</label
+      ><label class="check"
+        ><input type="checkbox" [(ngModel)]="across" /> Allow disabled-range
+        crossing</label
+      >
+      <label
+        >Minimum UTC value<input
+          [(ngModel)]="min"
+          placeholder="No minimum" /></label
+      ><label
+        >Maximum UTC value<input [(ngModel)]="max" placeholder="No maximum"
+      /></label>
+      <label
+        >Programmatic UTC value<input
+          [(ngModel)]="programmaticValue"
+          placeholder="ISO string, JSON tuple, or null" /></label
+      ><button type="button" (click)="applyValue()">Apply value</button>
+    </div>
+  </details>
+  <div
+    class="picker-stage"
+    [attr.style]="
+      '--wkly-accent-color:' +
+      (config.color || '#176c55') +
+      ';--wkly-size-multiplier:' +
+      (config.size || 1)
+    "
+  >
+    <wkly-datetime-picker
+      *ngIf="!config.presentation || config.presentation === 'inline'"
+      #picker
+      [formControl]="form"
+      [value]="value"
+      [mode]="mode"
+      [locale]="locale"
+      [calendarAdapter]="adapter"
+      [weekOffset]="weekOffset"
+      [weekLabelMode]="showWeekNumbers ? 'locale' : 'hidden'"
+      [viewportPreset]="preset"
+      [initialEpochDay]="initialEpochDay"
+      [hourCycle]="hourCycle"
+      [showSeconds]="seconds"
+      [minuteStep]="minuteStep"
+      [min]="min"
+      [max]="max"
+      [required]="required"
+      [disabled]="disabled"
+      [isDateDisabled]="config.validation ? unavailableDate : null"
+      [isTimeDisabled]="config.validation ? unavailableTime : null"
+      [allowRangeAcrossDisabled]="across"
+      (valueChange)="commit($event)"
+      (validationChange)="errors = $event"
+      (viewportChange)="
+        viewport =
+          $event.firstVisibleAbsoluteWeek +
+          ' … ' +
+          $event.lastVisibleAbsoluteWeek
+      "
+    ></wkly-datetime-picker>
+    <div *ngIf="config.presentation === 'dialog'" class="trigger-demo">
+      <span class="trigger-icon">▣</span>
+      <p>A focused space to choose a moment.</p>
+      <button
+        class="primary"
+        wklyDateTimePickerDialog
+        [mode]="mode"
+        [value]="value"
+        [locale]="locale"
+        [calendarAdapter]="adapter"
+        [weekOffset]="weekOffset"
+        [weekLabelMode]="showWeekNumbers ? 'locale' : 'hidden'"
+        [viewportPreset]="preset"
+        [hourCycle]="hourCycle"
+        [showSeconds]="seconds"
+        [minuteStep]="minuteStep"
+        [required]="required"
+        [disabled]="disabled"
+        (valueChange)="commit($event)"
+        (validationChange)="errors = $event"
+        (closed)="lastClose = $event"
+      >
+        Open dialog
+      </button>
+    </div>
+    <div *ngIf="config.presentation === 'overlay'" class="trigger-demo">
+      <label
+        >Choose date and time<input
+          aria-label="Choose date and time"
+          placeholder="Select a date"
+          wklyDateTimePickerOverlay
+          [mode]="mode"
+          [value]="value"
+          [locale]="locale"
+          [calendarAdapter]="adapter"
+          [weekOffset]="weekOffset"
+          [weekLabelMode]="showWeekNumbers ? 'locale' : 'hidden'"
+          [viewportPreset]="preset"
+          [hourCycle]="hourCycle"
+          [showSeconds]="seconds"
+          [minuteStep]="minuteStep"
+          [required]="required"
+          [disabled]="disabled"
+          (valueChange)="commit($event)"
+          (validationChange)="errors = $event"
+          (closed)="lastClose = $event"
+      /></label>
+    </div>
+    <div *ngIf="config.presentation === 'material'" class="trigger-demo">
+      <mat-form-field appearance="outline"
+        ><mat-label>Material date and time</mat-label
+        ><input
+          matInput
+          wklyDateTimePickerOverlay
+          #overlay="wklyOverlay"
+          [mode]="mode"
+          [value]="value"
+          [locale]="locale"
+          [calendarAdapter]="adapter"
+          [weekOffset]="weekOffset"
+          [weekLabelMode]="showWeekNumbers ? 'locale' : 'hidden'"
+          [viewportPreset]="preset"
+          [hourCycle]="hourCycle"
+          [showSeconds]="seconds"
+          [minuteStep]="minuteStep"
+          [required]="required"
+          [disabled]="disabled"
+          (valueChange)="commit($event)"
+          (validationChange)="errors = $event"
+          (closed)="lastClose = $event"
+        /><button
+          matSuffix
+          mat-button
+          aria-label="Open Material picker"
+          (click)="overlay.open()"
+        >
+          ▦
+        </button></mat-form-field
+      >
+    </div>
+  </div>
+  <div *ngIf="config.id.indexOf('virtual') === 0" class="jump-actions">
+    <button
+      (click)="
+        picker?.scrollToValue('2099-12-16T00:00:00.000Z', { focus: true })
+      "
+    >
+      Jump to 2099</button
+    ><button
+      (click)="
+        picker?.scrollToValue('1969-12-16T00:00:00.000Z', { focus: true })
+      "
+    >
+      Jump before 1970
+    </button>
+  </div>
+  <div class="diagnostics">
+    <span class="diagnostic-label">COMMITTED VALUE · UTC</span
+    ><code data-testid="value">{{ diagnostics }}</code>
+    <div class="status-line">
+      <span [class.error-text]="errors.length" data-testid="validation">{{
+        codes
+      }}</span
+      ><span data-testid="emissions">{{ emitted }} emissions</span>
+    </div>
+    <small data-testid="context">{{ context }}</small
+    ><small *ngIf="viewport" data-testid="viewport"
+      >Absolute weeks {{ viewport }}</small
+    ><small *ngIf="config.presentation && config.presentation !== 'inline'"
+      >Last close: {{ lastClose }}</small
+    ><small *ngIf="config.validation"
+      >Form: {{ form.status }} · {{ form.touched ? "touched" : "untouched" }} ·
+      Sundays and 12:00–12:59 unavailable</small
+    >
+  </div>
+  <div class="host-actions">
+    <button type="button" (click)="reset()">Reset example</button
+    ><button type="button" (click)="clear()">Clear value</button
+    ><span>Host controls</span>
+  </div>
 </article>

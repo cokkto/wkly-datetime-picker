@@ -10,7 +10,9 @@
     "showcase:test:e2e": "node scripts/playwright.cjs test",
     "showcase:test:e2e:update": "node scripts/playwright.cjs test --update-snapshots",
     "showcase:browsers": "node scripts/playwright.cjs install chromium firefox webkit",
-    "pack:check": "node scripts/pack.cjs"
+    "pack:check": "node scripts/pack.cjs",
+    "format:ts": "prettier --write \"projects/**/src/**/*.ts\"",
+    "format:html": "prettier --write \"projects/**/src/**/*.html\""
   },
   "devDependencies": {
     "@angular/animations": "11.2.14",
@@ -31,6 +33,7 @@
     "esbuild": "^0.21.5",
     "ng-packagr": "11.2.4",
     "playwright-node16": "npm:@playwright/test@^1.40.1",
+    "prettier": "^3.9.9",
     "reflect-metadata": "^0.1.14",
     "rxjs": "6.6.7",
     "tslib": "2.8.1",

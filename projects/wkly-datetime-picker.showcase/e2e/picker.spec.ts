@@ -10,6 +10,47 @@ test('single modes normalize Now and host clear without duplicate emissions', as
     const panel=page.getByTestId(id); await panel.getByRole('button',{name:'Clear value',exact:true}).click(); await expect(panel.getByTestId('value')).toHaveText('null'); await panel.getByRole('button',{name:'Now',exact:true}).click(); await expect(panel.getByTestId('value')).toHaveText(JSON.stringify(value)); await panel.getByRole('button',{name:'Now',exact:true}).click(); await expect(panel.getByTestId('emissions')).toHaveText('1 emissions'); await expect(panel.getByRole('button',{name:'Confirm',exact:true})).toHaveCount(0);
   }
 });
+
+test('Now leaves one selected day when another day is chosen', async ({ page }) => {
+  await page.goto('/single');
+  for (const [id, value] of [['datetime', '2099-12-17T13:00:00.000Z'], ['date', '2099-12-17T00:00:00.000Z']]) {
+    const panel = page.getByTestId(id);
+    await panel.getByRole('button', { name: 'Now', exact: true }).click();
+    await expect(panel.locator('.day.selected')).toHaveCount(1);
+    await panel.getByRole('button', { name: 'Thursday, 17 December 2099', exact: true }).click();
+    await expect(panel.getByTestId('value')).toHaveText(JSON.stringify(value));
+    await expect(panel.locator('.day.selected')).toHaveCount(1);
+    await expect(panel.getByRole('button', { name: 'Wednesday, 16 December 2099', exact: true })).not.toHaveClass(/selected/);
+    await expect(panel.getByRole('button', { name: 'Thursday, 17 December 2099', exact: true })).toHaveClass(/selected/);
+  }
+});
+test('Configure toggles week numbers in inline and opened pickers', async ({ page }) => {
+  await page.goto('/presentations');
+  for (const id of ['inline', 'dialog', 'overlay', 'material']) {
+    const panel = page.getByTestId(id);
+    await panel.getByText('Configure this example').click();
+    const toggle = panel.getByLabel('Show week numbers');
+    const open = async () => {
+      if (id === 'dialog') await panel.getByRole('button', { name: 'Open dialog' }).click();
+      else if (id === 'overlay' || id === 'material') await panel.locator('.trigger-demo input').click();
+    };
+    const close = async () => { if (id !== 'inline') await page.keyboard.press('Escape'); };
+    const calendar = id === 'inline' ? panel : page.getByRole('dialog');
+    await open();
+    await expect(calendar.locator('.week-number').first()).toBeVisible();
+    await close();
+    await toggle.uncheck();
+    await open();
+    await expect(calendar.locator('.week-number')).toHaveCount(0);
+    await close();
+    await panel.getByRole('button', { name: 'Reset example' }).click();
+    await expect(toggle).toBeChecked();
+    await open();
+    await expect(calendar.locator('.week-number').first()).toBeVisible();
+    await close();
+  }
+});
+
 test('ranges stay incomplete until second endpoint and reverse order', async ({ page }) => {
   await page.goto('/ranges'); const panel=page.getByTestId('date-range');
   await expect(panel.locator('fieldset')).toHaveCount(0);

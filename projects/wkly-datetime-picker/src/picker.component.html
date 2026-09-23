@@ -1,45 +1,261 @@
-<section class="wkly" [attr.dir]="direction" [attr.aria-label]="ariaLabel || 'Date and time picker'" [attr.aria-describedby]="ariaDescribedBy" (focusout)="touched()">
+<section
+  class="wkly"
+  [attr.dir]="direction"
+  [attr.aria-label]="ariaLabel || 'Date and time picker'"
+  [attr.aria-describedby]="ariaDescribedBy"
+  (focusout)="touched()"
+>
   <header class="toolbar">
-    <button *ngIf="hasDate" type="button" [disabled]="disabled" [attr.aria-label]="t(viewMode === 'calendar' ? 'manual' : 'calendar')" (click)="toggleView()">{{viewMode === 'calendar' ? '☷' : '▦'}}</button>
-    <button *ngIf="hasDate" class="year-control" type="button" [disabled]="disabled" [attr.aria-label]="t('year')" (click)="toggleView(true)">{{title}}</button>
-    <span class="spacer"></span><button type="button" class="now" [disabled]="disabled" (click)="now()">{{t('now')}}</button>
-    <button *ngIf="presentation === 'transient'" type="button" [disabled]="disabled" [attr.aria-label]="t('close')" (click)="cancel()">×</button>
+    <button
+      *ngIf="hasDate"
+      type="button"
+      [disabled]="disabled"
+      [attr.aria-label]="t(viewMode === 'calendar' ? 'manual' : 'calendar')"
+      (click)="toggleView()"
+    >
+      {{ viewMode === "calendar" ? "☷" : "▦" }}
+    </button>
+    <button
+      *ngIf="hasDate"
+      class="year-control"
+      type="button"
+      [disabled]="disabled"
+      [attr.aria-label]="t('year')"
+      (click)="toggleView(true)"
+    >
+      {{ title }}
+    </button>
+    <span class="spacer"></span
+    ><button type="button" class="now" [disabled]="disabled" (click)="now()">
+      {{ t("now") }}
+    </button>
+    <button
+      *ngIf="presentation === 'transient'"
+      type="button"
+      [disabled]="disabled"
+      [attr.aria-label]="t('close')"
+      (click)="cancel()"
+    >
+      ×
+    </button>
   </header>
   <ng-container *ngIf="hasDate && viewMode === 'calendar'">
-    <div role="grid" [attr.aria-label]="ariaLabel || 'Calendar'" [attr.aria-multiselectable]="isRange">
-      <div role="row" class="week-head" [class.no-label]="compact || (weekLabelMode === 'hidden' && !weekLabelFormatter)">
-        <span *ngIf="!compact && (weekLabelMode !== 'hidden' || weekLabelFormatter)" role="columnheader" aria-label="Week"></span><span *ngFor="let day of weekdays" role="columnheader">{{day}}</span>
+    <div
+      role="grid"
+      [attr.aria-label]="ariaLabel || 'Calendar'"
+      [attr.aria-multiselectable]="isRange"
+    >
+      <div
+        role="row"
+        class="week-head"
+        [class.no-label]="
+          compact || (weekLabelMode === 'hidden' && !weekLabelFormatter)
+        "
+      >
+        <span
+          *ngIf="!compact && (weekLabelMode !== 'hidden' || weekLabelFormatter)"
+          role="columnheader"
+          aria-label="Week"
+        ></span
+        ><span *ngFor="let day of weekdays" role="columnheader">{{ day }}</span>
       </div>
-      <div #scroller class="week-scroll" [style.height.px]="visibleCount * rowHeight" (scroll)="scroll($event)">
-        <div [style.height.px]="scrollHeight" class="scroll-space"><div class="rows" [style.top.px]="paddingTop">
-          <div *ngFor="let row of rows; trackBy: trackRow" role="row" class="week-row" [class.no-label]="compact || (weekLabelMode === 'hidden' && !weekLabelFormatter)">
-            <span *ngIf="!compact && (weekLabelMode !== 'hidden' || weekLabelFormatter)" role="rowheader" class="week-number">{{row.label}}</span>
-            <div *ngFor="let cell of row.cells" role="gridcell" [attr.aria-selected]="selected(cell.epochDay)" [attr.aria-disabled]="cell.disabled || disabled" [class.range]="inRange(cell.epochDay)" [class.hidden]="cell.hidden">
-              <span class="annotation">{{cell.annotation}}</span>
-              <button type="button" class="day" [attr.data-day]="cell.epochDay" [attr.aria-label]="cell.accessible" [attr.aria-current]="cell.epochDay === today ? 'date' : null" [attr.aria-disabled]="cell.disabled || disabled" [attr.tabindex]="!cell.hidden && cell.epochDay === focused ? 0 : -1" [class.selected]="selected(cell.epochDay)" [class.today]="cell.epochDay === today" (focus)="focused = cell.epochDay" (click)="select(cell.epochDay)" (keydown)="key($event,cell.epochDay)">{{cell.label}}</button>
+      <div
+        #scroller
+        class="week-scroll"
+        [style.height.px]="visibleCount * rowHeight"
+        (scroll)="scroll($event)"
+      >
+        <div [style.height.px]="scrollHeight" class="scroll-space">
+          <div class="rows" [style.top.px]="paddingTop">
+            <div
+              *ngFor="let row of rows; trackBy: trackRow"
+              role="row"
+              class="week-row"
+              [class.no-label]="
+                compact || (weekLabelMode === 'hidden' && !weekLabelFormatter)
+              "
+            >
+              <span
+                *ngIf="
+                  !compact && (weekLabelMode !== 'hidden' || weekLabelFormatter)
+                "
+                role="rowheader"
+                class="week-number"
+                >{{ row.label }}</span
+              >
+              <div
+                *ngFor="let cell of row.cells"
+                role="gridcell"
+                [attr.aria-selected]="selected(cell.epochDay)"
+                [attr.aria-disabled]="cell.disabled || disabled"
+                [class.range]="inRange(cell.epochDay)"
+                [class.hidden]="cell.hidden"
+              >
+                <span class="annotation">{{ cell.annotation }}</span>
+                <button
+                  type="button"
+                  class="day"
+                  [attr.data-day]="cell.epochDay"
+                  [attr.aria-label]="cell.accessible"
+                  [attr.aria-current]="cell.epochDay === today ? 'date' : null"
+                  [attr.aria-disabled]="cell.disabled || disabled"
+                  [attr.tabindex]="
+                    !cell.hidden && cell.epochDay === focused ? 0 : -1
+                  "
+                  [class.selected]="selected(cell.epochDay)"
+                  [class.today]="cell.epochDay === today"
+                  (focus)="focused = cell.epochDay"
+                  (click)="select(cell.epochDay)"
+                  (keydown)="key($event, cell.epochDay)"
+                >
+                  {{ cell.label }}
+                </button>
+              </div>
             </div>
           </div>
-        </div></div>
+        </div>
       </div>
     </div>
-    <div class="week-navigation"><button type="button" [disabled]="disabled" [attr.aria-label]="t('previous')" (click)="moveWeek(-1)">↑</button><span>{{title}}</span><button type="button" [disabled]="disabled" [attr.aria-label]="t('next')" (click)="moveWeek(1)">↓</button></div>
+    <div class="week-navigation">
+      <button
+        type="button"
+        [disabled]="disabled"
+        [attr.aria-label]="t('previous')"
+        (click)="moveWeek(-1)"
+      >
+        ↑</button
+      ><span>{{ title }}</span
+      ><button
+        type="button"
+        [disabled]="disabled"
+        [attr.aria-label]="t('next')"
+        (click)="moveWeek(1)"
+      >
+        ↓
+      </button>
+    </div>
   </ng-container>
   <ng-container *ngFor="let draft of drafts; let i = index">
-    <fieldset *ngIf="(i === 0 || isRange) && (hasTime || viewMode === 'manual')" [disabled]="disabled">
-      <legend *ngIf="isRange">{{t(i === 0 ? 'start' : 'end')}}</legend>
+    <fieldset
+      *ngIf="(i === 0 || isRange) && (hasTime || viewMode === 'manual')"
+      [disabled]="disabled"
+    >
+      <legend *ngIf="isRange">{{ t(i === 0 ? "start" : "end") }}</legend>
       <div *ngIf="hasDate && viewMode === 'manual'" class="date-fields">
-        <wkly-field [label]="t('day')" [locale]="effectiveLocale" [value]="draft.date.day" [min]="1" [max]="31" [disabled]="disabled" [invalid]="!!errors.length" (valueChange)="field(i,'day',$event)" (complete)="finish()"></wkly-field>
-        <wkly-field [label]="t('month')" [locale]="effectiveLocale" [value]="draft.date.month" [min]="1" [max]="monthCount(draft)" [labels]="months(draft)" [disabled]="disabled" [invalid]="!!errors.length" (valueChange)="field(i,'month',$event)" (complete)="finish()"></wkly-field>
-        <wkly-field [label]="t('year')" [locale]="effectiveLocale" [value]="draft.date.year" [min]="adapter.supportedYearRange[0]" [max]="adapter.supportedYearRange[1]" [disabled]="disabled" [invalid]="!!errors.length" (valueChange)="field(i,'year',$event)" (complete)="finish()"></wkly-field>
+        <wkly-field
+          [label]="t('day')"
+          [locale]="effectiveLocale"
+          [value]="draft.date.day"
+          [min]="1"
+          [max]="31"
+          [disabled]="disabled"
+          [invalid]="!!errors.length"
+          (valueChange)="field(i, 'day', $event)"
+          (complete)="finish()"
+        ></wkly-field>
+        <wkly-field
+          [label]="t('month')"
+          [locale]="effectiveLocale"
+          [value]="draft.date.month"
+          [min]="1"
+          [max]="monthCount(draft)"
+          [labels]="months(draft)"
+          [disabled]="disabled"
+          [invalid]="!!errors.length"
+          (valueChange)="field(i, 'month', $event)"
+          (complete)="finish()"
+        ></wkly-field>
+        <wkly-field
+          [label]="t('year')"
+          [locale]="effectiveLocale"
+          [value]="draft.date.year"
+          [min]="adapter.supportedYearRange[0]"
+          [max]="adapter.supportedYearRange[1]"
+          [disabled]="disabled"
+          [invalid]="!!errors.length"
+          (valueChange)="field(i, 'year', $event)"
+          (complete)="finish()"
+        ></wkly-field>
       </div>
       <div *ngIf="hasTime" class="time-fields" [class.seconds]="showSeconds">
-        <wkly-field [label]="t('hour')" [locale]="effectiveLocale" [value]="displayHour(draft)" [min]="effectiveHourCycle === 'h12' ? 1 : 0" [max]="effectiveHourCycle === 'h12' ? 12 : 23" [disabled]="disabled" [invalid]="!!errors.length" (valueChange)="field(i,'hour',$event)" (complete)="finish()"></wkly-field>
-        <wkly-field [label]="t('minute')" [locale]="effectiveLocale" [value]="draft.minute" [max]="59" [step]="minuteStep > 0 && 60 % minuteStep === 0 ? minuteStep : 1" [disabled]="disabled" [invalid]="!!errors.length" (valueChange)="field(i,'minute',$event)" (complete)="finish()"></wkly-field>
-        <wkly-field *ngIf="showSeconds" [label]="t('second')" [locale]="effectiveLocale" [value]="draft.second" [max]="59" [step]="secondStep > 0 && 60 % secondStep === 0 ? secondStep : 1" [disabled]="disabled" [invalid]="!!errors.length" (valueChange)="field(i,'second',$event)" (complete)="finish()"></wkly-field>
-        <div class="period"><button *ngIf="effectiveHourCycle === 'h12' || hourCycle === 'switchable'" type="button" [disabled]="disabled" [attr.aria-pressed]="effectiveHourCycle === 'h12' && (draft.hour || 0) < 12" (click)="period(i,'am')">{{t('am')}}</button><button type="button" [disabled]="disabled || hourCycle !== 'switchable'" [attr.aria-pressed]="effectiveHourCycle === 'h24'" (click)="period(i,'24')">24</button><button *ngIf="effectiveHourCycle === 'h12' || hourCycle === 'switchable'" type="button" [disabled]="disabled" [attr.aria-pressed]="effectiveHourCycle === 'h12' && (draft.hour || 0) >= 12" (click)="period(i,'pm')">{{t('pm')}}</button></div>
+        <wkly-field
+          [label]="t('hour')"
+          [locale]="effectiveLocale"
+          [value]="displayHour(draft)"
+          [min]="effectiveHourCycle === 'h12' ? 1 : 0"
+          [max]="effectiveHourCycle === 'h12' ? 12 : 23"
+          [disabled]="disabled"
+          [invalid]="!!errors.length"
+          (valueChange)="field(i, 'hour', $event)"
+          (complete)="finish()"
+        ></wkly-field>
+        <wkly-field
+          [label]="t('minute')"
+          [locale]="effectiveLocale"
+          [value]="draft.minute"
+          [max]="59"
+          [step]="minuteStep > 0 && 60 % minuteStep === 0 ? minuteStep : 1"
+          [disabled]="disabled"
+          [invalid]="!!errors.length"
+          (valueChange)="field(i, 'minute', $event)"
+          (complete)="finish()"
+        ></wkly-field>
+        <wkly-field
+          *ngIf="showSeconds"
+          [label]="t('second')"
+          [locale]="effectiveLocale"
+          [value]="draft.second"
+          [max]="59"
+          [step]="secondStep > 0 && 60 % secondStep === 0 ? secondStep : 1"
+          [disabled]="disabled"
+          [invalid]="!!errors.length"
+          (valueChange)="field(i, 'second', $event)"
+          (complete)="finish()"
+        ></wkly-field>
+        <div class="period">
+          <button
+            *ngIf="effectiveHourCycle === 'h12' || hourCycle === 'switchable'"
+            type="button"
+            [disabled]="disabled"
+            [attr.aria-pressed]="
+              effectiveHourCycle === 'h12' && (draft.hour || 0) < 12
+            "
+            (click)="period(i, 'am')"
+          >
+            {{ t("am") }}</button
+          ><button
+            type="button"
+            [disabled]="disabled || hourCycle !== 'switchable'"
+            [attr.aria-pressed]="effectiveHourCycle === 'h24'"
+            (click)="period(i, '24')"
+          >
+            24</button
+          ><button
+            *ngIf="effectiveHourCycle === 'h12' || hourCycle === 'switchable'"
+            type="button"
+            [disabled]="disabled"
+            [attr.aria-pressed]="
+              effectiveHourCycle === 'h12' && (draft.hour || 0) >= 12
+            "
+            (click)="period(i, 'pm')"
+          >
+            {{ t("pm") }}
+          </button>
+        </div>
       </div>
     </fieldset>
   </ng-container>
-  <div class="validation" role="status" aria-live="polite"><p *ngFor="let err of errors">! {{t(err.messageKey)}}</p></div>
-  <footer *ngIf="submitVisible"><button type="button" class="confirm" [disabled]="!canSubmit" (click)="submit()">{{t('confirm')}}</button></footer>
+  <div class="validation" role="status" aria-live="polite">
+    <p *ngFor="let err of errors">! {{ t(err.messageKey) }}</p>
+  </div>
+  <footer *ngIf="submitVisible">
+    <button
+      type="button"
+      class="confirm"
+      [disabled]="!canSubmit"
+      (click)="submit()"
+    >
+      {{ t("confirm") }}
+    </button>
+  </footer>
 </section>

@@ -14,8 +14,8 @@ const angularPlugin = { name: 'angular-ts', setup(build) {
     host.readFile = file => {
       let source = originalRead(file);
       if (!source || file.includes('node_modules') || !file.endsWith('.ts')) return source;
-      source = source.replace(/templateUrl:\s*'([^']+)'/g, (_, ref) => 'template: ' + JSON.stringify(fs.readFileSync(path.resolve(path.dirname(file), ref), 'utf8')));
-      return source.replace(/styleUrls:\s*\[([^\]]+)\]/g, (_, files) => 'styles: [' + [...files.matchAll(/'([^']+)'/g)].map(m => JSON.stringify(fs.readFileSync(path.resolve(path.dirname(file), m[1]), 'utf8'))).join(',') + ']');
+      source = source.replace(/templateUrl:\s*(['"])([^'"]+)\1/g, (_, quote, ref) => 'template: ' + JSON.stringify(fs.readFileSync(path.resolve(path.dirname(file), ref), 'utf8')));
+      return source.replace(/styleUrls:\s*\[([^\]]+)\]/g, (_, files) => 'styles: [' + [...files.matchAll(/(['"])([^'"]+)\1/g)].map(m => JSON.stringify(fs.readFileSync(path.resolve(path.dirname(file), m[2]), 'utf8'))).join(',') + ']');
     };
     host.writeFile = (file, contents) => emitted.set(path.resolve(file).replace(/\.js$/, '.ts').toLowerCase(), contents);
     ts.createProgram(parsed.fileNames, compilerOptions, host).emit();
