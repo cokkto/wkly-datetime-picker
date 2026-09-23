@@ -64,6 +64,7 @@
         class="week-scroll"
         [style.height.px]="visibleCount * rowHeight"
         (scroll)="scroll($event)"
+        (scrollend)="snapWeek()"
       >
         <div [style.height.px]="scrollHeight" class="scroll-space">
           <div class="rows" [style.top.px]="paddingTop">

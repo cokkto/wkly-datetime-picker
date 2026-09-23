@@ -139,6 +139,8 @@ export class WklyDateTimePickerComponent
   private clipMonth = false;
   private browser = false;
   private observer?: ResizeObserver;
+  private scrollEndTimer?: ReturnType<typeof setTimeout>;
+  private snapPending = false;
   private onChange: (value: WklyPickerValue) => void = () => {};
   private onTouched: () => void = () => {};
   private validatorChanged: () => void = () => {};
@@ -295,8 +297,9 @@ export class WklyDateTimePickerComponent
         const row = this.host.nativeElement.querySelector(
           ".week-row",
         ) as HTMLElement;
-        if (row && row.offsetHeight && row.offsetHeight !== this.rowHeight) {
-          this.rowHeight = row.offsetHeight;
+        const height = row?.getBoundingClientRect().height;
+        if (height && height !== this.rowHeight) {
+          this.rowHeight = height;
           this.scrollHeight = this.rowHeight * 2001;
           this.renderRows();
           this.resetScroll();
@@ -307,6 +310,7 @@ export class WklyDateTimePickerComponent
   }
   ngOnDestroy(): void {
     if (this.observer) this.observer.disconnect();
+    if (this.scrollEndTimer) clearTimeout(this.scrollEndTimer);
     if (this.generator) this.generator.clearCache();
   }
   t(key: string): string {
@@ -788,6 +792,8 @@ export class WklyDateTimePickerComponent
   }
   scroll(event: Event): void {
     const element = event.target as HTMLElement;
+    this.snapPending = true;
+    this.scheduleSnap();
     const index = Math.floor(element.scrollTop / this.rowHeight);
     const first = this.baseWeek + index;
     if (first === this.firstWeek) return;
@@ -801,11 +807,22 @@ export class WklyDateTimePickerComponent
     }
     this.renderRows();
   }
+  private scheduleSnap(): void {
+    if (this.scrollEndTimer) clearTimeout(this.scrollEndTimer);
+    this.scrollEndTimer = setTimeout(() => this.snapWeek(), 200);
+  }
+  snapWeek(): void {
+    if (this.scrollEndTimer) clearTimeout(this.scrollEndTimer);
+    this.scrollEndTimer = undefined;
+    if (!this.snapPending || !this.scroller) return;
+    this.snapPending = false;
+    this.showFirstWeek(this.firstWeek);
+  }
+  private showFirstWeek(week: number): void {
+    this.scrollToAbsoluteWeek(week + Math.floor(this.visibleCount / 2));
+  }
   moveWeek(delta: number): void {
-    if (!this.disabled)
-      this.scrollToAbsoluteWeek(
-        this.firstWeek + Math.floor(this.visibleCount / 2) + delta,
-      );
+    if (!this.disabled) this.showFirstWeek(this.firstWeek + delta);
   }
   private renderRows(): void {
     const overscan = Math.max(0, Math.min(50, this.overscanWeeks || 0));
