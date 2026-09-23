@@ -85,14 +85,24 @@
                 >{{ row.label }}</span
               >
               <div
-                *ngFor="let cell of row.cells"
+                *ngFor="let cell of row.cells; let dayIndex = index"
                 role="gridcell"
+                [attr.data-weekday-index]="dayIndex"
+                [attr.aria-colindex]="
+                  dayIndex +
+                  (compact ||
+                  (weekLabelMode === 'hidden' && !weekLabelFormatter)
+                    ? 1
+                    : 2)
+                "
                 [attr.aria-selected]="selected(cell.epochDay)"
                 [attr.aria-disabled]="cell.disabled || disabled"
                 [class.range]="inRange(cell.epochDay)"
                 [class.hidden]="cell.hidden"
               >
-                <span class="annotation">{{ cell.annotation }}</span>
+                <span [class]="'annotation annotation--' + dayIndex">{{
+                  cell.annotation
+                }}</span>
                 <button
                   type="button"
                   class="day"
