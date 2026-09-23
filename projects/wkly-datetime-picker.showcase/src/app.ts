@@ -59,6 +59,7 @@ export const PAGES: Record<string, { title: string; description: string; demos: 
   styling: { title: 'A small, useful palette.', description: 'CSS color tokens and a size multiplier fit the picker to your interface. Touch targets stay at least 44 pixels.', demos: [
     { id: 'default-style', title: 'Evergreen', description: 'The default palette, with a clear current-day indicator.', mode: 'date' },
     { id: 'custom-style', title: 'Indigo', description: 'A custom accent color with a 1.15 size multiplier.', color: '#5146a5', size: 1.15, mode: 'date' },
+    { id: 'dark-style', title: 'Slate after dark', description: 'Layered grays, blue selections, and warm constraint notices. Clear the range to see required validation.', theme: 'dark', color: '#0e76b7', mode: 'date-range', validation: true, value: ['2099-12-14T00:00:00.000Z', '2099-12-18T00:00:00.000Z'] },
     { id: 'large-style', title: 'More breathing room', description: 'A 1.3 size multiplier with range selection.', color: '#854320', size: 1.3, mode: 'date-range' }
   ] }
 };

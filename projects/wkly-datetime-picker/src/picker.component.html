@@ -25,7 +25,7 @@
     <div class="week-navigation"><button type="button" [disabled]="disabled" [attr.aria-label]="t('previous')" (click)="moveWeek(-1)">↑</button><span>{{title}}</span><button type="button" [disabled]="disabled" [attr.aria-label]="t('next')" (click)="moveWeek(1)">↓</button></div>
   </ng-container>
   <ng-container *ngFor="let draft of drafts; let i = index">
-    <fieldset *ngIf="i === 0 || isRange" [disabled]="disabled">
+    <fieldset *ngIf="(i === 0 || isRange) && (hasTime || viewMode === 'manual')" [disabled]="disabled">
       <legend *ngIf="isRange">{{t(i === 0 ? 'start' : 'end')}}</legend>
       <div *ngIf="hasDate && viewMode === 'manual'" class="date-fields">
         <wkly-field [label]="t('day')" [locale]="effectiveLocale" [value]="draft.date.day" [min]="1" [max]="31" [disabled]="disabled" [invalid]="!!errors.length" (valueChange)="field(i,'day',$event)" (complete)="finish()"></wkly-field>

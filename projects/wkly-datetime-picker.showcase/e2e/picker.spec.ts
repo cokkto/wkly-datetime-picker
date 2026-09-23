@@ -12,10 +12,11 @@ test('single modes normalize Now and host clear without duplicate emissions', as
 });
 test('ranges stay incomplete until second endpoint and reverse order', async ({ page }) => {
   await page.goto('/ranges'); const panel=page.getByTestId('date-range');
+  await expect(panel.locator('fieldset')).toHaveCount(0);
   await panel.getByRole('button',{name:'Now',exact:true}).click();
   await panel.getByRole('button',{name:'Thursday, 17 December 2099',exact:true}).click(); await expect(panel.getByTestId('validation')).toContainText('incomplete');
   await panel.getByRole('button',{name:'Tuesday, 15 December 2099',exact:true}).click(); await expect(panel.getByTestId('value')).toHaveText('["2099-12-15T00:00:00.000Z","2099-12-17T00:00:00.000Z"]');
-  for(const id of ['datetime-range','time-range']) { const p=page.getByTestId(id); await p.getByRole('button',{name:'Now',exact:true}).click(); await expect(p.getByTestId('validation')).toHaveText('valid'); await expect(p.getByRole('textbox',{name:'Hour',exact:true})).toHaveCount(2); }
+  for(const id of ['datetime-range','time-range']) { const p=page.getByTestId(id); await expect(p.locator('fieldset')).toHaveCount(2); await p.getByRole('button',{name:'Now',exact:true}).click(); await expect(p.getByTestId('validation')).toHaveText('valid'); await expect(p.getByRole('textbox',{name:'Hour',exact:true})).toHaveCount(2); }
 });
 test('February 31 is retained, validated on input and never committed', async ({ page }) => {
   await page.goto('/validation'); const panel=page.getByTestId('invalid-date'); await panel.getByRole('button',{name:'Manual date entry'}).click();

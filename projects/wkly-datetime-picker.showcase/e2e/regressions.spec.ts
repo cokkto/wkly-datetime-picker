@@ -134,3 +134,61 @@ test('calendar wheel, time wheel settlement, touch fields, forced colors and red
   await panel.locator('wkly-field').nth(1).locator('.field').evaluate(el => { const start=new Event('touchstart',{bubbles:true}); Object.defineProperty(start,'touches',{value:[{clientY:150}]}); el.dispatchEvent(start); const end=new Event('touchend',{bubbles:true}); Object.defineProperty(end,'changedTouches',{value:[{clientY:110}]}); el.dispatchEvent(end); }); await expect(panel.getByTestId('value')).toContainText('13:02:00.000Z');
   await page.emulateMedia({forcedColors:'active',reducedMotion:'reduce'}); await expect(panel.getByRole('button',{name:'Now',exact:true})).toBeVisible();
 });
+
+test('manual fields retain trailing digits and submit after typing pauses', async ({ page }) => {
+  await page.goto('/single');
+  const panel = page.getByTestId('datetime');
+  await panel.getByText('Configure this example').click();
+  await panel.getByLabel('Show seconds').check();
+  await panel.getByRole('button', { name: 'Manual date entry' }).click();
+  const day = panel.getByRole('textbox', { name: 'Day', exact: true });
+  await day.fill('');
+  await day.press('1'); await expect(day).toHaveValue('1');
+  await day.press('2'); await expect(day).toHaveValue('12');
+  await day.press('3'); await expect(day).toHaveValue('23');
+  await expect(panel.getByTestId('value')).toContainText('2099-12-16');
+  await expect(panel.getByTestId('value')).toContainText('2099-12-23');
+  await expect(day).toBeFocused();
+
+  for (let [label, value, expected] of [
+    ['Year', '2100', '2100-12-23'],
+    ['Month', '12', '2100-12-23'],
+    ['Hour', '14', 'T14:00:00'],
+    ['Minute', '25', 'T14:25:00'],
+    ['Second', '42', 'T14:25:42']
+  ]) {
+    const input = panel.getByRole('textbox', { name: label, exact: true });
+    if (label === 'Month') {
+      await input.fill('1');
+      await page.waitForTimeout(600);
+      await input.press('2');
+      await expect(input).toHaveValue('12');
+      await page.waitForTimeout(600);
+      await expect(panel.getByTestId('value')).toContainText('2100-12-23');
+      await input.fill('11');
+      expected = '2100-11-23';
+    } else await input.fill(value);
+    await expect(panel.getByTestId('value')).toContainText(expected);
+    await expect(input).toBeFocused();
+  }
+  const minute = panel.getByRole('textbox', { name: 'Minute', exact: true });
+  await minute.fill('26'); await minute.press('Tab');
+  await expect(panel.getByTestId('value')).toContainText('T14:26:42');
+});
+
+test('month resolves numbers after a pause and unique name fragments immediately', async ({ page }) => {
+  await page.goto('/single');
+  const panel = page.getByTestId('date');
+  await panel.getByRole('button', { name: 'Manual date entry' }).click();
+  const month = panel.getByRole('textbox', { name: 'Month', exact: true });
+  await month.fill('11');
+  await expect(month).toHaveValue('11');
+  await expect(month).toHaveValue('November');
+  await expect(panel.getByTestId('value')).toContainText('2099-11-16');
+
+  await month.fill('emb');
+  await expect(panel.getByTestId('value')).toContainText('2099-11-16');
+  await month.fill('Dec');
+  await expect(panel.getByTestId('value')).toContainText('2099-12-16', { timeout: 700 });
+  await expect(month).toHaveValue('December');
+});

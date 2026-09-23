@@ -1,4 +1,4 @@
-<article class="demo-panel" [attr.data-testid]="config.id">
+<article class="demo-panel" [class.dark-theme]="config.theme === 'dark'" [attr.data-testid]="config.id">
   <div class="panel-heading"><span class="eyebrow">{{config.presentation || 'inline'}} / {{config.calendar || 'gregorian'}}</span><h2>{{config.title}}</h2><p>{{config.description}}</p></div>
   <details class="configuration"><summary>Configure this example</summary><div class="config-grid">
     <label>Selection mode<select [(ngModel)]="mode" (ngModelChange)="modeChanged()"><option>datetime</option><option>date</option><option>time</option><option>datetime-range</option><option>date-range</option><option>time-range</option></select></label>

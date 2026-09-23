@@ -5,7 +5,7 @@ import { WklyDateTimePickerComponent, WklyPickerValue, WklySelectionMode, WklyVi
 import { WklyCalendarAdapter, WklyGregorianCalendarAdapter, decodeIso, encodeIso, resolveWeekOffset } from 'wkly-datetime-picker.adapters';
 import { floorMod } from 'wkly-datetime-picker.core';
 import { ShowcaseHebrewCalendarAdapter } from './hebrew-adapter';
-export interface DemoConfig { id: string; title: string; description: string; mode?: WklySelectionMode; locale?: string; calendar?: string; presentation?: string; seconds?: boolean; hourCycle?: string; preset?: WklyViewportPreset; color?: string; size?: number; validation?: boolean; value?: WklyPickerValue; }
+export interface DemoConfig { id: string; title: string; description: string; mode?: WklySelectionMode; locale?: string; calendar?: string; presentation?: string; seconds?: boolean; hourCycle?: string; preset?: WklyViewportPreset; color?: string; theme?: 'dark'; size?: number; validation?: boolean; value?: WklyPickerValue; }
 @Component({ selector: 'demo-panel', templateUrl: './demo.component.html' })
 export class DemoComponent implements OnInit {
   @Input() config!: DemoConfig; @Output() selection = new EventEmitter<WklyPickerValue>(); @ViewChild('picker') picker?: WklyDateTimePickerComponent;
