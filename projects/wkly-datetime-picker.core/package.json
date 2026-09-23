@@ -1,0 +1,20 @@
+{
+  "name": "wkly-datetime-picker.core",
+  "version": "0.1.0",
+  "description": "Calendar-neutral immutable week coordinates",
+  "license": "MIT",
+  "sideEffects": false,
+  "files": [
+    "*.js",
+    "*.cjs",
+    "*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build.cjs wkly-datetime-picker.core"
+  }
+}

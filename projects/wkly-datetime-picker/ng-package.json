@@ -1,0 +1,2 @@
+{"$schema":"../../node_modules/ng-packagr/ng-package.schema.json","dest":"../../dist/wkly-datetime-picker","lib":{"entryFile":"src/public-api.ts"},"allowedNonPeerDependencies":["wkly-datetime-picker.core","wkly-datetime-picker.adapters"]}
+

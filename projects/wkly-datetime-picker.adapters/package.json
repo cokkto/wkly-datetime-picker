@@ -1,0 +1,23 @@
+{
+  "name": "wkly-datetime-picker.adapters",
+  "version": "0.1.0",
+  "description": "Calendar adapters and canonical UTC validation for WKLY",
+  "license": "MIT",
+  "sideEffects": false,
+  "files": [
+    "*.js",
+    "*.cjs",
+    "*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "dependencies": {
+    "wkly-datetime-picker.core": "^0.1.0"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build.cjs wkly-datetime-picker.adapters"
+  }
+}

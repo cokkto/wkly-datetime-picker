@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "../../dist/wkly-datetime-picker.adapters",
+    "rootDir": "src",
+    "paths": {
+      "wkly-datetime-picker.core": [
+        "dist/wkly-datetime-picker.core/public-api.d.ts"
+      ]
+    },
+    "types": []
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

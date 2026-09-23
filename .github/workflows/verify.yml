@@ -1,0 +1,39 @@
+name: Verify
+on: [push, pull_request]
+jobs:
+  node16:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build
+      - run: npm test
+      - run: node scripts/ssr-check.cjs
+      - run: npm run showcase:build
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build
+      - run: npm test
+      - run: node scripts/ssr-check.cjs
+      - run: npm run showcase:build
+      - run: npm run pack:check
+      - run: npm run showcase:browsers
+      - run: npm run showcase:test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-failures
+          path: |
+            playwright-report
+            test-results

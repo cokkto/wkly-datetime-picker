@@ -1,0 +1,9 @@
+/requirement.md
+/requirements.rev01.md
+/node_modules/
+/dist/
+/.test-build/
+/test-results/
+/playwright-report/
+*.tgz
+node_modules

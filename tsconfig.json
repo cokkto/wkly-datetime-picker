@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2018", "module": "es2020", "moduleResolution": "node", "lib": ["es2020", "dom"],
+    "strict": true, "experimentalDecorators": true, "emitDecoratorMetadata": true, "skipLibCheck": true,
+    "baseUrl": ".", "paths": {
+      "wkly-datetime-picker.core": ["projects/wkly-datetime-picker.core/src/public-api.ts"],
+      "wkly-datetime-picker.adapters": ["projects/wkly-datetime-picker.adapters/src/public-api.ts"],
+      "wkly-datetime-picker": ["projects/wkly-datetime-picker/src/public-api.ts"],
+      "wkly-datetime-picker/cdk-overlay": ["projects/wkly-datetime-picker/cdk-overlay/public-api.ts"]
+    }
+  },
+  "include": ["projects/**/*.ts"], "exclude": ["**/e2e/**"]
+}
