@@ -709,6 +709,7 @@ dialog::backdrop {
 }
 .dark-theme .picker-stage wkly-datetime-picker {
   --wkly-background-color: #21232b;
+  --wkly-background-color-alternate: #2c2e36;
   --wkly-text-color: #c3c3c6;
   --wkly-muted-color: #9da5b2;
   --wkly-border-color: #5d6573;

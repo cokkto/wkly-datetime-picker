@@ -99,6 +99,7 @@
                 [attr.aria-disabled]="cell.disabled || disabled"
                 [class.range]="inRange(cell.epochDay)"
                 [class.hidden]="cell.hidden"
+                [class.odd-month]="cell.date.month % 2 === 1"
               >
                 <span [class]="'annotation annotation--' + dayIndex">{{
                   cell.annotation

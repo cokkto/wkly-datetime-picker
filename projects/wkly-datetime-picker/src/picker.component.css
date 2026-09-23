@@ -3,6 +3,7 @@
   width: 100%;
   box-sizing: border-box;
   --wkly-background-color: #fff;
+  --wkly-background-color-alternate: #fafafa;
   --wkly-text-color: #192c28;
   --wkly-muted-color: #52635e;
   --wkly-border-color: #dce5e1;
@@ -118,6 +119,9 @@ button:focus-visible {
   min-width: 0;
   height: var(--wkly-size-unit);
   text-align: center;
+}
+[role="gridcell"].odd-month {
+  background: var(--wkly-background-color-alternate);
 }
 .day {
   width: 100%;
