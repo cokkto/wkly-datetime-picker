@@ -11,8 +11,9 @@
     "showcase:test:e2e:update": "node scripts/playwright.cjs test --update-snapshots",
     "showcase:browsers": "node scripts/playwright.cjs install chromium firefox webkit",
     "pack:check": "node scripts/pack.cjs",
-    "format:ts": "prettier --write \"projects/**/src/**/*.ts\"",
-    "format:html": "prettier --write \"projects/**/src/**/*.html\""
+    "format:ts": "prettier --write \"projects/**/*.ts\"",
+    "format:html": "prettier --write \"projects/**/*.html\"",
+    "format:css": "prettier --write \"projects/**/*.css\""
   },
   "devDependencies": {
     "@angular/animations": "11.2.14",

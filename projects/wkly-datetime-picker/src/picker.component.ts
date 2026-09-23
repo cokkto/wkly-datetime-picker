@@ -802,7 +802,10 @@ export class WklyDateTimePickerComponent
     this.renderRows();
   }
   moveWeek(delta: number): void {
-    if (!this.disabled) this.scrollToAbsoluteWeek(this.anchorWeek + delta);
+    if (!this.disabled)
+      this.scrollToAbsoluteWeek(
+        this.firstWeek + Math.floor(this.visibleCount / 2) + delta,
+      );
   }
   private renderRows(): void {
     const overscan = Math.max(0, Math.min(50, this.overscanWeeks || 0));
