@@ -104,10 +104,12 @@ Custom calendars implement `WklyCalendarAdapter`. Conversions must round-trip ep
 ```css
 wkly-datetime-picker {
   --wkly-background-color: #fff;
+  --wkly-background-color-alternate: #fafafa;
   --wkly-text-color: #192c28;
   --wkly-muted-color: #52635e;
   --wkly-border-color: #dce5e1;
   --wkly-accent-color: #5146a5;
+  --wkly-accent-color-alternate: #7a6fca;
   --wkly-accent-text-color: #fff;
   --wkly-range-color: #e5f1ee;
   --wkly-error-color: #b42318;
