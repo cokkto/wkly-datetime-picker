@@ -794,7 +794,10 @@ export class WklyDateTimePickerComponent
     const element = event.target as HTMLElement;
     this.snapPending = true;
     this.scheduleSnap();
-    const index = Math.floor(element.scrollTop / this.rowHeight);
+    // Quantize displacement around the reset point, equally in both directions.
+    const relativeRows = element.scrollTop / this.rowHeight - 1000;
+    const index =
+      1000 + Math.sign(relativeRows) * Math.round(Math.abs(relativeRows));
     const first = this.baseWeek + index;
     if (first === this.firstWeek) return;
     this.clipMonth = false;
@@ -816,7 +819,10 @@ export class WklyDateTimePickerComponent
     this.scrollEndTimer = undefined;
     if (!this.snapPending || !this.scroller) return;
     this.snapPending = false;
-    this.showFirstWeek(this.firstWeek);
+    // Align the current virtual week without rebuilding or rebasing its rows.
+    const element = this.scroller.nativeElement;
+    const target = (this.firstWeek - this.baseWeek) * this.rowHeight;
+    if (element.scrollTop !== target) element.scrollTop = target;
   }
   private showFirstWeek(week: number): void {
     this.scrollToAbsoluteWeek(week + Math.floor(this.visibleCount / 2));
