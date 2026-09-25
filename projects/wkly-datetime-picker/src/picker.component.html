@@ -99,7 +99,7 @@
                 [attr.aria-disabled]="cell.disabled || disabled"
                 [class.range]="inRange(cell.epochDay)"
                 [class.hidden]="cell.hidden"
-                [class.odd-month]="cell.date.month % 2 === 1"
+                [class.odd-month]="cell.date && cell.date.month % 2 === 1"
               >
                 <span [class]="'annotation annotation--' + dayIndex">{{
                   cell.annotation
@@ -131,7 +131,7 @@
     <div class="week-navigation">
       <button
         type="button"
-        [disabled]="disabled"
+        [disabled]="disabled || !canMoveWeek(-1)"
         [attr.aria-label]="t('previous')"
         (click)="moveWeek(-1)"
       >
@@ -139,7 +139,7 @@
       ><span>{{ title }}</span
       ><button
         type="button"
-        [disabled]="disabled"
+        [disabled]="disabled || !canMoveWeek(1)"
         [attr.aria-label]="t('next')"
         (click)="moveWeek(1)"
       >

@@ -134,6 +134,10 @@ export class WklyDateTimePickerComponent
   initialized = false;
   compact = false;
   private baseWeek = 0;
+  private firstSupportedDay = 0;
+  private lastSupportedDay = 0;
+  private firstSupportedWeek = 0;
+  private lastSupportedWeek = 0;
   private generator!: WklyWeekGenerator;
   private initialMonth = "";
   private clipMonth = false;
@@ -274,6 +278,7 @@ export class WklyDateTimePickerComponent
       this.generator = createWeekGenerator();
       this.effectiveOffset = 0;
     }
+    this.setSupportedScrollRange();
     this.effectiveHourCycle =
       this.hourCycle === "h12"
         ? "h12"
@@ -288,6 +293,51 @@ export class WklyDateTimePickerComponent
     this.weekdays = Array.from({ length: 7 }, (_, i) =>
       this.adapter.formatWeekday(this.effectiveOffset + i, "short"),
     );
+  }
+  private setSupportedScrollRange(): void {
+    let [first, last] = this.adapter.supportedEpochDayRange;
+    const [firstYear, lastYear] = this.adapter.supportedYearRange;
+    const yearOf = (day: number) => this.adapter.epochDayToDate(day).year;
+    if (yearOf(first) < firstYear) {
+      let low = first,
+        high = last;
+      while (low < high) {
+        const mid = Math.floor((low + high) / 2);
+        if (yearOf(mid) < firstYear) low = mid + 1;
+        else high = mid;
+      }
+      first = low;
+    }
+    if (yearOf(last) > lastYear) {
+      let low = first,
+        high = last;
+      while (low < high) {
+        const mid = Math.ceil((low + high) / 2);
+        if (yearOf(mid) > lastYear) high = mid - 1;
+        else low = mid;
+      }
+      last = low;
+    }
+    if (
+      first > last ||
+      yearOf(first) < firstYear ||
+      yearOf(first) > lastYear ||
+      yearOf(last) < firstYear ||
+      yearOf(last) > lastYear
+    )
+      throw new RangeError("No supported days within the calendar year range");
+    this.firstSupportedDay = first;
+    this.lastSupportedDay = last;
+    this.firstSupportedWeek = absoluteWeekOf(first, this.effectiveOffset);
+    this.lastSupportedWeek = absoluteWeekOf(last, this.effectiveOffset);
+  }
+  private clampFirstWeek(week: number): number {
+    // Keep supported weeks inside the viewport; renderRows adds the buffer rows.
+    const last = Math.max(
+      this.firstSupportedWeek,
+      this.lastSupportedWeek - this.visibleCount + 1,
+    );
+    return Math.max(this.firstSupportedWeek, Math.min(last, week));
   }
   ngAfterViewInit(): void {
     this.resetScroll();
@@ -340,9 +390,9 @@ export class WklyDateTimePickerComponent
     try {
       const d = this.adapter.epochDayToDate(
         Math.max(
-          this.adapter.supportedEpochDayRange[0],
+          this.firstSupportedDay,
           Math.min(
-            this.adapter.supportedEpochDayRange[1],
+            this.lastSupportedDay,
             firstEpochDayOf(this.anchorWeek, this.effectiveOffset),
           ),
         ),
@@ -357,8 +407,8 @@ export class WklyDateTimePickerComponent
   }
   private blank(day: number): Draft {
     const safe = Math.max(
-      this.adapter.supportedEpochDayRange[0],
-      Math.min(this.adapter.supportedEpochDayRange[1], day),
+      this.firstSupportedDay,
+      Math.min(this.lastSupportedDay, day),
     );
     return {
       date: this.adapter.epochDayToDate(safe),
@@ -537,8 +587,7 @@ export class WklyDateTimePickerComponent
     }));
     if (
       this.hasDate &&
-      (day < this.adapter.supportedEpochDayRange[0] ||
-        day > this.adapter.supportedEpochDayRange[1])
+      (day < this.firstSupportedDay || day > this.lastSupportedDay)
     ) {
       this.report([error("unsupported-adapter-date", day)]);
       return;
@@ -668,6 +717,8 @@ export class WklyDateTimePickerComponent
     }
   }
   dayDisabled(day: number): boolean {
+    if (day < this.firstSupportedDay || day > this.lastSupportedDay)
+      return true;
     try {
       const date = this.adapter.epochDayToDate(day);
       if (
@@ -734,10 +785,7 @@ export class WklyDateTimePickerComponent
     if (delta) {
       event.preventDefault();
       const target = day + delta;
-      if (
-        target >= this.adapter.supportedEpochDayRange[0] &&
-        target <= this.adapter.supportedEpochDayRange[1]
-      )
+      if (target >= this.firstSupportedDay && target <= this.lastSupportedDay)
         this.scrollToEpochDay(target, { focus: true });
     }
   }
@@ -747,8 +795,8 @@ export class WklyDateTimePickerComponent
     options: WklyJumpOptions = {},
   ): void {
     day = Math.max(
-      this.adapter.supportedEpochDayRange[0],
-      Math.min(this.adapter.supportedEpochDayRange[1], day),
+      this.firstSupportedDay,
+      Math.min(this.lastSupportedDay, day),
     );
     this.anchorWeek = absoluteWeekOf(day, this.effectiveOffset);
     this.clipMonth = preset && this.viewportPreset.kind === "full-month";
@@ -782,6 +830,7 @@ export class WklyDateTimePickerComponent
             ? this.visibleCount - 1
             : Math.floor(this.visibleCount / 2));
     }
+    this.firstWeek = this.clampFirstWeek(this.firstWeek);
     this.baseWeek = this.firstWeek - 1000;
     this.renderRows();
     this.resetScroll();
@@ -798,7 +847,11 @@ export class WklyDateTimePickerComponent
     const relativeRows = element.scrollTop / this.rowHeight - 1000;
     const index =
       1000 + Math.sign(relativeRows) * Math.round(Math.abs(relativeRows));
-    const first = this.baseWeek + index;
+    const requestedFirst = this.baseWeek + index;
+    const first = this.clampFirstWeek(requestedFirst);
+    if (requestedFirst !== first) {
+      element.scrollTop = (first - this.baseWeek) * this.rowHeight;
+    }
     if (first === this.firstWeek) return;
     this.clipMonth = false;
     this.firstWeek = first;
@@ -825,7 +878,17 @@ export class WklyDateTimePickerComponent
     if (element.scrollTop !== target) element.scrollTop = target;
   }
   private showFirstWeek(week: number): void {
-    this.scrollToAbsoluteWeek(week + Math.floor(this.visibleCount / 2));
+    const first = this.clampFirstWeek(week);
+    if (first === this.firstWeek) return;
+    this.clipMonth = false;
+    this.firstWeek = first;
+    this.anchorWeek = first + Math.floor(this.visibleCount / 2);
+    this.baseWeek = first - 1000;
+    this.renderRows();
+    this.resetScroll();
+  }
+  canMoveWeek(delta: number): boolean {
+    return this.clampFirstWeek(this.firstWeek + delta) !== this.firstWeek;
   }
   moveWeek(delta: number): void {
     if (!this.disabled) this.showFirstWeek(this.firstWeek + delta);
@@ -838,16 +901,25 @@ export class WklyDateTimePickerComponent
       { length: this.visibleCount + 2 * overscan },
       (_, i) => {
         const week = this.generator.getWeek(start + i);
+        const supported =
+          week.epochDays[6] >= this.firstSupportedDay &&
+          week.epochDays[0] <= this.lastSupportedDay;
         return {
           week,
-          label: this.weekLabelFormatter
-            ? this.weekLabelFormatter(week, this.adapter)
-            : this.adapter.formatWeekLabel(week, this.weekLabelMode),
+          label: supported
+            ? this.weekLabelFormatter
+              ? this.weekLabelFormatter(week, this.adapter)
+              : this.adapter.formatWeekLabel(week, this.weekLabelMode)
+            : "",
           cells: week.epochDays.map((epochDay, j) => {
             let date: WklyCalendarDate | null = null;
-            try {
-              date = this.adapter.epochDayToDate(epochDay);
-            } catch (_) {}
+            if (
+              epochDay >= this.firstSupportedDay &&
+              epochDay <= this.lastSupportedDay
+            )
+              try {
+                date = this.adapter.epochDayToDate(epochDay);
+              } catch (_) {}
             const hidden =
               !date ||
               (this.clipMonth &&
@@ -885,6 +957,10 @@ export class WklyDateTimePickerComponent
   scrollToEpochDay(day: number, options: WklyJumpOptions = {}): void {
     integer(day);
     this.adapter.epochDayToDate(day);
+    day = Math.max(
+      this.firstSupportedDay,
+      Math.min(this.lastSupportedDay, day),
+    );
     this.position(day, false, options);
     if (options.select) this.select(day);
     if (options.focus) {

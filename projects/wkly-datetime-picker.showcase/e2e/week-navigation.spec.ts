@@ -1,6 +1,8 @@
 import { test, expect } from "./fixtures";
 import type { Locator } from "@playwright/test";
 
+const BUFFER_WEEKS = 3;
+
 async function visibleWeek(
   panel: Locator,
 ): Promise<{ first: number; topDay: number }> {
@@ -60,6 +62,63 @@ test("week buttons show a new row on every repeated click", async ({
   const panel = page.getByTestId("virtual-weeks");
   for (let i = 0; i < 4; i++) await expectOneWeekMove(panel, 1);
   for (let i = 0; i < 4; i++) await expectOneWeekMove(panel, -1);
+});
+
+test("Hebrew scrolling stops with three blank buffer weeks at each edge", async ({
+  page,
+}) => {
+  for (const [value, delta, bufferSide] of [
+    ["1900-01-01T13:00:00.000Z", -100000, "before"],
+    ["2100-12-31T13:00:00.000Z", 100000, "after"],
+  ] as const) {
+    await page.goto("/localization");
+    const panel = page.getByTestId("hebrew");
+    await panel.getByText("Configure this example").click();
+    await panel.getByLabel("Programmatic UTC value").fill(value);
+    await panel.getByRole("button", { name: "Apply value" }).click();
+    const scroller = panel.locator(".week-scroll");
+    await scroller.evaluate((element, amount) => {
+      element.scrollTop += amount;
+      element.dispatchEvent(new Event("scroll"));
+    }, delta);
+    await page.waitForTimeout(250);
+    const state = await scroller.evaluate((element, bufferWeeks) => {
+      const rows = Array.from(
+        element.querySelectorAll<HTMLElement>(".week-row"),
+      );
+      const visible = rows.slice(bufferWeeks, -bufferWeeks);
+      const hasDate = (row: HTMLElement) =>
+        Array.from(row.querySelectorAll<HTMLElement>(".day")).some((day) =>
+          Boolean(day.textContent?.trim()),
+        );
+      const buffer = bufferWeeks === 0 ? [] : rows.slice(0, bufferWeeks);
+      const trailing = rows.slice(-bufferWeeks);
+      return {
+        rowCount: rows.length,
+        visibleCount: visible.length,
+        visibleHasDates: visible.every(hasDate),
+        leadingBlank: buffer.every((row) => !row.textContent?.trim()),
+        trailingBlank: trailing.every((row) => !row.textContent?.trim()),
+        topOffset:
+          rows[bufferWeeks].getBoundingClientRect().top -
+          element.getBoundingClientRect().top,
+      };
+    }, BUFFER_WEEKS);
+    expect(state.rowCount).toBe(state.visibleCount + 2 * BUFFER_WEEKS);
+    expect(state.visibleHasDates).toBe(true);
+    expect(Math.abs(state.topOffset)).toBeLessThan(1);
+    if (bufferSide === "before") {
+      expect(state.leadingBlank).toBe(true);
+      await expect(
+        panel.locator(".week-navigation button").first(),
+      ).toBeDisabled();
+    } else {
+      expect(state.trailingBlank).toBe(true);
+      await expect(
+        panel.locator(".week-navigation button").last(),
+      ).toBeDisabled();
+    }
+  }
 });
 
 test("week buttons advance one row after mouse-wheel scrolling", async ({
@@ -183,22 +242,25 @@ test("wheel deltas leave three buffer rows above the first visible week", async 
   for (const delta of [12, 26, 51, 80, 121, -13, -29, -53, -118, 37]) {
     await page.mouse.wheel(0, delta);
     await page.waitForTimeout(350);
-    const state = await scroller.evaluate((element: HTMLElement) => {
-      const rows = Array.from(
-        element.querySelectorAll<HTMLElement>(".week-row"),
-      );
-      const viewport = element.getBoundingClientRect();
-      const firstVisible = rows[3];
-      const annotation =
-        firstVisible?.querySelector<HTMLElement>(".annotation");
-      return {
-        rowCount: rows.length,
-        topOffset: firstVisible?.getBoundingClientRect().top - viewport.top,
-        annotation: annotation?.textContent?.trim(),
-        annotationBottom: annotation?.getBoundingClientRect().bottom,
-        viewportTop: viewport.top,
-      };
-    });
+    const state = await scroller.evaluate(
+      (element: HTMLElement, bufferWeeks) => {
+        const rows = Array.from(
+          element.querySelectorAll<HTMLElement>(".week-row"),
+        );
+        const viewport = element.getBoundingClientRect();
+        const firstVisible = rows[bufferWeeks];
+        const annotation =
+          firstVisible?.querySelector<HTMLElement>(".annotation");
+        return {
+          rowCount: rows.length,
+          topOffset: firstVisible?.getBoundingClientRect().top - viewport.top,
+          annotation: annotation?.textContent?.trim(),
+          annotationBottom: annotation?.getBoundingClientRect().bottom,
+          viewportTop: viewport.top,
+        };
+      },
+      BUFFER_WEEKS,
+    );
     expect(state.rowCount, `delta ${delta}`).toBe(10);
     expect(Math.abs(state.topOffset!), `delta ${delta}`).toBeLessThan(1);
     expect(state.annotation, `delta ${delta}`).not.toBe("");

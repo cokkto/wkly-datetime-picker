@@ -46,6 +46,65 @@ export interface WklyCalendarAdapter {
   formatWeekLabel(week: WklyWeek, mode: WklyWeekLabelMode): string;
   normalizeDigits(input: string): string;
 }
+/** Optional base for adapters that share locale formatter instances. */
+export abstract class WklyCalendarAbstractAdapter implements WklyCalendarAdapter {
+  abstract readonly calendarId: string;
+  abstract readonly supportedEpochDayRange: readonly [EpochDay, EpochDay];
+  abstract readonly supportedYearRange: readonly [number, number];
+  private readonly dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
+  private readonly numberFormatters = new Map<string, Intl.NumberFormat>();
+
+  protected constructor(public readonly locale: string) {}
+
+  protected getDateTimeFormatter(
+    options: Intl.DateTimeFormatOptions = {},
+    locale: string = this.locale,
+  ): Intl.DateTimeFormat {
+    const key = this.formatterKey(locale, options);
+    let formatter = this.dateTimeFormatters.get(key);
+    if (!formatter) {
+      formatter = new Intl.DateTimeFormat(locale, options);
+      this.dateTimeFormatters.set(key, formatter);
+    }
+    return formatter;
+  }
+
+  protected getNumberFormatter(
+    options: Intl.NumberFormatOptions = {},
+    locale: string = this.locale,
+  ): Intl.NumberFormat {
+    const key = this.formatterKey(locale, options);
+    let formatter = this.numberFormatters.get(key);
+    if (!formatter) {
+      formatter = new Intl.NumberFormat(locale, options);
+      this.numberFormatters.set(key, formatter);
+    }
+    return formatter;
+  }
+
+  private formatterKey(locale: string, options: object): string {
+    return JSON.stringify([
+      locale,
+      Object.entries(options).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    ]);
+  }
+
+  abstract validateDate(date: WklyCalendarDate): readonly WklyCalendarDateError[];
+  abstract dateToEpochDay(date: WklyCalendarDate): EpochDay;
+  abstract epochDayToDate(epochDay: EpochDay): WklyCalendarDate;
+  abstract getMonths(year: number, era?: string): readonly WklyCalendarMonth[];
+  abstract getDaysInMonth(year: number, monthCode: string, era?: string): number;
+  abstract addMonths(date: WklyCalendarDate, amount: number): WklyCalendarDate;
+  abstract addYears(date: WklyCalendarDate, amount: number): WklyCalendarDate;
+  abstract formatDay(date: WklyCalendarDate): string;
+  abstract formatMonth(date: WklyCalendarDate): string;
+  abstract formatYear(date: WklyCalendarDate): string;
+  abstract formatDate(date: WklyCalendarDate): string;
+  abstract formatAccessibleDate(date: WklyCalendarDate): string;
+  abstract formatWeekday(epochDay: EpochDay, width: "short" | "long"): string;
+  abstract formatWeekLabel(week: WklyWeek, mode: WklyWeekLabelMode): string;
+  abstract normalizeDigits(input: string): string;
+}
 export type WklyWeekLabelFormatter = (
   week: WklyWeek,
   adapter: WklyCalendarAdapter,
@@ -221,7 +280,7 @@ export function resolveWeekOffset(
     ? 0
     : (floorMod(firstDay - 4, 7) as WklyWeekOffset);
 }
-export class WklyGregorianCalendarAdapter implements WklyCalendarAdapter {
+export class WklyGregorianCalendarAdapter extends WklyCalendarAbstractAdapter {
   readonly calendarId = "gregory";
   readonly supportedEpochDayRange = Object.freeze([
     -719528, 2932896,
@@ -230,7 +289,9 @@ export class WklyGregorianCalendarAdapter implements WklyCalendarAdapter {
     number,
     number,
   ];
-  constructor(public readonly locale = "en-US") {}
+  constructor(locale = "en-US") {
+    super(locale);
+  }
   validateDate(d: WklyCalendarDate): readonly WklyCalendarDateError[] {
     const errors: WklyCalendarDateError[] = [];
     if (!Number.isInteger(d.year) || d.year < 0 || d.year > 9999)
@@ -320,7 +381,7 @@ export class WklyGregorianCalendarAdapter implements WklyCalendarAdapter {
     d: WklyCalendarDate,
     options: Intl.DateTimeFormatOptions,
   ): string {
-    return new Intl.DateTimeFormat(this.locale, {
+    return this.getDateTimeFormatter({
       ...options,
       calendar: "gregory",
       timeZone: "UTC",
@@ -329,7 +390,7 @@ export class WklyGregorianCalendarAdapter implements WklyCalendarAdapter {
     );
   }
   formatDay(d: WklyCalendarDate): string {
-    return new Intl.NumberFormat(this.locale, { useGrouping: false }).format(
+    return this.getNumberFormatter({ useGrouping: false }).format(
       d.day,
     );
   }
@@ -337,7 +398,7 @@ export class WklyGregorianCalendarAdapter implements WklyCalendarAdapter {
     return this.format(d, { month: "long" });
   }
   formatYear(d: WklyCalendarDate): string {
-    return new Intl.NumberFormat(this.locale, { useGrouping: false }).format(
+    return this.getNumberFormatter({ useGrouping: false }).format(
       d.year,
     );
   }
@@ -353,7 +414,7 @@ export class WklyGregorianCalendarAdapter implements WklyCalendarAdapter {
     });
   }
   formatWeekday(day: number, width: "short" | "long"): string {
-    return new Intl.DateTimeFormat(this.locale, {
+    return this.getDateTimeFormatter({
       weekday: width,
       timeZone: "UTC",
     }).format(new Date(day * 86400000));
@@ -381,7 +442,7 @@ export class WklyGregorianCalendarAdapter implements WklyCalendarAdapter {
     let y = gregorianDate(day).year;
     if (day < weekStart(y)) y--;
     else if (day >= weekStart(y + 1)) y++;
-    return new Intl.NumberFormat(this.locale).format(
+    return this.getNumberFormatter().format(
       floorDiv(day - weekStart(y), 7) + 1,
     );
   }

@@ -16,6 +16,8 @@ All APIs are exported from public package entry points. Emitted TypeScript decla
 
 `WklyGregorianCalendarAdapter(locale='en-US')` implements proleptic Gregorian years 0–9999 using integer arithmetic. Low-level `gregorianDay(year,month,day)` and `gregorianDate(epochDay)` expose raw conversion; use adapter methods for date and supported-range validation. `pad(number,width=2)` is the codec's decimal padding helper.
 
+`WklyCalendarAbstractAdapter` implements the `WklyCalendarAdapter` contract with abstract calendar operations and protected `getDateTimeFormatter(options?, locale?)` and `getNumberFormatter(options?, locale?)` helpers. Each adapter instance reuses formatters for matching locale and options. Custom adapters can extend this class or implement `WklyCalendarAdapter` directly.
+
 `WklyCalendarDate` has calendarId, year, one-based ordinal month, stable monthCode, day, and optional era. `WklyCalendarMonth` has month, monthCode, and label. `WklyCalendarDateError` has code, optional field, and messageKey.
 
 | `WklyCalendarAdapter` member | Contract |
@@ -78,6 +80,8 @@ Validation errors contain code, messageKey, and optional endpoint, field, reject
 | validators | Empty readonly array of value => error/null callbacks |
 
 Boolean attributes are coerced. Supported visibleWeekCount is 1–52, extra rows 0–52, overscan 0–50. Invalid numeric configuration reports configuration-error.
+
+The visible calendar stops at weeks containing dates inside both the adapter's `supportedYearRange` and `supportedEpochDayRange`. The default `DEFAULT_OVERSCAN_WEEKS` is 3; these rendered buffer weeks remain outside the visible viewport and can be blank at a range edge.
 
 Outputs: valueChange (changed successful commits only), validationChange (readonly errors), opened, closed, viewportChange, viewModeChange. `WklyCloseReason` is submit, auto-submit, now, close-button, escape, backdrop, or programmatic. `WklyViewportChange` contains firstVisibleAbsoluteWeek, lastVisibleAbsoluteWeek, anchorAbsoluteWeek.
 

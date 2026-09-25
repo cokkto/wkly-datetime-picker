@@ -1,6 +1,6 @@
 import { HDate } from "@hebcal/core";
 import {
-  WklyCalendarAdapter,
+  WklyCalendarAbstractAdapter,
   WklyCalendarDate,
   WklyCalendarDateError,
   WklyCalendarMonth,
@@ -13,7 +13,7 @@ import {
 } from "wkly-datetime-picker.adapters";
 import { integer, WklyWeek } from "wkly-datetime-picker.core";
 /** Showcase-only extension. Stable month codes use Hebcal's Nisan-based identities. */
-export class ShowcaseHebrewCalendarAdapter implements WklyCalendarAdapter {
+export class ShowcaseHebrewCalendarAdapter extends WklyCalendarAbstractAdapter {
   readonly calendarId = "hebrew";
   readonly supportedEpochDayRange = Object.freeze([
     gregorianDay(1900, 1, 1),
@@ -24,7 +24,8 @@ export class ShowcaseHebrewCalendarAdapter implements WklyCalendarAdapter {
     number,
   ];
   private gregorian: WklyGregorianCalendarAdapter;
-  constructor(readonly locale = "he-IL") {
+  constructor(locale = "he-IL") {
+    super(locale);
     this.gregorian = new WklyGregorianCalendarAdapter(locale);
   }
   private monthNumbers(year: number): number[] {
@@ -37,10 +38,10 @@ export class ShowcaseHebrewCalendarAdapter implements WklyCalendarAdapter {
     return this.monthNumbers(year).map((n, i) => ({
       month: i + 1,
       monthCode: "H" + n,
-      label: new Intl.DateTimeFormat(this.locale + "-u-ca-hebrew", {
-        month: "long",
-        timeZone: "UTC",
-      }).format(new Date((new HDate(1, n, year).abs() - 719163) * 86400000)),
+      label: this.getDateTimeFormatter(
+        { month: "long", timeZone: "UTC" },
+        this.locale + "-u-ca-hebrew",
+      ).format(new Date((new HDate(1, n, year).abs() - 719163) * 86400000)),
     }));
   }
   getDaysInMonth(year: number, code: string): number {
@@ -128,7 +129,7 @@ export class ShowcaseHebrewCalendarAdapter implements WklyCalendarAdapter {
     };
   }
   formatDay(d: WklyCalendarDate): string {
-    return new Intl.NumberFormat(this.locale).format(d.day);
+    return this.getNumberFormatter().format(d.day);
   }
   formatMonth(d: WklyCalendarDate): string {
     return (

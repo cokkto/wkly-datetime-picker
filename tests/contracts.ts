@@ -5,6 +5,25 @@ import { ShowcaseHebrewCalendarAdapter } from '../projects/wkly-datetime-picker.
 let count = 0;
 function test(name: string, action: () => void): void { action(); count++; console.log('PASS ' + name); }
 const a = new WklyGregorianCalendarAdapter('en-GB');
+class FormatterProbe extends WklyGregorianCalendarAdapter {
+  dateFormatter(options: Intl.DateTimeFormatOptions, locale?: string): Intl.DateTimeFormat {
+    return this.getDateTimeFormatter(options, locale);
+  }
+  numberFormatter(options: Intl.NumberFormatOptions, locale?: string): Intl.NumberFormat {
+    return this.getNumberFormatter(options, locale);
+  }
+}
+test('calendar adapters reuse formatters by locale and options', () => {
+  const first = new FormatterProbe('en-US');
+  const second = new FormatterProbe('en-US');
+  const date = first.dateFormatter({ month: 'long', timeZone: 'UTC' });
+  assert.equal(date, first.dateFormatter({ timeZone: 'UTC', month: 'long' }));
+  assert.notEqual(date, first.dateFormatter({ month: 'short', timeZone: 'UTC' }));
+  assert.notEqual(date, first.dateFormatter({ month: 'long', timeZone: 'UTC' }, 'he-IL'));
+  assert.notEqual(date, second.dateFormatter({ month: 'long', timeZone: 'UTC' }));
+  assert.equal(first.numberFormatter({ useGrouping: false }), first.numberFormatter({ useGrouping: false }));
+  assert.notEqual(first.numberFormatter({ useGrouping: false }), first.numberFormatter({ useGrouping: true }));
+});
 test('negative floor arithmetic and all offsets', () => {
   for (const [n, div, mod] of [[1,0,1],[0,0,0],[-1,-1,6],[-7,-1,0],[-8,-2,6]]) { assert.equal(floorDiv(n,7),div); assert.equal(floorMod(n,7),mod); }
   for (let offset = 0; offset < 7; offset++) for (let day = -8; day <= 8; day++) { const week = generateWeek(absoluteWeekOf(day, offset as WklyWeekOffset), offset as WklyWeekOffset); assert.equal(week.epochDays.length,7); assert(week.epochDays.includes(day)); week.epochDays.forEach((d,i) => assert.equal(d,week.epochDays[0]+i)); assert(Object.isFrozen(week)); assert(Object.isFrozen(week.epochDays)); }

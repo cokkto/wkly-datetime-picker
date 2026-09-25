@@ -20,6 +20,8 @@ import {
   WklyWeekLabelFormatter,
   WklyWeekLabelMode,
 } from "wkly-datetime-picker.adapters";
+/** Rendered buffer weeks on each side of the visible calendar. */
+export const DEFAULT_OVERSCAN_WEEKS = 3;
 export type WklyCloseReason =
   | "submit"
   | "auto-submit"
@@ -191,7 +193,7 @@ export abstract class WklyPickerInputs {
   @Input() weekLabelMode: WklyWeekLabelMode = "locale";
   @Input() weekLabelFormatter: WklyWeekLabelFormatter | null = null;
   @Input() weekCacheSize = 256;
-  @Input() overscanWeeks = 3;
+  @Input() overscanWeeks = DEFAULT_OVERSCAN_WEEKS;
   @Input() ariaLabel: string | null = null;
   @Input() ariaDescribedBy: string | null = null;
   @Input() initialEpochDay: number | null = null;
