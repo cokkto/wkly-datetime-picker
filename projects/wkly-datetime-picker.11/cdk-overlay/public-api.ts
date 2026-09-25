@@ -17,7 +17,7 @@ import {
   WklyCloseReason,
   WklyPresentationRef,
   WklyTriggerBase,
-} from "wkly-datetime-picker";
+} from "wkly-datetime-picker.11";
 @Injectable({ providedIn: "root" })
 export class WklyDateTimePickerOverlayService {
   constructor(

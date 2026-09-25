@@ -215,15 +215,15 @@ export class WklyFieldComponent implements OnDestroy {
       this.finish();
     }
     const delta =
-    event.key === "ArrowUp"
-    ? -1
-    : event.key === "ArrowDown"
-    ? 1
-    : event.key === "PageUp"
-    ? -5
-    : event.key === "PageDown"
-    ? 5
-    : 0;
+      event.key === "ArrowUp"
+        ? -1
+        : event.key === "ArrowDown"
+          ? 1
+          : event.key === "PageUp"
+            ? -5
+            : event.key === "PageDown"
+              ? 5
+              : 0;
     if (delta) {
       event.preventDefault();
       this.stepBy(delta);

@@ -47,16 +47,17 @@ import {
 import {
   coerceBoolean,
   ENGLISH,
-  TRANSLATIONS,
   WKLY_CLOCK,
   WKLY_CONFIG,
   WKLY_LOCALIZATION,
+  WKLY_TRANSLATIONS,
   WklyClock,
   WklyCloseReason,
   WklyConfiguration,
   WklyJumpOptions,
   WklyPickerInputs,
   WklyStrings,
+  WklyTranslations,
 } from "./config";
 declare class ResizeObserver {
   constructor(callback: () => void);
@@ -87,7 +88,7 @@ interface Row {
 @Component({
   selector: "wkly-datetime-picker",
   templateUrl: "./picker.component.html",
-  styleUrls: ["./picker.component.css"],
+  styleUrls: ["../../wkly-datetime-picker/src/picker.component.css"],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -157,6 +158,7 @@ export class WklyDateTimePickerComponent
     @Inject(WKLY_CONFIG) private defaults: WklyConfiguration,
     @Inject(WKLY_CLOCK) private clock: WklyClock,
     @Inject(WKLY_LOCALIZATION) private strings: WklyStrings,
+    @Inject(WKLY_TRANSLATIONS) private defaultTranslations: WklyTranslations,
     @Inject(PLATFORM_ID) platform: Object,
     private host: ElementRef<HTMLElement>,
   ) {
@@ -366,7 +368,9 @@ export class WklyDateTimePickerComponent
   t(key: string): string {
     return (
       this.strings[key] ||
-      (TRANSLATIONS[this.effectiveLocale.split("-")[0]] || {})[key] ||
+      ((this.translations || this.defaultTranslations)[
+        this.effectiveLocale.split("-")[0]
+      ] || {})[key] ||
       ENGLISH[key] ||
       key
     );

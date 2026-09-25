@@ -1,14 +1,18 @@
 # WKLY visual test project
 
-This private Angular application imports the public workspace entry points. Library source/templates rebuild while the development server runs; refresh to see changes. No picker behavior is simulated in the host. Material and the Hebrew adapter are private test dependencies.
+This private Angular 22 application owns the routed UI, examples, controls, and translations. It sends serializable configuration to calendar runtimes in iframes. Each runtime boots its own Angular major and imports the matching `wkly-datetime-picker.N` package. Library source and templates rebuild while the development server runs; refresh after an edit to view changes. Material and the Hebrew adapter are private runtime dependencies.
 
 ```sh
-npm ci --legacy-peer-deps
+corepack pnpm install
 npm run showcase:start       # http://127.0.0.1:4200; real UTC clock
-npm run showcase:build       # dist/showcase; static application
+npm run showcase:build       # dist/showcase; host and all runtimes
 ```
 
 Static hosts must fall back to index.html for Angular routes. The development/test server does this automatically. Fonts, assets, and locale data are local.
+
+The Angular runtime menu reads `supported-angular.json` and selects the highest supported major by default. Stage one has one runtime, Angular 11. To add a major, add its `wkly-datetime-picker.N` package, a small `projects/wkly-datetime-picker.runtime.N` app with its own dependency versions, and an entry in `supported-angular.json`. The build script bundles each runtime separately; the main showcase and its configs remain shared. The pnpm workspace shares its package store and uses a hoisted `node_modules` layout for compatibility with Angular 11's compiler.
+
+The host sends `wkly:configure` with mode, locale, value, bounds, translation catalog, styling, and other plain data; `wkly:jump` requests a distant scroll. Runtimes answer with `wkly:ready`, value and validation changes, open/close and viewport events, form state, height, or `wkly:error`. Both sides check same-origin messages and the matching iframe/window source. No Angular instance or callback crosses the boundary. The protocol types are in `src/runtime-protocol.ts`.
 
 | Route | Content |
 | --- | --- |
@@ -37,15 +41,15 @@ npx playwright show-trace test-results/<failure>/trace.zip
 
 Playwright starts/stops port 4200 automatically and injects `2099-12-16T13:00:00.000Z`. Browser timezone is UTC and motion is reduced. Close normal development servers before running tests. Production development uses the real clock.
 
-Interaction tests run in Chromium, Firefox, WebKit, and touch-enabled mobile Chromium. Screenshots run only in Chromium. Failures retain trace, screenshot, and video. Tests begin from direct routes and independent fixtures.
+The iframe bridge suite runs in Chromium, Firefox, WebKit, and touch-enabled mobile Chromium. Failures retain trace, screenshot, and video. The previous direct-DOM specs and screenshot baselines remain as migration references; they predate the iframe boundary and are excluded by `playwright.config.ts` until ported.
 
 ```sh
 npm run showcase:test:e2e:update -- --project=chromium
 npm run showcase:test:e2e -- --project=chromium
 ```
 
-Baseline updates are explicit. Review PNG diffs under e2e/baselines/chromium before committing. Ordinary tests do not rewrite baselines. The checked-in baselines are generated on Windows; compare them on the same OS and Playwright versions.
+Baseline updates are explicit. Existing PNGs under e2e/baselines/chromium describe the former direct-rendered app and should be regenerated after screenshot specs are ported.
 
-Node 16/18 uses a compatible legacy Playwright runner for interactions; Node 20+ uses current browsers and screenshot comparisons. The `showcase:browsers` script automatically installs the matching engines. Use modern Node for baseline updates and browser-support verification.
+Use Node 24.15+ for Angular 22 showcase builds and browser tests. The library build, contracts, and SSR check also run on Node 16 in CI.
 
 `npm test` exhaustively round-trips the Hebrew adapter over its Gregorian 1900–2100 interval. `npm run pack:check` checks that this application, its tests, and showcase-only dependencies are absent from publishable packages.

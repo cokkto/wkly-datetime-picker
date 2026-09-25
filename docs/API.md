@@ -1,5 +1,7 @@
 # Public API
 
+The Angular components, module, forms integration, and optional CDK entry point now live in `wkly-datetime-picker.11`. `wkly-datetime-picker` provides Angular-independent presentation configuration, translations, input names, and CSS. Applications using Angular 11 should import the picker from `wkly-datetime-picker.11`; date adapters remain in `wkly-datetime-picker.adapters`.
+
 All APIs are exported from public package entry points. Emitted TypeScript declarations contain complete signatures and readonly contracts.
 
 ## Core
@@ -89,10 +91,10 @@ The component and triggers expose scrollToEpochDay, scrollToAbsoluteWeek, scroll
 
 Forms methods follow ControlValueAccessor/Validator: writeValue, registerOnChange, registerOnTouched, setDisabledState, validate, registerOnValidatorChange. Programmatic writes never invoke the registered change callback. Invalid drafts leave the last committed value intact.
 
-`WKLY_CLOCK` provides `WklyClock {now(): Date}`. `WKLY_CONFIG` provides readonly `WklyConfiguration {locale?,weekOffset?,initialEpochDay?}`. `WKLY_LOCALIZATION` provides `WklyStrings`, a key/string map overriding built-in ENGLISH and TRANSLATIONS. Missing keys fall back to English. `coerceBoolean` is the shared attribute coercion helper.
+`WKLY_CLOCK` provides `WklyClock {now(): Date}`. `WKLY_CONFIG` provides readonly `WklyConfiguration {locale?,weekOffset?,initialEpochDay?}`. `WKLY_LOCALIZATION` provides per-instance `WklyStrings` overrides. `WKLY_TRANSLATIONS` accepts an optional locale-to-strings catalog; the showcase supplies its Arabic and Hebrew translations. Missing keys fall back to English. `coerceBoolean` is the shared attribute coercion helper.
 
-`WklyDateTimePickerDialogService.open(trigger,onCancel,backdrop=true)` returns `WklyPresentationRef {component,destroy()}` for custom hosts. `WklyTriggerBase`, `WklyPickerInputs`, and `INPUT_NAMES` support presentation extensions. `WklyFieldComponent` is the numeric/wheel primitive with value, label, min/max/step, locale, disabled, invalid, optional labels inputs and valueChange/complete outputs; use the full picker for application forms.
+`WklyDateTimePickerDialogService.open(trigger,onCancel,backdrop=true)` returns `WklyPresentationRef {component,destroy()}` for custom hosts. The shared `WklyPickerInputs` interface defines input property names and types; the Angular 11 `WklyPickerInputs` directive implements it with Angular decorators. `WklyTriggerBase` and `INPUT_NAMES` support presentation extensions. `WklyFieldComponent` is the numeric/wheel primitive with value, label, min/max/step, locale, disabled, invalid, optional labels inputs and valueChange/complete outputs; use the full picker for application forms.
 
 ## Optional CDK entry point
 
-`wkly-datetime-picker/cdk-overlay` exports `WklyDateTimePickerOverlayModule`, `WklyDateTimePickerOverlayDirective` (`[wklyDateTimePickerOverlay]`, exportAs wklyOverlay), and `WklyDateTimePickerOverlayService`. The directive inherits the shared API. Service open(trigger,onCancel,backdrop=true) returns WklyPresentationRef using CDK Overlay and its focus trap. Install the CDK major matching Angular and include overlay-prebuilt.css. Base/native-dialog imports do not load CDK.
+`wkly-datetime-picker.11/cdk-overlay` exports `WklyDateTimePickerOverlayModule`, `WklyDateTimePickerOverlayDirective` (`[wklyDateTimePickerOverlay]`, exportAs wklyOverlay), and `WklyDateTimePickerOverlayService`. The directive inherits the shared API. Service open(trigger,onCancel,backdrop=true) returns WklyPresentationRef using CDK Overlay and its focus trap. Install Angular 11 CDK and include overlay-prebuilt.css. Base/native-dialog imports do not load CDK.

@@ -1,12 +1,5 @@
-import {
-  Component,
-  NgModule,
-  OnDestroy,
-  QueryList,
-  ViewChildren,
-} from "@angular/core";
+import { Component, NgModule, OnDestroy } from "@angular/core";
 import { BrowserModule } from "@angular/platform-browser";
-import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import {
   ActivatedRoute,
@@ -20,15 +13,7 @@ import en from "@angular/common/locales/en";
 import ar from "@angular/common/locales/ar";
 import he from "@angular/common/locales/he";
 import fi from "@angular/common/locales/fi";
-import { MatFormFieldModule } from "@angular/material/form-field";
-import { MatInputModule } from "@angular/material/input";
-import { MatButtonModule } from "@angular/material/button";
-import {
-  WKLY_CLOCK,
-  WklyDateTimePickerModule,
-  WklyPickerValue,
-} from "wkly-datetime-picker";
-import { WklyDateTimePickerOverlayModule } from "wkly-datetime-picker/cdk-overlay";
+import { WklyPickerValue } from "wkly-datetime-picker.adapters";
 import {
   decodeIso,
   encodeIso,
@@ -36,7 +21,8 @@ import {
 } from "wkly-datetime-picker.adapters";
 import { DemoComponent, DemoConfig } from "./demo.component";
 import { ShowcaseHebrewCalendarAdapter } from "./hebrew-adapter";
-declare const WKLY_E2E: boolean;
+import { RuntimeVersionService } from "./runtime-version.service";
+import { PairedSelectionService } from "./paired-selection.service";
 registerLocaleData(enGB);
 registerLocaleData(en, "en-US");
 registerLocaleData(ar);
@@ -300,6 +286,7 @@ export const PAGES: Record<
 };
 @Component({
   selector: "showcase-page",
+  standalone: false,
   template: ` <ng-container *ngIf="page; else overview">
       <a class="back-link" routerLink="/">← Back to overview</a>
       <header class="page-heading">
@@ -319,6 +306,7 @@ export const PAGES: Record<
           *ngFor="let config of page.demos"
           [config]="config"
           (selection)="sync($event)"
+          [class.full-row]="config.presentation !== 'inline'"
         ></demo-panel>
       </div>
     </ng-container>
@@ -336,7 +324,7 @@ export const PAGES: Record<
           ><a routerLink="/presentations">See presentations →</a>
         </div>
         <div class="feature-pills">
-          <span>Angular 11+</span><span>UTC by design</span
+          <span>Angular runtimes</span><span>UTC by design</span
           ><span>Touch & keyboard</span>
         </div>
       </header>
@@ -369,7 +357,6 @@ export const PAGES: Record<
     </ng-template>`,
 })
 export class PageComponent {
-  @ViewChildren(DemoComponent) panels!: QueryList<DemoComponent>;
   routeName: string;
   page: (typeof PAGES)[string] | null;
   routes = Object.keys(PAGES);
@@ -408,7 +395,10 @@ export class PageComponent {
       a = new ShowcaseHebrewCalendarAdapter("en-US");
     return { iso, day, label: a.formatDate(a.epochDayToDate(day)) };
   });
-  constructor(route: ActivatedRoute) {
+  constructor(
+    route: ActivatedRoute,
+    private pairsService: PairedSelectionService,
+  ) {
     this.routeName = route.snapshot.data.page || "";
     this.page = PAGES[this.routeName] || null;
   }
@@ -416,15 +406,16 @@ export class PageComponent {
     if (this.routeName === "calendars" && typeof value === "string") {
       const date = decodeIso(value);
       const wire = encodeIso(date, "date");
-      this.panels.forEach((p) => p.setExternal(wire));
+      this.pairsService.select(wire);
     }
   }
   choosePair(value: string): void {
-    this.panels.forEach((p) => p.setExternal(value));
+    this.pairsService.select(value);
   }
 }
 @Component({
   selector: "wkly-showcase",
+  standalone: false,
   template: `<header class="app-header">
       <a routerLink="/" class="brand"
         ><span class="brand-mark">w.</span
@@ -437,7 +428,18 @@ export class PageComponent {
         aria-label="Toggle navigation"
       >
         ☰</button
-      ><span class="version">v0.1.0 <i></i> Playground</span>
+      ><label class="version"
+        ><span class="version-label">Angular runtime</span>
+        <select
+          [value]="versions.selected"
+          (change)="selectVersion($event)"
+          aria-label="Angular runtime version"
+        >
+          <option *ngFor="let major of versions.available" [value]="major">
+            {{ major }}
+          </option>
+        </select>
+      </label>
     </header>
     <div class="app-layout">
       <aside [class.mobile-open]="menu">
@@ -479,6 +481,10 @@ export class PageComponent {
     </div>`,
 })
 export class AppComponent {
+  constructor(public versions: RuntimeVersionService) {}
+  selectVersion(event: Event): void {
+    this.versions.select((event.target as HTMLSelectElement).value);
+  }
   menu = false;
   routes = Object.keys(PAGES);
   labels: Record<string, string> = {
@@ -496,14 +502,8 @@ export class AppComponent {
   declarations: [AppComponent, PageComponent, DemoComponent],
   imports: [
     BrowserModule,
-    BrowserAnimationsModule,
     FormsModule,
     ReactiveFormsModule,
-    WklyDateTimePickerModule,
-    WklyDateTimePickerOverlayModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
     RouterModule.forRoot(
       [
         { path: "", component: PageComponent },
@@ -517,14 +517,6 @@ export class AppComponent {
       { scrollPositionRestoration: "enabled" },
     ),
   ],
-  providers: WKLY_E2E
-    ? [
-        {
-          provide: WKLY_CLOCK,
-          useValue: { now: () => new Date("2099-12-16T13:00:00.000Z") },
-        },
-      ]
-    : [],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

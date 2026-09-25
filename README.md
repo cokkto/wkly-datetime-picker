@@ -3,11 +3,11 @@
 A reusable Angular date/time picker built around a continuous sequence of weeks, with a configurable visual test project.
 
 ```sh
-npm ci --legacy-peer-deps
+corepack pnpm install
 npm run showcase:start
 ```
 
-Open **http://127.0.0.1:4200**. The private test project is `projects/wkly-datetime-picker.showcase`. It imports the libraries through public package names. The development compiler watches library source and templates; refresh after an edit to view the rebuilt library. No separate package build is needed between edits.
+Open **http://127.0.0.1:4200**. The private Angular 22 showcase keeps all examples, controls, and translations in one app. Its Angular version menu selects a small isolated calendar iframe for each supported version; Angular 11 is currently supported and selected by default. The development compiler watches library source and templates; refresh after an edit to view the rebuilt library. No separate package build is needed between edits.
 
 ## Packages
 
@@ -15,11 +15,12 @@ Open **http://127.0.0.1:4200**. The private test project is `projects/wkly-datet
 | --- | --- |
 | `wkly-datetime-picker.core` | Safe integer coordinates, frozen week models, bounded LRU cache; no runtime dependencies |
 | `wkly-datetime-picker.adapters` | Calendar extension contract, Gregorian conversion, UTC codec, formatting, constraints |
-| `wkly-datetime-picker` | Angular component, forms, native dialog, localization, clock injection |
-| `wkly-datetime-picker/cdk-overlay` | Optional anchored CDK presentation |
-| `wkly-datetime-picker.showcase` | Private routed test project, Material examples, Hebrew adapter, Playwright tests |
+| `wkly-datetime-picker` | Angular-independent presentation configuration, localization, and stylesheet |
+| `wkly-datetime-picker.11` | Angular 11 component, forms, native dialog, and optional CDK presentation |
+| `wkly-datetime-picker.showcase` | Private evergreen Angular app, shared examples and translations, Playwright tests |
+| `wkly-datetime-picker.runtime.11` | Small Angular 11 iframe app that renders `wkly-datetime-picker.11` |
 
-The Angular library is built with Angular **11.2** and TypeScript **4.1**. It uses NgModules and classic inputs/outputs. Builds and contract tests support Node **16+**. The showcase uses a small esbuild/JIT compiler to watch the same source. Library artifacts are written to `dist/<package>`.
+The Angular 11 package is built with Angular **11.2** and TypeScript **4.1**. It uses NgModules and classic inputs/outputs. Builds and contract tests support Node **16+**; the Angular 22 showcase requires Node **24.15+**. pnpm keeps version-specific Angular dependencies in workspace importers with a shared package store and hoisted `node_modules` layout for the Angular 11 compiler. Library artifacts are written to `dist/<package>`; the showcase is written to `dist/showcase`. See [the Angular 11 stage plan](docs/ANGULAR-11-STAGE.md) for package boundaries and migration notes.
 
 ## UTC values
 
@@ -38,7 +39,7 @@ Empty values are `null`. Complete ranges are immutable ordered tuples. Milliseco
 
 ## Angular integration
 
-Import `WklyDateTimePickerModule` from `wkly-datetime-picker`, and `ReactiveFormsModule` for forms:
+Import `WklyDateTimePickerModule` from `wkly-datetime-picker.11`, and `ReactiveFormsModule` for forms:
 
 ```ts
 appointment = new FormControl('2099-12-16T13:00:00.000Z');
@@ -58,7 +59,7 @@ appointment = new FormControl('2099-12-16T13:00:00.000Z');
 
 Inline valid completed actions commit immediately. Transient presentations edit an isolated draft: Confirm submits; X, Escape, and backdrop discard it. Only single `date` mode in calendar view auto-submits a selected day. Manual entry always requires Confirm in a transient presentation. Now validates and commits immediately. The host owns clearing: `appointment.setValue(null)`.
 
-For an anchored overlay, install the CDK major matching Angular, import `WklyDateTimePickerOverlayModule` from `wkly-datetime-picker/cdk-overlay`, and include CDK's `overlay-prebuilt.css`:
+For an anchored overlay, install Angular 11 CDK, import `WklyDateTimePickerOverlayModule` from `wkly-datetime-picker.11/cdk-overlay`, and include CDK's `overlay-prebuilt.css`:
 
 ```html
 <input aria-label="Appointment" wklyDateTimePickerOverlay
@@ -70,7 +71,7 @@ Trigger inputs are readonly displays; the picker is their editing mechanism. The
 ## Configuration examples
 
 ```ts
-import { WKLY_CONFIG, WKLY_LOCALIZATION, WKLY_CLOCK } from 'wkly-datetime-picker';
+import { WKLY_CONFIG, WKLY_LOCALIZATION, WKLY_CLOCK } from 'wkly-datetime-picker.11';
 import { WklyGregorianCalendarAdapter } from 'wkly-datetime-picker.adapters';
 
 // Application providers:
@@ -145,6 +146,6 @@ npm run showcase:test:e2e:update  # intentional baseline updates only
 npm run pack:check
 ```
 
-The pack check examines only the three publishable packages. Nothing is published automatically. See [API reference](docs/API.md) and [showcase instructions](projects/wkly-datetime-picker.showcase/README.md).
+The pack check examines only the four publishable packages. Nothing is published automatically. See [API reference](docs/API.md) and [showcase instructions](projects/wkly-datetime-picker.showcase/README.md).
 
-On Node 20+, browser tests use current Playwright/browser releases. Node 16/18 selects a compatible legacy Playwright runner for interaction tests; current-browser screenshot comparisons run on Node 20+ only. Use `showcase:browsers` to install the browser versions matching the selected runner. CI uses Node 22 and all four browser projects.
+Run the showcase and its browser tests on Node 24.15+ to satisfy Angular 22. CI also checks library builds, contracts, and SSR on Node 16. Browser tests cover Chromium, Firefox, WebKit, and mobile Chromium.

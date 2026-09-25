@@ -1,0 +1,9 @@
+{
+  "11": {
+    "package": "wkly-datetime-picker.11",
+    "runtimeEntry": "projects/wkly-datetime-picker.runtime.11/src/main.ts",
+    "runtimeHtml": "projects/wkly-datetime-picker.runtime.11/src/index.html",
+    "toolchain": "Angular 11.2, TypeScript 4.1, RxJS 6.6",
+    "node": "16"
+  }
+}

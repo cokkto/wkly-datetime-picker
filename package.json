@@ -2,10 +2,12 @@
   "name": "wkly-workspace",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@8.15.9",
   "scripts": {
     "build": "node scripts/build.cjs",
     "test": "node scripts/test.cjs",
     "showcase:start": "node scripts/serve.cjs",
+    "showcase": "node scripts/serve.cjs",
     "showcase:build": "node scripts/showcase-build.cjs",
     "showcase:test:e2e": "node scripts/playwright.cjs test",
     "showcase:test:e2e:update": "node scripts/playwright.cjs test --update-snapshots",

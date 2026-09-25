@@ -1,0 +1,4 @@
+packages:
+  - .
+  - projects/wkly-datetime-picker.showcase
+  - projects/wkly-datetime-picker.runtime.11

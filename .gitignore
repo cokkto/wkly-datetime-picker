@@ -1,6 +1,9 @@
 /requirement.md
 /requirements.rev01.md
+/requirements.rev02.md
 /node_modules/
+/projects/wkly-datetime-picker.showcase/node_modules/
+/projects/wkly-datetime-picker.runtime.11/node_modules/
 /dist/
 /.test-build/
 /test-results/

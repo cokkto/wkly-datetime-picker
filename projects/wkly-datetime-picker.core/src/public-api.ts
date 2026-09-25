@@ -89,7 +89,8 @@ export function createWeekGenerator(
       if (cacheSize) {
         cache.delete(week);
         cache.set(week, model);
-        if (cache.size > cacheSize) cache.delete(cache.keys().next().value);
+        if (cache.size > cacheSize)
+          cache.delete(cache.keys().next().value as number);
       }
       return model;
     },

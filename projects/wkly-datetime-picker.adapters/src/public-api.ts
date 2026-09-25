@@ -89,11 +89,17 @@ export abstract class WklyCalendarAbstractAdapter implements WklyCalendarAdapter
     ]);
   }
 
-  abstract validateDate(date: WklyCalendarDate): readonly WklyCalendarDateError[];
+  abstract validateDate(
+    date: WklyCalendarDate,
+  ): readonly WklyCalendarDateError[];
   abstract dateToEpochDay(date: WklyCalendarDate): EpochDay;
   abstract epochDayToDate(epochDay: EpochDay): WklyCalendarDate;
   abstract getMonths(year: number, era?: string): readonly WklyCalendarMonth[];
-  abstract getDaysInMonth(year: number, monthCode: string, era?: string): number;
+  abstract getDaysInMonth(
+    year: number,
+    monthCode: string,
+    era?: string,
+  ): number;
   abstract addMonths(date: WklyCalendarDate, amount: number): WklyCalendarDate;
   abstract addYears(date: WklyCalendarDate, amount: number): WklyCalendarDate;
   abstract formatDay(date: WklyCalendarDate): string;
@@ -390,17 +396,13 @@ export class WklyGregorianCalendarAdapter extends WklyCalendarAbstractAdapter {
     );
   }
   formatDay(d: WklyCalendarDate): string {
-    return this.getNumberFormatter({ useGrouping: false }).format(
-      d.day,
-    );
+    return this.getNumberFormatter({ useGrouping: false }).format(d.day);
   }
   formatMonth(d: WklyCalendarDate): string {
     return this.format(d, { month: "long" });
   }
   formatYear(d: WklyCalendarDate): string {
-    return this.getNumberFormatter({ useGrouping: false }).format(
-      d.year,
-    );
+    return this.getNumberFormatter({ useGrouping: false }).format(d.year);
   }
   formatDate(d: WklyCalendarDate): string {
     return this.format(d, { year: "numeric", month: "short", day: "numeric" });

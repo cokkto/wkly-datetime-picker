@@ -1,29 +1,35 @@
 import {
+  ChangeDetectorRef,
   Component,
+  DoCheck,
+  ElementRef,
   EventEmitter,
   Input,
+  NgZone,
+  OnDestroy,
   OnInit,
   Output,
   ViewChild,
 } from "@angular/core";
 import { FormControl } from "@angular/forms";
 import { getLocaleFirstDayOfWeek } from "@angular/common";
+import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
+import { Subscription } from "rxjs";
 import {
-  WklyDateTimePickerComponent,
   WklyPickerValue,
   WklySelectionMode,
   WklyViewportPreset,
   WklyValidationError,
-} from "wkly-datetime-picker";
-import {
-  WklyCalendarAdapter,
-  WklyGregorianCalendarAdapter,
-  decodeIso,
-  encodeIso,
-  resolveWeekOffset,
 } from "wkly-datetime-picker.adapters";
-import { floorMod } from "wkly-datetime-picker.core";
-import { ShowcaseHebrewCalendarAdapter } from "./hebrew-adapter";
+import { decodeIso, resolveWeekOffset } from "wkly-datetime-picker.adapters";
+import {
+  isRuntimeMessage,
+  RuntimeConfig,
+  RuntimeMessage,
+} from "./runtime-protocol";
+import { RuntimeVersionService } from "./runtime-version.service";
+import { PairedSelectionService } from "./paired-selection.service";
+import { TRANSLATIONS } from "./translations";
 export interface DemoConfig {
   id: string;
   title: string;
@@ -41,14 +47,38 @@ export interface DemoConfig {
   validation?: boolean;
   value?: WklyPickerValue;
 }
-@Component({ selector: "demo-panel", templateUrl: "demo.component.html" })
-export class DemoComponent implements OnInit {
+@Component({
+  selector: "demo-panel",
+  standalone: false,
+  templateUrl: "demo.component.html",
+})
+export class DemoComponent implements OnInit, DoCheck, OnDestroy {
   @Input() config!: DemoConfig;
   @Output() selection = new EventEmitter<WklyPickerValue>();
-  @ViewChild("picker") picker?: WklyDateTimePickerComponent;
+  @ViewChild("runtimeFrame") runtimeFrame?: ElementRef<HTMLIFrameElement>;
+  runtimeUrl!: SafeResourceUrl;
+  runtimeHeight = 520;
+  runtimeError = "";
+  formStatus = "VALID";
+  formTouched = false;
+  private ready = false;
+  private lastSent = "";
+  private versionSubscription?: Subscription;
+  private pairSubscription?: Subscription;
+  private readonly messageListener = (event: MessageEvent) => {
+    if (
+      event.origin !== window.location.origin ||
+      event.source !== this.runtimeFrame?.nativeElement.contentWindow ||
+      !isRuntimeMessage(event.data)
+    )
+      return;
+    this.zone.run(() => {
+      this.receive(event.data);
+      this.changes.detectChanges();
+    });
+  };
   mode: WklySelectionMode = "datetime";
   locale = "en-GB";
-  adapter: WklyCalendarAdapter = new WklyGregorianCalendarAdapter("en-GB");
   preset: WklyViewportPreset = { kind: "full-month" };
   presetName = "full-month";
   hourCycle: any = "h24";
@@ -66,7 +96,7 @@ export class DemoComponent implements OnInit {
   across = false;
   min: string | null = null;
   max: string | null = null;
-  form = new FormControl(null);
+  form = new FormControl<WklyPickerValue>(null);
   initial: WklyPickerValue = null;
   programmaticValue = "";
   get diagnostics(): string {
@@ -76,18 +106,138 @@ export class DemoComponent implements OnInit {
     return this.errors.map((e) => e.code).join(", ") || "valid";
   }
   get context(): string {
-    return `${this.locale} · ${this.adapter.calendarId} · offset ${resolveWeekOffset(this.locale, this.weekOffset, null, getLocaleFirstDayOfWeek(this.locale))} · ${this.hourCycle}`;
+    return `${this.locale} · ${this.config.calendar || "gregorian"} · offset ${resolveWeekOffset(this.locale, this.weekOffset, null, getLocaleFirstDayOfWeek(this.locale))} · ${this.hourCycle}`;
   }
   get initialEpochDay(): number | null {
     return this.config.validation
       ? decodeIso("2099-12-16T00:00:00.000Z").epochDay
       : null;
   }
-  readonly unavailableDate = (day: number) => floorMod(day + 4, 7) === 0;
-  readonly unavailableTime = (seconds: number) =>
-    seconds >= 12 * 3600 && seconds < 13 * 3600;
+  constructor(
+    public versions: RuntimeVersionService,
+    private pairs: PairedSelectionService,
+    private sanitizer: DomSanitizer,
+    private zone: NgZone,
+    private changes: ChangeDetectorRef,
+  ) {}
   ngOnInit(): void {
     this.reset();
+    this.setRuntimeUrl();
+    this.versionSubscription = this.versions.changed.subscribe(() => {
+      this.setRuntimeUrl();
+      this.changes.detectChanges();
+    });
+    if (
+      this.config.id === "gregorian-pair" ||
+      this.config.id === "hebrew-pair"
+    ) {
+      this.pairSubscription = this.pairs.changed.subscribe((value) =>
+        this.setExternal(value),
+      );
+    }
+    window.addEventListener("message", this.messageListener);
+  }
+  ngOnDestroy(): void {
+    this.versionSubscription?.unsubscribe();
+    this.pairSubscription?.unsubscribe();
+    window.removeEventListener("message", this.messageListener);
+  }
+  ngDoCheck(): void {
+    this.sendConfig();
+  }
+  private setRuntimeUrl(): void {
+    this.ready = false;
+    this.lastSent = "";
+    this.runtimeError = "";
+    this.runtimeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+      `/runtime/${this.versions.selected}/index.html`,
+    );
+  }
+  private configuration(): RuntimeConfig {
+    return {
+      mode: this.mode,
+      value: this.value,
+      locale: this.locale,
+      calendar: this.config.calendar === "hebrew" ? "hebrew" : "gregorian",
+      presentation: (this.config.presentation ||
+        "inline") as RuntimeConfig["presentation"],
+      weekOffset: this.weekOffset,
+      weekLabelMode: this.showWeekNumbers ? "locale" : "hidden",
+      viewportPreset: this.preset as RuntimeConfig["viewportPreset"],
+      initialEpochDay: this.initialEpochDay,
+      hourCycle: this.hourCycle,
+      showSeconds: this.seconds,
+      minuteStep: this.minuteStep,
+      min: this.min,
+      max: this.max,
+      required: this.required,
+      disabled: this.disabled,
+      allowRangeAcrossDisabled: this.across,
+      validation: !!this.config.validation,
+      translations: TRANSLATIONS,
+      color: this.config.color || "#176c55",
+      size: this.config.size || 1,
+      dark: this.config.theme === "dark",
+    };
+  }
+  private sendConfig(): void {
+    if (!this.ready || !this.runtimeFrame?.nativeElement.contentWindow) return;
+    const payload = this.configuration();
+    const serialized = JSON.stringify(payload);
+    if (serialized === this.lastSent) return;
+    this.lastSent = serialized;
+    this.runtimeFrame.nativeElement.contentWindow.postMessage(
+      { type: "wkly:configure", payload },
+      window.location.origin,
+    );
+  }
+  private receive(message: RuntimeMessage): void {
+    switch (message.type) {
+      case "wkly:ready":
+        this.ready = true;
+        this.lastSent = "";
+        this.sendConfig();
+        break;
+      case "wkly:valueChange":
+        this.commit(message.payload as WklyPickerValue);
+        this.lastSent = JSON.stringify(this.configuration());
+        break;
+      case "wkly:validationChange":
+        this.errors = (message.payload || []) as WklyValidationError[];
+        break;
+      case "wkly:viewportChange": {
+        const value = message.payload as {
+          firstVisibleAbsoluteWeek: number;
+          lastVisibleAbsoluteWeek: number;
+        };
+        this.viewport = `${value.firstVisibleAbsoluteWeek} … ${value.lastVisibleAbsoluteWeek}`;
+        break;
+      }
+      case "wkly:closed":
+        this.lastClose = String(message.payload || "programmatic");
+        break;
+      case "wkly:formState": {
+        const state = message.payload as { status: string; touched: boolean };
+        this.formStatus = state.status;
+        this.formTouched = state.touched;
+        break;
+      }
+      case "wkly:height":
+        this.runtimeHeight = Math.max(
+          480,
+          Math.min(1000, Number(message.payload) || 520),
+        );
+        break;
+      case "wkly:error":
+        this.runtimeError = String(message.payload);
+        break;
+    }
+  }
+  jump(value: string): void {
+    this.runtimeFrame?.nativeElement.contentWindow?.postMessage(
+      { type: "wkly:jump", payload: value },
+      window.location.origin,
+    );
   }
   reset(): void {
     this.mode = this.config.mode || "datetime";
@@ -95,10 +245,6 @@ export class DemoComponent implements OnInit {
     this.seconds = !!this.config.seconds;
     this.showWeekNumbers = true;
     this.hourCycle = this.config.hourCycle || "h24";
-    this.adapter =
-      this.config.calendar === "hebrew"
-        ? new ShowcaseHebrewCalendarAdapter(this.locale)
-        : new WklyGregorianCalendarAdapter(this.locale);
     this.preset = this.config.preset || { kind: "full-month" };
     this.presetName = this.preset.kind;
     this.weekOffset = this.locale === "en-US" ? 3 : null;
@@ -115,6 +261,8 @@ export class DemoComponent implements OnInit {
     this.value = this.initial;
     this.form.setValue(this.value);
     this.errors = [];
+    this.formStatus = "VALID";
+    this.formTouched = false;
     this.emitted = 0;
     this.lastClose = "—";
     this.required = !!this.config.validation;
@@ -140,10 +288,7 @@ export class DemoComponent implements OnInit {
     }
   }
   localeChanged(): void {
-    this.adapter =
-      this.config.calendar === "hebrew"
-        ? new ShowcaseHebrewCalendarAdapter(this.locale)
-        : new WklyGregorianCalendarAdapter(this.locale);
+    // ngDoCheck sends the updated serializable configuration to the runtime.
   }
   presetChanged(): void {
     this.preset =
@@ -160,6 +305,7 @@ export class DemoComponent implements OnInit {
   setExternal(value: WklyPickerValue): void {
     this.value = value;
     this.form.setValue(value);
+    this.changes.detectChanges();
   }
   changeDisabled(): void {
     if (this.disabled) this.form.disable();
