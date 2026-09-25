@@ -1,17 +1,33 @@
 name: Verify
 on: [push, pull_request]
 jobs:
-  node16:
+  compatibility-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+      - id: matrix
+        run: node scripts/ci-compatibility.cjs matrix >> "$GITHUB_OUTPUT"
+  compatibility:
+    needs: compatibility-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.compatibility-matrix.outputs.matrix) }}
+    name: Angular ${{ matrix.angular }} (Node ${{ matrix.node }})
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 16
-      - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm run build
-      - run: corepack pnpm test
-      - run: node scripts/ssr-check.cjs
+          node-version: ${{ matrix.node }}
+      # Link the complete hoisted tree before running package install scripts.
+      - run: corepack pnpm install --frozen-lockfile --ignore-scripts
+      - run: corepack pnpm --filter wkly-workspace --filter "${{ matrix.runtimePackage }}" rebuild --pending
+      - run: node scripts/ci-compatibility.cjs verify ${{ matrix.angular }}
   verify:
     runs-on: windows-latest
     steps:
@@ -19,7 +35,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24.15.0
-      - run: corepack pnpm install --frozen-lockfile
+      # Each importer keeps its own esbuild version after pnpm finishes linking.
+      - run: corepack pnpm install --frozen-lockfile --ignore-scripts
+      - run: corepack pnpm rebuild --pending
       - run: corepack pnpm run build
       - run: corepack pnpm test
       - run: node scripts/ssr-check.cjs
