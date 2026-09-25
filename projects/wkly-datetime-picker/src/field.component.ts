@@ -13,7 +13,9 @@ import { normalizeDigits } from "wkly-datetime-picker.adapters";
     class="field"
     (wheel)="wheel($event)"
     (touchstart)="touchStart($event)"
+    (touchmove)="touchMove($event)"
     (touchend)="touchEnd($event)"
+    (touchcancel)="touchEnd($event)"
   >
     <span class="label">{{ label }}</span>
     <button
@@ -113,6 +115,8 @@ export class WklyFieldComponent implements OnDestroy {
   @Output() complete = new EventEmitter<void>();
   private before: number | null = null;
   private touchY = 0;
+  private touchSteps = 0;
+  private touchChanged = false;
   private typed: string | null = null;
   private inputTimer: ReturnType<typeof setTimeout> | null = null;
   private wheelTimer: ReturnType<typeof setTimeout> | null = null;
@@ -126,6 +130,10 @@ export class WklyFieldComponent implements OnDestroy {
             useGrouping: false,
             minimumIntegerDigits: this.max < 60 ? 2 : 1,
           }).format(this.value);
+  }
+  ngOnDestroy(): void {
+    this.cancelInput();
+    if (this.wheelTimer !== null) clearTimeout(this.wheelTimer);
   }
   next(delta: number): number {
     const count = Math.floor((this.max - this.min) / this.step) + 1;
@@ -149,10 +157,7 @@ export class WklyFieldComponent implements OnDestroy {
   }
   stepBy(delta: number): void {
     if (this.disabled) return;
-    this.cancelInput();
-    this.typed = null;
-    this.value = this.next(delta);
-    this.valueChange.emit(this.value);
+    this.scrollBy(delta);
     this.complete.emit();
   }
   begin(event: FocusEvent): void {
@@ -193,15 +198,6 @@ export class WklyFieldComponent implements OnDestroy {
       if (!this.disabled) this.complete.emit();
     }, 1000);
   }
-  private cancelInput(): void {
-    if (this.inputTimer !== null) clearTimeout(this.inputTimer);
-    this.inputTimer = null;
-  }
-  finish(): void {
-    this.cancelInput();
-    this.typed = null;
-    this.complete.emit();
-  }
   key(event: KeyboardEvent): void {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -219,43 +215,70 @@ export class WklyFieldComponent implements OnDestroy {
       this.finish();
     }
     const delta =
-      event.key === "ArrowUp"
-        ? -1
-        : event.key === "ArrowDown"
-          ? 1
-          : event.key === "PageUp"
-            ? -5
-            : event.key === "PageDown"
-              ? 5
-              : 0;
+    event.key === "ArrowUp"
+    ? -1
+    : event.key === "ArrowDown"
+    ? 1
+    : event.key === "PageUp"
+    ? -5
+    : event.key === "PageDown"
+    ? 5
+    : 0;
     if (delta) {
       event.preventDefault();
       this.stepBy(delta);
     }
   }
+  finish(): void {
+    this.cancelInput();
+    this.typed = null;
+    this.complete.emit();
+  }
   wheel(event: WheelEvent): void {
     if (this.disabled || Math.abs(event.deltaY) < 1) return;
     event.preventDefault();
-    this.cancelInput();
-    this.typed = null;
-    this.value = this.next(event.deltaY > 0 ? 1 : -1);
-    this.valueChange.emit(this.value);
+    this.scrollBy(event.deltaY > 0 ? 1 : -1);
     if (this.wheelTimer !== null) clearTimeout(this.wheelTimer);
     this.wheelTimer = setTimeout(() => {
       this.wheelTimer = null;
       this.complete.emit();
     }, 140);
   }
-  ngOnDestroy(): void {
-    this.cancelInput();
-    if (this.wheelTimer !== null) clearTimeout(this.wheelTimer);
-  }
   touchStart(event: TouchEvent): void {
     this.touchY = event.touches[0].clientY;
+    this.touchSteps = 0;
+    this.touchChanged = false;
+  }
+  touchMove(event: TouchEvent): void {
+    this.applyTouchY(event.touches[0].clientY);
   }
   touchEnd(event: TouchEvent): void {
-    const delta = this.touchY - event.changedTouches[0].clientY;
-    if (Math.abs(delta) > 16)
-      this.stepBy(Math.round(delta / 40) || Math.sign(delta));
+    this.applyTouchY(event.changedTouches[0].clientY);
+    if (this.touchChanged) this.complete.emit();
+    this.touchChanged = false;
+  }
+  private cancelInput(): void {
+    if (this.inputTimer !== null) clearTimeout(this.inputTimer);
+    this.inputTimer = null;
+  }
+  private scrollBy(delta: number): void {
+    if (this.disabled || !delta) return;
+    this.cancelInput();
+    this.typed = null;
+    this.value = this.next(delta);
+    this.valueChange.emit(this.value);
+  }
+  private applyTouchY(y: number): void {
+    if (this.disabled) return;
+    const delta = this.touchY - y;
+    const steps =
+      Math.abs(delta) > 16
+        ? Math.sign(delta) * Math.max(1, Math.round(Math.abs(delta) / 40))
+        : 0;
+    const change = steps - this.touchSteps;
+    if (!change) return;
+    this.scrollBy(change);
+    this.touchSteps = steps;
+    this.touchChanged = true;
   }
 }
