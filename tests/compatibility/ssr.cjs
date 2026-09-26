@@ -8,7 +8,14 @@ Module._load = function (name) {
 };
 for (const name of ['wkly-datetime-picker.core', 'wkly-datetime-picker.adapters', 'wkly-datetime-picker']) assert(Object.keys(require(name)).length);
 Module._load = original;
-const load = async name => { const value = await import(name); return { ...value.default, ...value }; };
+const load = async name => {
+  // Legacy Zone patches conflict with Node 16's dynamic-import promises.
+  try { return require(name); } catch (error) {
+    if (error.code !== 'ERR_REQUIRE_ESM') throw error;
+    const value = await import(name);
+    return { ...value.default, ...value };
+  }
+};
 (async () => {
   try { require('zone.js/node'); } catch (error) {
     if (error.code !== 'MODULE_NOT_FOUND' && error.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') throw error;

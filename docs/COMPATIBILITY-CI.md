@@ -35,6 +35,10 @@ The showcase's UI/iframe bridge suite remains available through
 Use **Compatibility result** as the required branch check. It fails if planning,
 shared tests or any selected compatibility job fails, while allowing an empty matrix.
 
+The first clean consumer run exposed missing picker/dialog exports in Angular 11's
+flattened package bundle. Its public barrel now explicitly re-exports those symbols
+so declarations and executable exports agree; the public API is unchanged.
+
 ## Adding Angular 12, 13, or a later major
 
 1. Add `projects/wkly-datetime-picker.N` with version `N.SharedRevision.AngularRevision`,
