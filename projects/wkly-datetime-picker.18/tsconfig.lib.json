@@ -13,6 +13,9 @@
       "wkly-datetime-picker": ["dist/wkly-datetime-picker/public-api.d.ts"]
     }
   },
-  "angularCompilerOptions": { "strictTemplates": true, "compilationMode": "partial" },
+  "angularCompilerOptions": {
+    "strictTemplates": true,
+    "compilationMode": "partial"
+  },
   "include": ["src/**/*.ts", "cdk-overlay/**/*.ts"]
 }

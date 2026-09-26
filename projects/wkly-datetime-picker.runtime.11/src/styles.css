@@ -1,9 +1,19 @@
 @import "@angular/cdk/overlay-prebuilt.css";
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
 
-html, body { margin: 0; min-width: 0; font-family: Arial, sans-serif; }
-.runtime-stage { box-sizing: border-box; padding: 2px; }
-.runtime-stage.dark { color-scheme: dark; }
+html,
+body {
+  margin: 0;
+  min-width: 0;
+  font-family: Arial, sans-serif;
+}
+.runtime-stage {
+  box-sizing: border-box;
+  padding: 2px;
+}
+.runtime-stage.dark {
+  color-scheme: dark;
+}
 .runtime-stage.dark wkly-datetime-picker {
   --wkly-background-color: #21232b;
   --wkly-background-color-alternate: #2c2e36;
@@ -15,8 +25,27 @@ html, body { margin: 0; min-width: 0; font-family: Arial, sans-serif; }
   --wkly-error-color: #b22142;
   --wkly-focus-color: #65b8ec;
 }
-.trigger-demo { min-height: 96px; display: flex; align-items: center; gap: 12px; }
-.trigger-demo button, .trigger-demo input { font: inherit; padding: 10px 14px; }
-.trigger-demo .primary { border: 0; border-radius: 6px; background: #176c55; color: white; cursor: pointer; }
-.trigger-icon { font-size: 30px; }
-mat-form-field { width: 100%; }
+.trigger-demo {
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.trigger-demo button,
+.trigger-demo input {
+  font: inherit;
+  padding: 10px 14px;
+}
+.trigger-demo .primary {
+  border: 0;
+  border-radius: 6px;
+  background: #176c55;
+  color: white;
+  cursor: pointer;
+}
+.trigger-icon {
+  font-size: 30px;
+}
+mat-form-field {
+  width: 100%;
+}

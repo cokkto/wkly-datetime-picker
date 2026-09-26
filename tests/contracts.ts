@@ -1,47 +1,265 @@
-import { strict as assert } from 'assert';
-import { absoluteWeekOf, createWeekGenerator, firstEpochDayOf, floorDiv, floorMod, generateWeek, WklyWeekOffset } from 'wkly-datetime-picker.core';
-import { decodeIso, encodeIso, gregorianDay, normalizeDigits, resolveWeekOffset, validateSelection, WklyGregorianCalendarAdapter } from 'wkly-datetime-picker.adapters';
-import { ShowcaseHebrewCalendarAdapter } from '../projects/wkly-datetime-picker.showcase/src/hebrew-adapter';
+import { strict as assert } from "assert";
+import {
+  absoluteWeekOf,
+  createWeekGenerator,
+  firstEpochDayOf,
+  floorDiv,
+  floorMod,
+  generateWeek,
+  WklyWeekOffset,
+} from "wkly-datetime-picker.core";
+import {
+  decodeIso,
+  encodeIso,
+  gregorianDay,
+  normalizeDigits,
+  resolveWeekOffset,
+  validateSelection,
+  WklyGregorianCalendarAdapter,
+} from "wkly-datetime-picker.adapters";
+import { ShowcaseHebrewCalendarAdapter } from "../projects/wkly-datetime-picker.showcase/src/hebrew-adapter";
 let count = 0;
-function test(name: string, action: () => void): void { action(); count++; console.log('PASS ' + name); }
-const a = new WklyGregorianCalendarAdapter('en-GB');
+function test(name: string, action: () => void): void {
+  action();
+  count++;
+  console.log("PASS " + name);
+}
+const a = new WklyGregorianCalendarAdapter("en-GB");
 class FormatterProbe extends WklyGregorianCalendarAdapter {
-  dateFormatter(options: Intl.DateTimeFormatOptions, locale?: string): Intl.DateTimeFormat {
+  dateFormatter(
+    options: Intl.DateTimeFormatOptions,
+    locale?: string,
+  ): Intl.DateTimeFormat {
     return this.getDateTimeFormatter(options, locale);
   }
-  numberFormatter(options: Intl.NumberFormatOptions, locale?: string): Intl.NumberFormat {
+  numberFormatter(
+    options: Intl.NumberFormatOptions,
+    locale?: string,
+  ): Intl.NumberFormat {
     return this.getNumberFormatter(options, locale);
   }
 }
-test('calendar adapters reuse formatters by locale and options', () => {
-  const first = new FormatterProbe('en-US');
-  const second = new FormatterProbe('en-US');
-  const date = first.dateFormatter({ month: 'long', timeZone: 'UTC' });
-  assert.equal(date, first.dateFormatter({ timeZone: 'UTC', month: 'long' }));
-  assert.notEqual(date, first.dateFormatter({ month: 'short', timeZone: 'UTC' }));
-  assert.notEqual(date, first.dateFormatter({ month: 'long', timeZone: 'UTC' }, 'he-IL'));
-  assert.notEqual(date, second.dateFormatter({ month: 'long', timeZone: 'UTC' }));
-  assert.equal(first.numberFormatter({ useGrouping: false }), first.numberFormatter({ useGrouping: false }));
-  assert.notEqual(first.numberFormatter({ useGrouping: false }), first.numberFormatter({ useGrouping: true }));
+test("calendar adapters reuse formatters by locale and options", () => {
+  const first = new FormatterProbe("en-US");
+  const second = new FormatterProbe("en-US");
+  const date = first.dateFormatter({ month: "long", timeZone: "UTC" });
+  assert.equal(date, first.dateFormatter({ timeZone: "UTC", month: "long" }));
+  assert.notEqual(
+    date,
+    first.dateFormatter({ month: "short", timeZone: "UTC" }),
+  );
+  assert.notEqual(
+    date,
+    first.dateFormatter({ month: "long", timeZone: "UTC" }, "he-IL"),
+  );
+  assert.notEqual(
+    date,
+    second.dateFormatter({ month: "long", timeZone: "UTC" }),
+  );
+  assert.equal(
+    first.numberFormatter({ useGrouping: false }),
+    first.numberFormatter({ useGrouping: false }),
+  );
+  assert.notEqual(
+    first.numberFormatter({ useGrouping: false }),
+    first.numberFormatter({ useGrouping: true }),
+  );
 });
-test('negative floor arithmetic and all offsets', () => {
-  for (const [n, div, mod] of [[1,0,1],[0,0,0],[-1,-1,6],[-7,-1,0],[-8,-2,6]]) { assert.equal(floorDiv(n,7),div); assert.equal(floorMod(n,7),mod); }
-  for (let offset = 0; offset < 7; offset++) for (let day = -8; day <= 8; day++) { const week = generateWeek(absoluteWeekOf(day, offset as WklyWeekOffset), offset as WklyWeekOffset); assert.equal(week.epochDays.length,7); assert(week.epochDays.includes(day)); week.epochDays.forEach((d,i) => assert.equal(d,week.epochDays[0]+i)); assert(Object.isFrozen(week)); assert(Object.isFrozen(week.epochDays)); }
-  assert.deepEqual(generateWeek(-1,0).epochDays,[-7,-6,-5,-4,-3,-2,-1]); assert.equal(absoluteWeekOf(0,4),-1); assert.equal(firstEpochDayOf(0,4),4);
+test("negative floor arithmetic and all offsets", () => {
+  for (const [n, div, mod] of [
+    [1, 0, 1],
+    [0, 0, 0],
+    [-1, -1, 6],
+    [-7, -1, 0],
+    [-8, -2, 6],
+  ]) {
+    assert.equal(floorDiv(n, 7), div);
+    assert.equal(floorMod(n, 7), mod);
+  }
+  for (let offset = 0; offset < 7; offset++)
+    for (let day = -8; day <= 8; day++) {
+      const week = generateWeek(
+        absoluteWeekOf(day, offset as WklyWeekOffset),
+        offset as WklyWeekOffset,
+      );
+      assert.equal(week.epochDays.length, 7);
+      assert(week.epochDays.includes(day));
+      week.epochDays.forEach((d, i) => assert.equal(d, week.epochDays[0] + i));
+      assert(Object.isFrozen(week));
+      assert(Object.isFrozen(week.epochDays));
+    }
+  assert.deepEqual(generateWeek(-1, 0).epochDays, [-7, -6, -5, -4, -3, -2, -1]);
+  assert.equal(absoluteWeekOf(0, 4), -1);
+  assert.equal(firstEpochDayOf(0, 4), 4);
 });
-test('safe integer rejection and overflow', () => { for (const n of [NaN,Infinity,.1,Number.MAX_SAFE_INTEGER+1]) assert.throws(() => generateWeek(n,0), RangeError); assert.throws(() => firstEpochDayOf(Number.MAX_SAFE_INTEGER,0),RangeError); assert.throws(() => absoluteWeekOf(Number.MIN_SAFE_INTEGER,6),RangeError); assert.throws(() => floorDiv(1,0),RangeError); });
-test('bounded LRU, disabled cache, immutable offset and distant jump', () => { const g=createWeekGenerator({weekOffset:4,cacheSize:2}); const w=g.getWeek(0); g.getWeek(1); assert.equal(g.getWeek(0),w); g.getWeek(2); assert.equal(g.getWeek(0),w); const other=g.getWeek(1); g.getWeek(3); g.getWeek(4); assert.notEqual(g.getWeek(1),other); const no=createWeekGenerator({cacheSize:0}); assert.notEqual(no.getWeek(0),no.getWeek(0)); assert.notEqual(createWeekGenerator().getWeek(0),w); assert.throws(() => (g as any).weekOffset=1); assert.equal(g.getWeek(100000000).epochDays[0],700000004); });
-test('Gregorian conversion, leap years and year bounds', () => { assert.equal(gregorianDay(1970,1,1),0); assert.equal(gregorianDay(1969,12,31),-1); assert.equal(gregorianDay(1970,1,2),1); assert.equal(a.getDaysInMonth(2000,'M02'),29); assert.equal(a.getDaysInMonth(1900,'M02'),28); for (let day=-719528;day<=2932896;day+=31) assert.equal(a.dateToEpochDay(a.epochDayToDate(day)),day); for(const day of [-719528,-1,0,1,2932896]) assert.equal(a.dateToEpochDay(a.epochDayToDate(day)),day); assert.throws(() => a.epochDayToDate(2932897)); });
-test('impossible drafts are never clamped', () => { const may=a.epochDayToDate(gregorianDay(2100,5,31)); const feb=a.addMonths(may,-3); assert.equal(feb.day,31); assert(a.validateDate(feb).length); assert.throws(() => a.dateToEpochDay(feb)); });
-test('strict ISO codec and hidden field normalization', () => { for(const bad of ['2099-12-16T13:00:00+03:00','2099-12-16T13:00:60.000Z','2099-12-16T13:00:00.001Z','1900-02-29T00:00:00.000Z','0000-00-00T00:00:00.000Z']) assert.throws(() => decodeIso(bad)); const d=decodeIso('2099-12-16T13:14:15.000Z'); assert.equal(encodeIso(d,'date'),'2099-12-16T00:00:00.000Z'); assert.equal(encodeIso(d,'time'),'0000-01-01T13:14:00.000Z'); assert.equal(encodeIso(d,'datetime',true),'2099-12-16T13:14:15.000Z'); });
-test('locale offset zero, weekday starts, digits and ISO year boundaries', () => { assert.equal(resolveWeekOffset('en-US',0),0); assert.equal(resolveWeekOffset('en-US',null,null,0),3); assert.equal(resolveWeekOffset('en-GB',null,null,1),4); assert.equal(normalizeDigits('١۲३4 x'),'1234'); const week=generateWeek(absoluteWeekOf(gregorianDay(2021,1,1),4),4); assert.equal(a.formatWeekLabel(week,'iso'),'53'); });
-test('all mode shapes, malformed values and bounds', () => { for(const mode of ['date','time','datetime','date-range','time-range','datetime-range'] as const) { const iso=encodeIso(decodeIso('2099-12-16T13:00:00.000Z'),mode); const value=mode.endsWith('range') ? [iso,iso] as const : iso; assert.deepEqual(validateSelection(value,{mode},a),[]); assert(validateSelection(mode.endsWith('range') ? iso : [iso,iso],{mode},a).some(e=>e.code==='wrong-value-shape')); } assert(validateSelection(null,{required:true},a).length); assert(validateSelection(null,{min:'2099-12-17T00:00:00.000Z',max:'2099-12-16T00:00:00.000Z'},a).some(e=>e.code==='configuration-error')); assert(validateSelection('2099-12-16T13:01:00.000Z',{minuteStep:5},a).some(e=>e.code==='step-mismatch')); });
-test('disabled endpoints, crossing and custom range validators', () => { const values=['2099-12-15T00:00:00.000Z','2099-12-17T00:00:00.000Z'] as const; const config={mode:'date-range' as const,isDateDisabled:(day:number)=>day===gregorianDay(2099,12,16)}; assert(validateSelection(values,config,a).some(e=>e.code==='range-crosses-disabled')); assert.deepEqual(validateSelection(values,{...config,allowRangeAcrossDisabled:true},a),[]); assert(validateSelection(values,{...config,isDateDisabled:()=>true},a).some(e=>e.code==='disabled-endpoint')); });
-test('Hebrew full advertised interval round trip and leap-month identity', () => { const h=new ShowcaseHebrewCalendarAdapter('en-US'); for(let day=h.supportedEpochDayRange[0];day<=h.supportedEpochDayRange[1];day++) { const d=h.epochDayToDate(day); assert.equal(h.dateToEpochDay(d),day); } assert.equal(h.getMonths(5784).length,13); assert.equal(h.getMonths(5785).length,12); const leap=h.epochDayToDate(gregorianDay(2024,3,25)); const next=h.addYears(leap,1); assert.equal(next.monthCode,leap.monthCode); assert(h.validateDate(next).length); });
-test('overnight datetime crossing checks only times actually inside the interval', () => {
-  const config = { mode: 'datetime-range' as const, isTimeDisabled: (seconds: number) => seconds === 12 * 3600 };
-  assert.deepEqual(validateSelection(['2099-12-16T20:00:00.000Z','2099-12-17T01:00:00.000Z'],config,a),[]);
-  assert(validateSelection(['2099-12-16T20:00:00.000Z','2099-12-18T01:00:00.000Z'],config,a).some(e=>e.code==='range-crosses-disabled'));
-  assert(validateSelection(['2099-12-16T11:00:00.000Z','2099-12-17T01:00:00.000Z'],config,a).some(e=>e.code==='range-crosses-disabled'));
+test("safe integer rejection and overflow", () => {
+  for (const n of [NaN, Infinity, 0.1, Number.MAX_SAFE_INTEGER + 1])
+    assert.throws(() => generateWeek(n, 0), RangeError);
+  assert.throws(() => firstEpochDayOf(Number.MAX_SAFE_INTEGER, 0), RangeError);
+  assert.throws(() => absoluteWeekOf(Number.MIN_SAFE_INTEGER, 6), RangeError);
+  assert.throws(() => floorDiv(1, 0), RangeError);
+});
+test("bounded LRU, disabled cache, immutable offset and distant jump", () => {
+  const g = createWeekGenerator({ weekOffset: 4, cacheSize: 2 });
+  const w = g.getWeek(0);
+  g.getWeek(1);
+  assert.equal(g.getWeek(0), w);
+  g.getWeek(2);
+  assert.equal(g.getWeek(0), w);
+  const other = g.getWeek(1);
+  g.getWeek(3);
+  g.getWeek(4);
+  assert.notEqual(g.getWeek(1), other);
+  const no = createWeekGenerator({ cacheSize: 0 });
+  assert.notEqual(no.getWeek(0), no.getWeek(0));
+  assert.notEqual(createWeekGenerator().getWeek(0), w);
+  assert.throws(() => ((g as any).weekOffset = 1));
+  assert.equal(g.getWeek(100000000).epochDays[0], 700000004);
+});
+test("Gregorian conversion, leap years and year bounds", () => {
+  assert.equal(gregorianDay(1970, 1, 1), 0);
+  assert.equal(gregorianDay(1969, 12, 31), -1);
+  assert.equal(gregorianDay(1970, 1, 2), 1);
+  assert.equal(a.getDaysInMonth(2000, "M02"), 29);
+  assert.equal(a.getDaysInMonth(1900, "M02"), 28);
+  for (let day = -719528; day <= 2932896; day += 31)
+    assert.equal(a.dateToEpochDay(a.epochDayToDate(day)), day);
+  for (const day of [-719528, -1, 0, 1, 2932896])
+    assert.equal(a.dateToEpochDay(a.epochDayToDate(day)), day);
+  assert.throws(() => a.epochDayToDate(2932897));
+});
+test("impossible drafts are never clamped", () => {
+  const may = a.epochDayToDate(gregorianDay(2100, 5, 31));
+  const feb = a.addMonths(may, -3);
+  assert.equal(feb.day, 31);
+  assert(a.validateDate(feb).length);
+  assert.throws(() => a.dateToEpochDay(feb));
+});
+test("strict ISO codec and hidden field normalization", () => {
+  for (const bad of [
+    "2099-12-16T13:00:00+03:00",
+    "2099-12-16T13:00:60.000Z",
+    "2099-12-16T13:00:00.001Z",
+    "1900-02-29T00:00:00.000Z",
+    "0000-00-00T00:00:00.000Z",
+  ])
+    assert.throws(() => decodeIso(bad));
+  const d = decodeIso("2099-12-16T13:14:15.000Z");
+  assert.equal(encodeIso(d, "date"), "2099-12-16T00:00:00.000Z");
+  assert.equal(encodeIso(d, "time"), "0000-01-01T13:14:00.000Z");
+  assert.equal(encodeIso(d, "datetime", true), "2099-12-16T13:14:15.000Z");
+});
+test("locale offset zero, weekday starts, digits and ISO year boundaries", () => {
+  assert.equal(resolveWeekOffset("en-US", 0), 0);
+  assert.equal(resolveWeekOffset("en-US", null, null, 0), 3);
+  assert.equal(resolveWeekOffset("en-GB", null, null, 1), 4);
+  assert.equal(normalizeDigits("١۲३4 x"), "1234");
+  const week = generateWeek(absoluteWeekOf(gregorianDay(2021, 1, 1), 4), 4);
+  assert.equal(a.formatWeekLabel(week, "iso"), "53");
+});
+test("all mode shapes, malformed values and bounds", () => {
+  for (const mode of [
+    "date",
+    "time",
+    "datetime",
+    "date-range",
+    "time-range",
+    "datetime-range",
+  ] as const) {
+    const iso = encodeIso(decodeIso("2099-12-16T13:00:00.000Z"), mode);
+    const value = mode.endsWith("range") ? ([iso, iso] as const) : iso;
+    assert.deepEqual(validateSelection(value, { mode }, a), []);
+    assert(
+      validateSelection(
+        mode.endsWith("range") ? iso : [iso, iso],
+        { mode },
+        a,
+      ).some((e) => e.code === "wrong-value-shape"),
+    );
+  }
+  assert(validateSelection(null, { required: true }, a).length);
+  assert(
+    validateSelection(
+      null,
+      { min: "2099-12-17T00:00:00.000Z", max: "2099-12-16T00:00:00.000Z" },
+      a,
+    ).some((e) => e.code === "configuration-error"),
+  );
+  assert(
+    validateSelection("2099-12-16T13:01:00.000Z", { minuteStep: 5 }, a).some(
+      (e) => e.code === "step-mismatch",
+    ),
+  );
+});
+test("disabled endpoints, crossing and custom range validators", () => {
+  const values = [
+    "2099-12-15T00:00:00.000Z",
+    "2099-12-17T00:00:00.000Z",
+  ] as const;
+  const config = {
+    mode: "date-range" as const,
+    isDateDisabled: (day: number) => day === gregorianDay(2099, 12, 16),
+  };
+  assert(
+    validateSelection(values, config, a).some(
+      (e) => e.code === "range-crosses-disabled",
+    ),
+  );
+  assert.deepEqual(
+    validateSelection(values, { ...config, allowRangeAcrossDisabled: true }, a),
+    [],
+  );
+  assert(
+    validateSelection(
+      values,
+      { ...config, isDateDisabled: () => true },
+      a,
+    ).some((e) => e.code === "disabled-endpoint"),
+  );
+});
+test("Hebrew full advertised interval round trip and leap-month identity", () => {
+  const h = new ShowcaseHebrewCalendarAdapter("en-US");
+  for (
+    let day = h.supportedEpochDayRange[0];
+    day <= h.supportedEpochDayRange[1];
+    day++
+  ) {
+    const d = h.epochDayToDate(day);
+    assert.equal(h.dateToEpochDay(d), day);
+  }
+  assert.equal(h.getMonths(5784).length, 13);
+  assert.equal(h.getMonths(5785).length, 12);
+  const leap = h.epochDayToDate(gregorianDay(2024, 3, 25));
+  const next = h.addYears(leap, 1);
+  assert.equal(next.monthCode, leap.monthCode);
+  assert(h.validateDate(next).length);
+});
+test("overnight datetime crossing checks only times actually inside the interval", () => {
+  const config = {
+    mode: "datetime-range" as const,
+    isTimeDisabled: (seconds: number) => seconds === 12 * 3600,
+  };
+  assert.deepEqual(
+    validateSelection(
+      ["2099-12-16T20:00:00.000Z", "2099-12-17T01:00:00.000Z"],
+      config,
+      a,
+    ),
+    [],
+  );
+  assert(
+    validateSelection(
+      ["2099-12-16T20:00:00.000Z", "2099-12-18T01:00:00.000Z"],
+      config,
+      a,
+    ).some((e) => e.code === "range-crosses-disabled"),
+  );
+  assert(
+    validateSelection(
+      ["2099-12-16T11:00:00.000Z", "2099-12-17T01:00:00.000Z"],
+      config,
+      a,
+    ).some((e) => e.code === "range-crosses-disabled"),
+  );
 });
 console.log(`${count} contract groups passed`);
