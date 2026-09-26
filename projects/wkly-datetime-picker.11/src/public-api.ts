@@ -4,8 +4,13 @@ import { WklyDateTimePickerComponent } from "./picker.component";
 import { WklyDateTimePickerDialogDirective } from "./presentation";
 import { WklyFieldComponent } from "./field.component";
 export * from "./config";
-export * from "./picker.component";
-export * from "./presentation";
+export { WklyDateTimePickerComponent } from "./picker.component";
+export {
+  WklyPresentationRef,
+  WklyDateTimePickerDialogService,
+  WklyTriggerBase,
+  WklyDateTimePickerDialogDirective,
+} from "./presentation";
 export { WklyFieldComponent } from "./field.component";
 export {
   WklyPickerValue,

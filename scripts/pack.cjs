@@ -5,9 +5,9 @@ const angularPackages = Object.entries(require('../supported-angular.json'))
   .map(([, info]) => info.package);
 for (const name of ['wkly-datetime-picker.core', 'wkly-datetime-picker.adapters', 'wkly-datetime-picker', ...angularPackages]) {
   const pkg = JSON.parse(fs.readFileSync('dist/' + name + '/package.json'));
-  if (name === 'wkly-datetime-picker') {
+  if (!angularPackages.includes(name)) {
     for (const dep of [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {})])
-      if (dep.startsWith('@angular/') || dep === 'rxjs') throw new Error('Angular dependency leaked into shared presentation: ' + dep);
+      if (dep.startsWith('@angular/') || dep === 'rxjs' || /^wkly-datetime-picker\.\d+$/.test(dep)) throw new Error('Framework dependency leaked into shared package: ' + dep);
   }
   for (const dep of Object.keys(pkg.dependencies || {})) if (/hebcal|material|playwright|showcase/.test(dep)) throw new Error('Forbidden dependency: ' + dep);
   const result = JSON.parse(execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['pack', '--dry-run', '--json'], { cwd: 'dist/' + name, encoding: 'utf8', shell: process.platform === 'win32' }));

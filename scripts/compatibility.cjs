@@ -12,12 +12,15 @@ function rows(metadata = supported) {
     if (!/^[1-9]\d*$/.test(angular) || info.package !== `wkly-datetime-picker.${angular}`)
       throw new Error(`Invalid compatibility package: ${angular}`);
     if (!/^\d+(\.\d+){0,2}$/.test(info.node)) throw new Error(`Invalid Node version: ${angular}`);
+    for (const [name, version] of Object.entries(info.dependencies || {})) {
+      if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error(`Pin ${name} for Angular ${angular}`);
+    }
     for (const name of ['@angular/core', '@angular/compiler-cli', '@angular/cli', '@angular-devkit/build-angular', 'ng-packagr', 'typescript', 'rxjs', 'esbuild']) {
       if (!/^\d+\.\d+\.\d+$/.test(info.dependencies?.[name])) throw new Error(`Pin ${name} for Angular ${angular}`);
     }
     if (info.dependencies['@angular/core'].split('.')[0] !== angular) throw new Error(`Angular dependency mismatch: ${angular}`);
     const pkg = read(path.join(root, 'projects', info.package, 'package.json'));
-    if (pkg.name !== info.package || pkg.version.split('.')[0] !== angular) throw new Error(`Package/version mismatch: ${angular}`);
+    if (pkg.name !== info.package || !/^\d+\.\d+\.\d+(?:-[\w.-]+)?$/.test(pkg.version) || pkg.version.split('.')[0] !== angular) throw new Error(`Package/version mismatch: ${angular}`);
     return { angular, node: info.node };
   });
   if (!result.length) throw new Error('No supported Angular packages');
