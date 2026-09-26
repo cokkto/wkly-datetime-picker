@@ -17,6 +17,7 @@ import {
   WklyCloseReason,
   WklyPresentationRef,
   WklyTriggerBase,
+  WklyPickerInputsPropertyKeys,
 } from "wkly-datetime-picker.18";
 @Injectable({ providedIn: "root" })
 export class WklyDateTimePickerOverlayService {
@@ -118,7 +119,7 @@ export class WklyDateTimePickerOverlayDirective extends WklyTriggerBase {
     return this.service.open(
       this.element.nativeElement,
       (reason) => this.close(reason),
-      this.closeOnBackdrop,
+      this[WklyPickerInputsPropertyKeys.CloseOnBackdrop](),
     );
   }
 }

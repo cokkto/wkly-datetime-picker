@@ -306,7 +306,9 @@ export const PAGES: Record<
           *ngFor="let config of page.demos"
           [config]="config"
           (selection)="sync($event)"
-          [class.full-row]="!!config.presentation && config.presentation !== 'inline'"
+          [class.full-row]="
+            !!config.presentation && config.presentation !== 'inline'
+          "
         ></demo-panel>
       </div>
     </ng-container>

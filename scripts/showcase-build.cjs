@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, "..");
 const hostRoot = path.join(root, "projects/wkly-datetime-picker.showcase");
 const hostRequire = createRequire(path.join(hostRoot, "package.json"));
 
-function angularPlugin(ts, configPath) {
+function angularPlugin(ts, configPath, compilerCli) {
   return {
     name: "angular-ts",
     setup(build) {
@@ -65,10 +65,30 @@ function angularPlugin(ts, configPath) {
             path.resolve(file).replace(/\.js$/, ".ts").toLowerCase(),
             contents,
           );
-        const program = ts.createProgram(parsed.fileNames, options, host);
-        const errors = ts
-          .getPreEmitDiagnostics(program)
-          .filter((d) => d.category === ts.DiagnosticCategory.Error);
+        // Signal inputs need Angular's compiler to emit runtime input metadata.
+        const program = compilerCli
+          ? new compilerCli.NgtscProgram(
+              parsed.fileNames,
+              {
+                ...options,
+                enableIvy: true,
+                compilationMode: "full",
+              },
+              host,
+            )
+          : ts.createProgram(parsed.fileNames, options, host);
+        const errors = (
+          compilerCli
+            ? [
+                ...program.getTsOptionDiagnostics(),
+                ...program.getTsSyntacticDiagnostics(),
+                ...program.getTsSemanticDiagnostics(),
+                ...program.getNgOptionDiagnostics(),
+                ...program.getNgStructuralDiagnostics(),
+                ...program.getNgSemanticDiagnostics(),
+              ]
+            : ts.getPreEmitDiagnostics(program)
+        ).filter((d) => d.category === ts.DiagnosticCategory.Error);
         if (errors.length)
           throw new Error(
             ts.formatDiagnosticsWithColorAndContext(errors, {
@@ -184,6 +204,14 @@ for (const major of majors) {
         angularPlugin(
           runtimeRequire("typescript"),
           path.join(runtimeRoot, "tsconfig.json"),
+          Number(major) >= 18
+            ? createRequire(
+                path.join(
+                  root,
+                  `projects/wkly-datetime-picker.${major}/package.json`,
+                ),
+              )("@angular/compiler-cli")
+            : undefined,
         ),
       ],
       define: { WKLY_E2E: process.env.WKLY_E2E === "1" ? "true" : "false" },

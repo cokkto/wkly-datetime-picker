@@ -43,37 +43,83 @@ export interface WklyConfiguration {
 export type WklyStrings = Readonly<Record<string, string>>;
 export type WklyTranslations = Readonly<Record<string, WklyStrings>>;
 /** Input properties every Angular-specific picker and trigger must expose. */
+export enum WklyPickerInputsPropertyKeys {
+  Mode = "mode",
+  Value = "value",
+  CalendarAdapter = "calendarAdapter",
+  Locale = "locale",
+  WeekOffset = "weekOffset",
+  ViewportPreset = "viewportPreset",
+  HourCycle = "hourCycle",
+  ShowSeconds = "showSeconds",
+  MinuteStep = "minuteStep",
+  SecondStep = "secondStep",
+  Min = "min",
+  Max = "max",
+  IsDateDisabled = "isDateDisabled",
+  IsTimeDisabled = "isTimeDisabled",
+  RangeValidator = "rangeValidator",
+  AllowRangeAcrossDisabled = "allowRangeAcrossDisabled",
+  Required = "required",
+  Disabled = "disabled",
+  WeekLabelMode = "weekLabelMode",
+  WeekLabelFormatter = "weekLabelFormatter",
+  WeekCacheSize = "weekCacheSize",
+  OverscanWeeks = "overscanWeeks",
+  AriaLabel = "ariaLabel",
+  AriaDescribedBy = "ariaDescribedBy",
+  InitialEpochDay = "initialEpochDay",
+  CloseOnBackdrop = "closeOnBackdrop",
+  Validators = "validators",
+  Translations = "translations",
+}
+export enum WklyPickerOutputsPropertyKeys {
+  ValueChange = "valueChange",
+  ValidationChange = "validationChange",
+  Opened = "opened",
+  Closed = "closed",
+  ViewportChange = "viewportChange",
+  ViewModeChange = "viewModeChange",
+}
 export interface WklyPickerInputs {
-  mode: WklySelectionMode;
-  value: WklyPickerValue;
-  calendarAdapter: WklyCalendarAdapter;
-  locale: string;
-  weekOffset: WklyWeekOffset | null;
-  viewportPreset: WklyViewportPreset;
-  hourCycle: WklyHourCycle;
-  showSeconds: boolean;
-  minuteStep: number;
-  secondStep: number;
-  min: string | null;
-  max: string | null;
-  isDateDisabled: WklyDisabledDatePredicate | null;
-  isTimeDisabled: WklyDisabledTimePredicate | null;
-  rangeValidator: WklyRangeValidator | null;
-  allowRangeAcrossDisabled: boolean;
-  required: boolean;
-  disabled: boolean;
-  weekLabelMode: WklyWeekLabelMode;
-  weekLabelFormatter: WklyWeekLabelFormatter | null;
-  weekCacheSize: number;
-  overscanWeeks: number;
-  ariaLabel: string | null;
-  ariaDescribedBy: string | null;
-  initialEpochDay: number | null;
-  closeOnBackdrop: boolean;
-  validators: readonly ((
+  [WklyPickerInputsPropertyKeys.Mode]: WklySelectionMode;
+  [WklyPickerInputsPropertyKeys.Value]: WklyPickerValue;
+  [WklyPickerInputsPropertyKeys.CalendarAdapter]: WklyCalendarAdapter;
+  [WklyPickerInputsPropertyKeys.Locale]: string;
+  [WklyPickerInputsPropertyKeys.WeekOffset]: WklyWeekOffset | null;
+  [WklyPickerInputsPropertyKeys.ViewportPreset]: WklyViewportPreset;
+  [WklyPickerInputsPropertyKeys.HourCycle]: WklyHourCycle;
+  [WklyPickerInputsPropertyKeys.ShowSeconds]: boolean;
+  [WklyPickerInputsPropertyKeys.MinuteStep]: number;
+  [WklyPickerInputsPropertyKeys.SecondStep]: number;
+  [WklyPickerInputsPropertyKeys.Min]: string | null;
+  [WklyPickerInputsPropertyKeys.Max]: string | null;
+  [WklyPickerInputsPropertyKeys.IsDateDisabled]: WklyDisabledDatePredicate | null;
+  [WklyPickerInputsPropertyKeys.IsTimeDisabled]: WklyDisabledTimePredicate | null;
+  [WklyPickerInputsPropertyKeys.RangeValidator]: WklyRangeValidator | null;
+  [WklyPickerInputsPropertyKeys.AllowRangeAcrossDisabled]: boolean;
+  [WklyPickerInputsPropertyKeys.Required]: boolean;
+  [WklyPickerInputsPropertyKeys.Disabled]: boolean;
+  [WklyPickerInputsPropertyKeys.WeekLabelMode]: WklyWeekLabelMode;
+  [WklyPickerInputsPropertyKeys.WeekLabelFormatter]: WklyWeekLabelFormatter | null;
+  [WklyPickerInputsPropertyKeys.WeekCacheSize]: number;
+  [WklyPickerInputsPropertyKeys.OverscanWeeks]: number;
+  [WklyPickerInputsPropertyKeys.AriaLabel]: string | null;
+  [WklyPickerInputsPropertyKeys.AriaDescribedBy]: string | null;
+  [WklyPickerInputsPropertyKeys.InitialEpochDay]: number | null;
+  [WklyPickerInputsPropertyKeys.CloseOnBackdrop]: boolean;
+  [WklyPickerInputsPropertyKeys.Validators]: readonly ((
     value: WklyPickerValue,
   ) => WklyValidationError | null)[];
-  translations: WklyTranslations | null;
+  [WklyPickerInputsPropertyKeys.Translations]: WklyTranslations | null;
+}
+export interface WklyPickerOutputs {
+  [WklyPickerOutputsPropertyKeys.ValueChange]: unknown;
+  [WklyPickerOutputsPropertyKeys.ValidationChange]: unknown;
+  [WklyPickerOutputsPropertyKeys.Opened]: unknown;
+  [WklyPickerOutputsPropertyKeys.Closed]: unknown;
+  [WklyPickerOutputsPropertyKeys.ViewportChange]: unknown;
+  [WklyPickerOutputsPropertyKeys.ViewModeChange]: unknown;
 }
 export const ENGLISH: WklyStrings = {
   manual: "Manual date entry",
@@ -118,34 +164,34 @@ export function coerceBoolean(value: unknown): boolean {
   );
 }
 export const INPUT_NAMES = [
-  "mode",
-  "value",
-  "calendarAdapter",
-  "locale",
-  "weekOffset",
-  "viewportPreset",
-  "hourCycle",
-  "showSeconds",
-  "minuteStep",
-  "secondStep",
-  "min",
-  "max",
-  "isDateDisabled",
-  "isTimeDisabled",
-  "rangeValidator",
-  "allowRangeAcrossDisabled",
-  "required",
-  "disabled",
-  "weekLabelMode",
-  "weekLabelFormatter",
-  "weekCacheSize",
-  "overscanWeeks",
-  "ariaLabel",
-  "ariaDescribedBy",
-  "initialEpochDay",
-  "closeOnBackdrop",
-  "validators",
-  "translations",
+  WklyPickerInputsPropertyKeys.Mode,
+  WklyPickerInputsPropertyKeys.Value,
+  WklyPickerInputsPropertyKeys.CalendarAdapter,
+  WklyPickerInputsPropertyKeys.Locale,
+  WklyPickerInputsPropertyKeys.WeekOffset,
+  WklyPickerInputsPropertyKeys.ViewportPreset,
+  WklyPickerInputsPropertyKeys.HourCycle,
+  WklyPickerInputsPropertyKeys.ShowSeconds,
+  WklyPickerInputsPropertyKeys.MinuteStep,
+  WklyPickerInputsPropertyKeys.SecondStep,
+  WklyPickerInputsPropertyKeys.Min,
+  WklyPickerInputsPropertyKeys.Max,
+  WklyPickerInputsPropertyKeys.IsDateDisabled,
+  WklyPickerInputsPropertyKeys.IsTimeDisabled,
+  WklyPickerInputsPropertyKeys.RangeValidator,
+  WklyPickerInputsPropertyKeys.AllowRangeAcrossDisabled,
+  WklyPickerInputsPropertyKeys.Required,
+  WklyPickerInputsPropertyKeys.Disabled,
+  WklyPickerInputsPropertyKeys.WeekLabelMode,
+  WklyPickerInputsPropertyKeys.WeekLabelFormatter,
+  WklyPickerInputsPropertyKeys.WeekCacheSize,
+  WklyPickerInputsPropertyKeys.OverscanWeeks,
+  WklyPickerInputsPropertyKeys.AriaLabel,
+  WklyPickerInputsPropertyKeys.AriaDescribedBy,
+  WklyPickerInputsPropertyKeys.InitialEpochDay,
+  WklyPickerInputsPropertyKeys.CloseOnBackdrop,
+  WklyPickerInputsPropertyKeys.Validators,
+  WklyPickerInputsPropertyKeys.Translations,
 ] as const;
 type AssertNever<T extends never> = T;
 type _MissingInputNames = AssertNever<
