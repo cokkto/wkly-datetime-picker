@@ -73,7 +73,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           package-manager-cache: false
-      - name: Build, pack, install and AOT compile consumer
+      - name: Unit contracts, build, pack, install and AOT compile consumer
         run: node scripts/compatibility.cjs test "$ANGULAR_MAJOR"
       # Browser tooling is independent of the library's historical Node version.
       - uses: actions/setup-node@v7
@@ -86,7 +86,7 @@ jobs:
           printf '{"private":true}' > .compat/browser/package.json
           npm install --prefix .compat/browser --no-audit --no-fund @playwright/test@1.58.2
           node .compat/browser/node_modules/@playwright/test/cli.js install --with-deps chromium
-      - name: Packed package browser contracts
+      - name: Packed package browser and visual contracts
         run: node .compat/browser/node_modules/@playwright/test/cli.js test --config tests/compatibility/playwright.config.cjs
         env:
           NODE_PATH: ${{ github.workspace }}/.compat/browser/node_modules
@@ -103,10 +103,33 @@ jobs:
             test-results/
             playwright-report/
 
+  showcase:
+    name: Versioned showcase / Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: corepack pnpm install --frozen-lockfile
+      - run: npm run build
+      - run: node scripts/playwright.cjs install --with-deps chromium
+      - run: npm run showcase:test:e2e -- --project=chromium
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: showcase-browser
+          if-no-files-found: ignore
+          path: |
+            test-results/
+            playwright-report/
+
   result:
     name: Compatibility result
     if: always()
-    needs: [plan, shared, angular]
+    needs: [plan, shared, angular, showcase]
     runs-on: ubuntu-latest
     steps:
       - name: Require successful checks
@@ -114,8 +137,10 @@ jobs:
           PLAN: ${{ needs.plan.result }}
           SHARED: ${{ needs.shared.result }}
           ANGULAR: ${{ needs.angular.result }}
+          SHOWCASE: ${{ needs.showcase.result }}
           HAS_PACKAGES: ${{ needs.plan.outputs.has-packages }}
         run: |
           test "$PLAN" = success
           test "$SHARED" = success
+          test "$SHOWCASE" = success
           if [ "$HAS_PACKAGES" = true ]; then test "$ANGULAR" = success; fi

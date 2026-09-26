@@ -4,6 +4,9 @@
 /node_modules/
 /projects/wkly-datetime-picker.showcase/node_modules/
 /projects/wkly-datetime-picker.runtime.11/node_modules/
+/projects/wkly-datetime-picker.runtime.18/node_modules/
+/projects/wkly-datetime-picker.18/node_modules/
+/tests/compatibility/playwright-report/
 /dist/
 /.test-build/
 /.compat/

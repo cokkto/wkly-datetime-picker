@@ -7,7 +7,7 @@ corepack pnpm install
 npm run showcase:start
 ```
 
-Open **http://127.0.0.1:4200**. The private Angular 22 showcase keeps all examples, controls, and translations in one app. Its Angular version menu selects a small isolated calendar iframe for each supported version; Angular 11 is currently supported and selected by default. The development compiler watches library source and templates; refresh after an edit to view the rebuilt library. No separate package build is needed between edits.
+Open **http://127.0.0.1:4200**. The private showcase keeps all examples, controls, and translations in one app. Its Angular version menu selects an isolated Angular 11 or 18 calendar iframe; 18 is selected by default. Use `npm run showcase -- --angular=11` or `--angular=18` to choose the initial runtime. The development compiler watches source and templates; refresh after an edit.
 
 ## Packages
 
@@ -21,10 +21,12 @@ for local commands, adding Angular majors, and GitHub CLI diagnostics.
 | `wkly-datetime-picker.adapters` | Calendar extension contract, Gregorian conversion, UTC codec, formatting, constraints |
 | `wkly-datetime-picker` | Angular-independent presentation configuration, localization, and stylesheet |
 | `wkly-datetime-picker.11` | Angular 11 component, forms, native dialog, and optional CDK presentation |
+| `wkly-datetime-picker.18` | Angular 18 component, forms, native dialog, and optional CDK presentation |
 | `wkly-datetime-picker.showcase` | Private evergreen Angular app, shared examples and translations, Playwright tests |
 | `wkly-datetime-picker.runtime.11` | Small Angular 11 iframe app that renders `wkly-datetime-picker.11` |
+| `wkly-datetime-picker.runtime.18` | Small Angular 18 iframe app that renders `wkly-datetime-picker.18` |
 
-The Angular 11 package is built with Angular **11.2** and TypeScript **4.1**. It uses NgModules and classic inputs/outputs. Builds and contract tests support Node **16+**; the Angular 22 showcase requires Node **24.15+**. pnpm keeps version-specific Angular dependencies in workspace importers with a shared package store and hoisted `node_modules` layout for the Angular 11 compiler. Library artifacts are written to `dist/<package>`; the showcase is written to `dist/showcase`. See [the Angular 11 stage plan](docs/ANGULAR-11-STAGE.md) for package boundaries and migration notes.
+Angular 11 uses Angular **11.2** and TypeScript **4.1**. Angular 18 uses Angular **18.2**, TypeScript **5.5**, partial Ivy compilation, and Angular 18's `createComponent` API. Compatibility CI uses Node **16** for Angular 11, Node **20** for Angular 18, and Node **24** for browser tests. pnpm keeps version-specific Angular dependencies in workspace importers. Library artifacts are written to `dist/<package>`; the showcase is written to `dist/showcase`. See [the Angular 11 stage plan](docs/ANGULAR-11-STAGE.md) for package boundaries and migration notes.
 
 ## UTC values
 
@@ -150,6 +152,6 @@ npm run showcase:test:e2e:update  # intentional baseline updates only
 npm run pack:check
 ```
 
-The pack check examines only the four publishable packages. Nothing is published automatically. See [API reference](docs/API.md) and [showcase instructions](projects/wkly-datetime-picker.showcase/README.md).
+The pack check examines all registered publishable packages. Nothing is published automatically. See [API reference](docs/API.md) and [showcase instructions](projects/wkly-datetime-picker.showcase/README.md).
 
-Run the showcase and its browser tests on Node 24.15+ to satisfy Angular 22. CI also checks library builds, contracts, and SSR on Node 16. Browser tests cover Chromium, Firefox, WebKit, and mobile Chromium.
+Run the showcase and its browser tests on Node 24.15+. CI builds Angular 11 and 18 with their pinned toolchains and runs packed consumer, SSR, interaction, visual layout, and versioned showcase checks.

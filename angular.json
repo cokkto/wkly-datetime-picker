@@ -11,6 +11,11 @@
       "root": "projects/wkly-datetime-picker.runtime.11",
       "sourceRoot": "projects/wkly-datetime-picker.runtime.11/src"
     },
+    "wkly-datetime-picker.runtime.18": {
+      "projectType": "application",
+      "root": "projects/wkly-datetime-picker.runtime.18",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime.18/src"
+    },
     "wkly-datetime-picker": {
       "projectType": "library",
       "root": "projects/wkly-datetime-picker"
@@ -26,6 +31,10 @@
     "wkly-datetime-picker.11": {
       "projectType": "library",
       "root": "projects/wkly-datetime-picker.11"
+    },
+    "wkly-datetime-picker.18": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.18"
     }
   }
 }

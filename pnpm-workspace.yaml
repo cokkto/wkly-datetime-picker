@@ -1,4 +1,9 @@
 packages:
   - .
+  - projects/wkly-datetime-picker.core
+  - projects/wkly-datetime-picker.adapters
+  - projects/wkly-datetime-picker
   - projects/wkly-datetime-picker.showcase
   - projects/wkly-datetime-picker.runtime.11
+  - projects/wkly-datetime-picker.runtime.18
+  - projects/wkly-datetime-picker.18

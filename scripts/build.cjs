@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const { createRequire } = require("module");
 const { buildSync } = require("esbuild");
 const root = path.resolve(__dirname, "..");
 process.chdir(root);
@@ -63,10 +64,13 @@ for (const name of [
       },
       include: ["src/**/*.ts"],
     };
-    fs.writeFileSync(
-      project + "/tsconfig.lib.json",
-      JSON.stringify(config, null, 2),
-    );
+    const configFile = project + "/tsconfig.lib.json";
+    if (
+      !fs.existsSync(configFile) ||
+      JSON.stringify(JSON.parse(fs.readFileSync(configFile, "utf8"))) !==
+        JSON.stringify(config)
+    )
+      fs.writeFileSync(configFile, JSON.stringify(config, null, 2) + "\n");
     execFileSync(
       process.execPath,
       [tsc, "-p", project + "/tsconfig.lib.json"],
@@ -93,10 +97,11 @@ for (const name of [
         out + "/picker.css",
       );
   } else {
+    const packager = createRequire(path.resolve(project, "package.json"));
     execFileSync(
       process.execPath,
       [
-        require.resolve("ng-packagr/cli/main.js"),
+        packager.resolve("ng-packagr/cli/main.js"),
         "-p",
         project + "/ng-package.json",
         "-c",

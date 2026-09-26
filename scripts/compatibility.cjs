@@ -162,6 +162,7 @@ function test(major) {
     throw new Error(`Use Node ${supported[major].node} for Angular ${major}`);
   process.env.WKLY_ANGULAR = major;
   run("npm", ["install"], dir);
+  run(process.execPath, ["scripts/test.cjs"], dir);
   run(process.execPath, ["scripts/build.cjs"], dir);
   run(process.execPath, ["scripts/pack.cjs"], dir);
   const consumer = path.join(dir, "consumer");
@@ -294,8 +295,11 @@ function matrix() {
       .split("\0")
       .filter(Boolean);
   }
-  const include = affected(files);
-  const output = `matrix=${JSON.stringify({ include })}\nhas-packages=${include.length > 0}\n`;
+  const include = rows();
+  const changed = affected(files);
+  // Every registered package must pass the browser and consumer contracts on
+  // every CI run. Keep the affected set for release planning and diagnostics.
+  const output = `matrix=${JSON.stringify({ include })}\nhas-packages=${include.length > 0}\naffected=${JSON.stringify(changed.map((row) => row.angular))}\n`;
   if (process.env.GITHUB_OUTPUT)
     fs.appendFileSync(process.env.GITHUB_OUTPUT, output);
   process.stdout.write(output);
