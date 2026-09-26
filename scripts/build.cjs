@@ -5,13 +5,17 @@ const { buildSync } = require('esbuild');
 const root = path.resolve(__dirname, '..');
 process.chdir(root);
 const tsc = require.resolve('typescript/bin/tsc');
-for (const name of ['wkly-datetime-picker.core', 'wkly-datetime-picker.adapters', 'wkly-datetime-picker', 'wkly-datetime-picker.11']) {
+const supported = require('../supported-angular.json');
+const angularPackages = Object.entries(supported)
+  .filter(([major]) => !process.env.WKLY_ANGULAR || major === process.env.WKLY_ANGULAR)
+  .map(([, info]) => info.package);
+for (const name of ['wkly-datetime-picker.core', 'wkly-datetime-picker.adapters', 'wkly-datetime-picker', ...angularPackages]) {
   if (process.argv[2] && process.argv[2] !== name) continue;
   const project = path.join('projects', name);
   const out = path.join('dist', name);
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
-  if (name !== 'wkly-datetime-picker.11') {
+  if (!angularPackages.includes(name)) {
     buildSync({ entryPoints: [project + '/src/public-api.ts'], outfile: out + '/index.js', bundle: true, format: 'esm', platform: 'neutral', target: 'es2018', external: ['wkly-datetime-picker.core', 'wkly-datetime-picker.adapters'] });
     buildSync({ entryPoints: [project + '/src/public-api.ts'], outfile: out + '/index.cjs', bundle: true, format: 'cjs', platform: 'node', target: 'node16', external: ['wkly-datetime-picker.core', 'wkly-datetime-picker.adapters'] });
     const paths = { 'wkly-datetime-picker.core': ['dist/wkly-datetime-picker.core/public-api.d.ts'] };

@@ -1,6 +1,9 @@
 const { execFileSync } = require('child_process');
 const fs = require('fs');
-for (const name of ['wkly-datetime-picker.core', 'wkly-datetime-picker.adapters', 'wkly-datetime-picker', 'wkly-datetime-picker.11']) {
+const angularPackages = Object.entries(require('../supported-angular.json'))
+  .filter(([major]) => !process.env.WKLY_ANGULAR || major === process.env.WKLY_ANGULAR)
+  .map(([, info]) => info.package);
+for (const name of ['wkly-datetime-picker.core', 'wkly-datetime-picker.adapters', 'wkly-datetime-picker', ...angularPackages]) {
   const pkg = JSON.parse(fs.readFileSync('dist/' + name + '/package.json'));
   if (name === 'wkly-datetime-picker') {
     for (const dep of [...Object.keys(pkg.dependencies || {}), ...Object.keys(pkg.peerDependencies || {})])

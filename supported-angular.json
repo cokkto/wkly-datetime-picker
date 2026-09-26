@@ -5,10 +5,27 @@
     "runtimeHtml": "projects/wkly-datetime-picker.runtime.11/src/index.html",
     "toolchain": "Angular 11.2, TypeScript 4.1, RxJS 6.6",
     "node": "16",
-    "verify": [
-      "scripts/build.cjs",
-      "scripts/test.cjs",
-      "scripts/ssr-check.cjs"
-    ]
+    "dependencies": {
+      "@angular/animations": "11.2.14",
+      "@angular/cdk": "11.2.13",
+      "@angular/common": "11.2.14",
+      "@angular/compiler": "11.2.14",
+      "@angular/compiler-cli": "11.2.14",
+      "@angular/core": "11.2.14",
+      "@angular/forms": "11.2.14",
+      "@angular/platform-browser": "11.2.14",
+      "@angular/platform-browser-dynamic": "11.2.14",
+      "@angular/platform-server": "11.2.14",
+      "@angular/cli": "11.2.19",
+      "@angular-devkit/build-angular": "0.1102.19",
+      "@types/node": "14.18.63",
+      "ng-packagr": "11.2.4",
+      "typescript": "4.1.6",
+      "rxjs": "6.6.7",
+      "tslib": "2.8.1",
+      "zone.js": "0.11.8",
+      "esbuild": "0.21.5",
+      "@hebcal/core": "5.9.0"
+    }
   }
 }

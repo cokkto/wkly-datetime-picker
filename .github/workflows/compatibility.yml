@@ -1,0 +1,121 @@
+name: Package compatibility
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compatibility-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      has-packages: ${{ steps.matrix.outputs.has-packages }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: node --test scripts/compatibility.test.cjs
+      - id: matrix
+        run: node scripts/compatibility.cjs matrix
+
+  shared:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install shared test tools only
+        run: |
+          mkdir -p .compat/shared
+          printf '{"private":true}' > .compat/shared/package.json
+          npm install --prefix .compat/shared --no-audit --no-fund esbuild@0.21.5 @hebcal/core@5.9.0
+      - name: Shared behavior contracts
+        run: node scripts/test.cjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/.compat/shared/node_modules
+
+  angular:
+    needs: plan
+    if: needs.plan.outputs.has-packages == 'true'
+    name: Angular ${{ matrix.angular }} / Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      ANGULAR_MAJOR: ${{ matrix.angular }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Generate isolated toolchain
+        run: node scripts/compatibility.cjs prepare "$ANGULAR_MAJOR"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - name: Build, pack, install and AOT compile consumer
+        run: node scripts/compatibility.cjs test "$ANGULAR_MAJOR"
+      # Browser tooling is independent of the library's historical Node version.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install browser test tools
+        run: |
+          mkdir -p .compat/browser
+          printf '{"private":true}' > .compat/browser/package.json
+          npm install --prefix .compat/browser --no-audit --no-fund @playwright/test@1.58.2
+          node .compat/browser/node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Packed package browser contracts
+        run: node .compat/browser/node_modules/@playwright/test/cli.js test --config tests/compatibility/playwright.config.cjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/.compat/browser/node_modules
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: compatibility-${{ matrix.angular }}
+          include-hidden-files: true
+          if-no-files-found: ignore
+          path: |
+            .compat/${{ matrix.angular }}/package-lock.json
+            .compat/${{ matrix.angular }}/consumer/package-lock.json
+            .compat/${{ matrix.angular }}/dist/**/*.tgz
+            test-results/
+            playwright-report/
+
+  result:
+    name: Compatibility result
+    if: always()
+    needs: [plan, shared, angular]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful checks
+        env:
+          PLAN: ${{ needs.plan.result }}
+          SHARED: ${{ needs.shared.result }}
+          ANGULAR: ${{ needs.angular.result }}
+          HAS_PACKAGES: ${{ needs.plan.outputs.has-packages }}
+        run: |
+          test "$PLAN" = success
+          test "$SHARED" = success
+          if [ "$HAS_PACKAGES" = true ]; then test "$ANGULAR" = success; fi
