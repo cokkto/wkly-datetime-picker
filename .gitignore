@@ -6,6 +6,7 @@
 /projects/wkly-datetime-picker.runtime.11/node_modules/
 /dist/
 /.test-build/
+/.compat/
 /test-results/
 /playwright-report/
 *.tgz

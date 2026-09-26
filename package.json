@@ -4,6 +4,9 @@
   "private": true,
   "packageManager": "pnpm@8.15.9",
   "scripts": {
+    "test:angular": "node scripts/compatibility.cjs test",
+    "ci:matrix": "node scripts/compatibility.cjs matrix",
+    "ci:test": "node --test scripts/compatibility.test.cjs",
     "build": "node scripts/build.cjs",
     "test": "node scripts/test.cjs",
     "showcase:start": "node scripts/serve.cjs",
