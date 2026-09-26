@@ -12,7 +12,9 @@
     "rxjs": ">=6.5 <7"
   },
   "peerDependenciesMeta": {
-    "@angular/cdk": { "optional": true }
+    "@angular/cdk": {
+      "optional": true
+    }
   },
   "dependencies": {
     "wkly-datetime-picker.core": "^0.1.0",

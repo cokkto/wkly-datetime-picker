@@ -11,9 +11,15 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": "../..",
     "paths": {
-      "wkly-datetime-picker.core": ["projects/wkly-datetime-picker.core/src/public-api.ts"],
-      "wkly-datetime-picker.adapters": ["projects/wkly-datetime-picker.adapters/src/public-api.ts"],
-      "wkly-datetime-picker": ["projects/wkly-datetime-picker/src/public-api.ts"]
+      "wkly-datetime-picker.core": [
+        "projects/wkly-datetime-picker.core/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.adapters": [
+        "projects/wkly-datetime-picker.adapters/src/public-api.ts"
+      ],
+      "wkly-datetime-picker": [
+        "projects/wkly-datetime-picker/src/public-api.ts"
+      ]
     },
     "types": []
   },

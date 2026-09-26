@@ -4,7 +4,15 @@
   "description": "Angular-independent presentation configuration for WKLY",
   "license": "MIT",
   "sideEffects": false,
-  "files": ["*.js", "*.cjs", "*.d.ts", "*.css", "LICENSE", "README.md", "API.md"],
+  "files": [
+    "*.js",
+    "*.cjs",
+    "*.d.ts",
+    "*.css",
+    "LICENSE",
+    "README.md",
+    "API.md"
+  ],
   "dependencies": {
     "wkly-datetime-picker.core": "^0.1.0",
     "wkly-datetime-picker.adapters": "^0.1.0"
