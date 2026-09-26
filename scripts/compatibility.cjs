@@ -92,13 +92,28 @@ function test(major) {
   fs.copyFileSync(path.join(dir, '.npmrc'), path.join(consumer, '.npmrc'));
   run('npm', ['install'], consumer);
   let source = fs.readFileSync(path.join(root, 'tests/compatibility/main.ts'), 'utf8').replaceAll('__PACKAGE__', supported[major].package);
+  const entries = [];
+  function secondaryEntries(folder, prefix = '') {
+    for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name === 'node_modules') continue;
+      const child = path.join(folder, entry.name);
+      const subpath = prefix + '/' + entry.name;
+      if (fs.existsSync(path.join(child, 'ng-package.json'))) entries.push(supported[major].package + subpath);
+      secondaryEntries(child, subpath);
+    }
+  }
+  secondaryEntries(path.join(dir, 'projects', supported[major].package));
+  source += entries.map((entry, i) => `\nimport * as entry${i} from '${entry}';\nif (!Object.keys(entry${i}).length) throw new Error('Empty public entry: ${entry}');`).join('');
   // Angular 19+ defaults declarations to standalone; keep one NgModule harness.
   source = source.replace('/* COMPONENT_OPTIONS */', Number(major) >= 14 ? 'standalone: false,' : '');
   fs.writeFileSync(path.join(consumer, 'main.ts'), source);
   fs.writeFileSync(path.join(consumer, 'index.html'), '<!doctype html><html><head><meta charset="utf-8"><base href="/"></head><body><compat-app></compat-app></body></html>');
   write(path.join(consumer, 'tsconfig.json'), { compilerOptions: { target: 'es2018', module: 'es2020', moduleResolution: 'node', experimentalDecorators: true, emitDecoratorMetadata: true, skipLibCheck: true, lib: ['es2020', 'dom'], types: [] }, angularCompilerOptions: { strictTemplates: true }, files: ['main.ts'] });
   write(path.join(consumer, 'angular.json'), { version: 1, projects: { consumer: { projectType: 'application', root: '', sourceRoot: '', architect: { build: { builder: supported[major].builder || '@angular-devkit/build-angular:browser', options: { outputPath: 'public', index: 'index.html', main: 'main.ts', tsConfig: 'tsconfig.json', aot: true, optimization: false, sourceMap: true, progress: false } } } } } });
-  run(process.execPath, ['node_modules/@angular/cli/bin/ng.js', 'build', 'consumer'], consumer);
+  const cli = read(path.join(consumer, 'node_modules/@angular/cli/package.json'));
+  run(process.execPath, [path.join(consumer, 'node_modules/@angular/cli', cli.bin.ng), 'build', 'consumer'], consumer);
+  fs.copyFileSync(path.join(root, 'tests/compatibility/ssr.cjs'), path.join(consumer, 'ssr.cjs'));
+  run(process.execPath, ['ssr.cjs', supported[major].package], consumer);
 }
 
 function matrix() {

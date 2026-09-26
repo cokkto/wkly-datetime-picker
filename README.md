@@ -11,6 +11,10 @@ Open **http://127.0.0.1:4200**. The private Angular 22 showcase keeps all exampl
 
 ## Packages
 
+Package CI is driven by [supported-angular.json](supported-angular.json), with isolated
+toolchains and tests against packed npm artifacts. See [compatibility CI](docs/COMPATIBILITY-CI.md)
+for local commands, adding Angular majors, and GitHub CLI diagnostics.
+
 | Package | Responsibility |
 | --- | --- |
 | `wkly-datetime-picker.core` | Safe integer coordinates, frozen week models, bounded LRU cache; no runtime dependencies |

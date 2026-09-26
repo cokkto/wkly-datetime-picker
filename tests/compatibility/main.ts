@@ -21,7 +21,7 @@ import { ENGLISH } from 'wkly-datetime-picker';
   `,
 })
 export class App {
-  title = ENGLISH.confirm + ' / week ' + absoluteWeekOf(0);
+  title = ENGLISH.confirm + ' / week ' + absoluteWeekOf(0, 0);
   adapter = new WklyGregorianCalendarAdapter('en-GB');
   date = new FormControl('2020-02-15T00:00:00.000Z');
 }
