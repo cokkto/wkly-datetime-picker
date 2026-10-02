@@ -150,6 +150,8 @@ importers:
 
   projects/wkly-datetime-picker.core: {}
 
+  projects/wkly-datetime-picker.runtime: {}
+
   projects/wkly-datetime-picker.runtime.11:
     dependencies:
       '@angular/animations':

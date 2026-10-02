@@ -23,10 +23,10 @@ import {
 } from "wkly-datetime-picker.adapters";
 import { decodeIso, resolveWeekOffset } from "wkly-datetime-picker.adapters";
 import {
-  isRuntimeMessage,
+  isExpectedRuntimeMessage,
   RuntimeConfig,
   RuntimeMessage,
-} from "./runtime-protocol";
+} from "../../wkly-datetime-picker.runtime/src/runtime-protocol";
 import { RuntimeVersionService } from "./runtime-version.service";
 import { PairedSelectionService } from "./paired-selection.service";
 import { TRANSLATIONS } from "./translations";
@@ -66,10 +66,13 @@ export class DemoComponent implements OnInit, DoCheck, OnDestroy {
   private versionSubscription?: Subscription;
   private pairSubscription?: Subscription;
   private readonly messageListener = (event: MessageEvent) => {
+    // Several demos can coexist; accept only this panel's iframe messages.
     if (
-      event.origin !== window.location.origin ||
-      event.source !== this.runtimeFrame?.nativeElement.contentWindow ||
-      !isRuntimeMessage(event.data)
+      !isExpectedRuntimeMessage(
+        event,
+        this.runtimeFrame?.nativeElement.contentWindow,
+        window.location.origin,
+      )
     )
       return;
     this.zone.run(() => {

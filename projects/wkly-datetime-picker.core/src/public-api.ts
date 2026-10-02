@@ -19,6 +19,7 @@ export function floorDiv(dividend: number, divisor: number): number {
   return integer(Math.floor(dividend / divisor));
 }
 export function floorMod(dividend: number, divisor: number): number {
+  // Epoch days before 1970 still need a nonnegative offset within a week.
   floorDiv(dividend, divisor);
   const remainder = dividend % divisor;
   return remainder < 0 ? remainder + divisor : remainder === 0 ? 0 : remainder;

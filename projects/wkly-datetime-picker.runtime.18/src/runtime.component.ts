@@ -16,10 +16,11 @@ import {
 import { floorMod } from "wkly-datetime-picker.core";
 import { ShowcaseHebrewCalendarAdapter } from "../../wkly-datetime-picker.showcase/src/hebrew-adapter";
 import {
-  isRuntimeMessage,
+  isExpectedRuntimeMessage,
+  isRuntimeConfig,
   RuntimeConfig,
   RuntimeMessage,
-} from "../../wkly-datetime-picker.showcase/src/runtime-protocol";
+} from "../../wkly-datetime-picker.runtime/src/runtime-protocol";
 
 @Component({
   selector: "wkly-runtime",
@@ -36,11 +37,8 @@ export class RuntimeComponent implements OnInit, OnDestroy {
   readonly unavailableTime = (seconds: number) =>
     seconds >= 12 * 3600 && seconds < 13 * 3600;
   private readonly onMessage = (event: MessageEvent) => {
-    if (
-      event.source !== window.parent ||
-      event.origin !== window.location.origin ||
-      !isRuntimeMessage(event.data)
-    )
+    // The iframe shares an origin with the host, so source identity is required too.
+    if (!isExpectedRuntimeMessage(event, window.parent, window.location.origin))
       return;
     this.zone.run(() => this.receive(event.data));
   };
@@ -59,13 +57,8 @@ export class RuntimeComponent implements OnInit, OnDestroy {
 
   private receive(message: RuntimeMessage): void {
     if (message.type === "wkly:configure") {
-      const next = message.payload as RuntimeConfig;
-      if (
-        !next ||
-        typeof next !== "object" ||
-        typeof next.locale !== "string" ||
-        typeof next.mode !== "string"
-      ) {
+      const next = message.payload;
+      if (!isRuntimeConfig(next)) {
         this.send("wkly:error", "Invalid runtime configuration");
         return;
       }
@@ -75,6 +68,7 @@ export class RuntimeComponent implements OnInit, OnDestroy {
           ? new ShowcaseHebrewCalendarAdapter(next.locale)
           : new WklyGregorianCalendarAdapter(next.locale);
       this.value = next.value as WklyPickerValue;
+      // Host configuration should update the form without reporting a user edit.
       this.form.setValue(this.value, { emitEvent: false });
       if (next.disabled) this.form.disable({ emitEvent: false });
       else this.form.enable({ emitEvent: false });

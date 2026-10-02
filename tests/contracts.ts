@@ -18,6 +18,7 @@ import {
   WklyGregorianCalendarAdapter,
 } from "wkly-datetime-picker.adapters";
 import { ShowcaseHebrewCalendarAdapter } from "../projects/wkly-datetime-picker.showcase/src/hebrew-adapter";
+import { createWeekRows, validateDrafts } from "wkly-datetime-picker";
 let count = 0;
 function test(name: string, action: () => void): void {
   action();
@@ -233,6 +234,62 @@ test("Hebrew full advertised interval round trip and leap-month identity", () =>
   const next = h.addYears(leap, 1);
   assert.equal(next.monthCode, leap.monthCode);
   assert(h.validateDate(next).length);
+});
+test("week rows retain month clipping and disabled-day state", () => {
+  const day = gregorianDay(2024, 3, 1);
+  const week = absoluteWeekOf(day, 0);
+  const rows = createWeekRows({
+    generator: createWeekGenerator(),
+    adapter: a,
+    startWeek: week,
+    count: 1,
+    firstVisibleWeek: week,
+    firstSupportedDay: a.supportedEpochDayRange[0],
+    lastSupportedDay: a.supportedEpochDayRange[1],
+    clipMonth: true,
+    initialMonth: "2024/M03",
+    weekLabelMode: "locale",
+    weekLabelFormatter: null,
+    isDayDisabled: (candidate) => candidate === day,
+  });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].cells.length, 7);
+  assert(rows[0].cells.some((cell) => cell.hidden && cell.date?.month === 2));
+  assert(rows[0].cells.some((cell) => cell.epochDay === day && cell.disabled));
+  assert(rows[0].cells.some((cell) => cell.epochDay === day && !cell.hidden));
+});
+test("draft validation preserves an impossible manual date", () => {
+  const draft = {
+    date: { ...a.epochDayToDate(gregorianDay(2024, 2, 1)), day: 31 },
+    hour: 0,
+    minute: 0,
+    second: 0,
+    present: true,
+  };
+  const options = {
+    drafts: [draft],
+    configErrors: [],
+    adapter: a,
+    selection: { mode: "date" as const },
+    mode: "date" as const,
+    isRange: false,
+    hasDate: true,
+    hasTime: false,
+    showSeconds: false,
+    required: false,
+  };
+  const invalid = validateDrafts(options);
+  assert(
+    invalid.errors.some((entry) => entry.code === "invalid-calendar-date"),
+  );
+  assert.equal(invalid.pendingValue, null);
+  assert.equal(draft.date.day, 31);
+  const valid = validateDrafts({
+    ...options,
+    drafts: [{ ...draft, date: { ...draft.date, day: 29 } }],
+  });
+  assert.deepEqual(valid.errors, []);
+  assert.equal(valid.pendingValue, "2024-02-29T00:00:00.000Z");
 });
 test("overnight datetime crossing checks only times actually inside the interval", () => {
   const config = {

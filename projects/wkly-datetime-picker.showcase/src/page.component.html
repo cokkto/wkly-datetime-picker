@@ -1,0 +1,69 @@
+<ng-container *ngIf="page; else overview">
+  <a class="back-link" routerLink="/">← Back to overview</a>
+  <header class="page-heading">
+    <span class="eyebrow">THE PLAYGROUND / {{ routeName }}</span>
+    <h1>{{ page.title }}</h1>
+    <p>{{ page.description }}</p>
+  </header>
+  <div *ngIf="routeName === 'calendars'" class="paired-examples">
+    <button *ngFor="let example of pairs" (click)="choosePair(example.iso)">
+      <strong>{{ example.iso.slice(0, 10) }}</strong
+      ><span>{{ example.label }}</span
+      ><small>Epoch day {{ example.day }}</small>
+    </button>
+  </div>
+  <div class="demo-grid">
+    <demo-panel
+      *ngFor="let config of page.demos"
+      [config]="config"
+      (selection)="sync($event)"
+      [class.full-row]="
+        !!config.presentation && config.presentation !== 'inline'
+      "
+    ></demo-panel>
+  </div>
+</ng-container>
+<ng-template #overview
+  ><header class="hero">
+    <span class="eyebrow">WKLY / ANGULAR DATE & TIME PICKER</span>
+    <h1>A fresh perspective<br />on <em>time.</em></h1>
+    <p>
+      One continuous calendar. Any date, any time.<br />A week-based picker
+      built to feel natural everywhere.
+    </p>
+    <div class="hero-actions">
+      <a routerLink="/single" class="primary"
+        >Explore the picker <span>↗</span></a
+      ><a routerLink="/presentations">See presentations →</a>
+    </div>
+    <div class="feature-pills">
+      <span>Angular runtimes</span><span>UTC by design</span
+      ><span>Touch & keyboard</span>
+    </div>
+  </header>
+  <div class="overview-layout">
+    <div>
+      <span class="eyebrow">EXPLORE THE POSSIBILITIES</span>
+      <div class="feature-list">
+        <a
+          *ngFor="let route of routes; let i = index"
+          [routerLink]="'/' + route"
+          ><span class="feature-index">0{{ i + 1 }}</span>
+          <div>
+            <h2>{{ labels[route] }}</h2>
+            <p>{{ summaries[route] }}</p>
+          </div>
+          <span>↗</span></a
+        >
+      </div>
+    </div>
+    <demo-panel [config]="heroDemo"></demo-panel>
+  </div>
+  <div class="package-note">
+    WORKSPACE PACKAGES <code>core 0.1.0</code><code>adapters 0.1.0</code
+    ><code>picker 0.1.0</code
+    ><span
+      >Showcase imports live library source through public entry points.</span
+    >
+  </div>
+</ng-template>

@@ -1,0 +1,61 @@
+<header class="app-header">
+  <a routerLink="/" class="brand"
+    ><span class="brand-mark">w.</span
+    ><strong>wkly<span>datetime picker</span></strong></a
+  ><span class="header-caption">A CONTINUOUS VIEW OF TIME</span
+  ><button
+    class="menu-toggle"
+    (click)="menu = !menu"
+    [attr.aria-expanded]="menu"
+    aria-label="Toggle navigation"
+  >
+    ☰</button
+  ><label class="version"
+    ><span class="version-label">Angular runtime</span>
+    <select
+      [value]="versions.selected"
+      (change)="selectVersion($event)"
+      aria-label="Angular runtime version"
+    >
+      <option *ngFor="let major of versions.available" [value]="major">
+        {{ major }}
+      </option>
+    </select>
+  </label>
+</header>
+<div class="app-layout">
+  <aside [class.mobile-open]="menu">
+    <span class="nav-caption">PLAYGROUND</span>
+    <nav aria-label="Showcase">
+      <a
+        routerLink="/"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        #overview="routerLinkActive"
+        [attr.aria-current]="overview.isActive ? 'page' : null"
+        (click)="menu = false"
+        >Overview</a
+      ><a
+        *ngFor="let route of routes"
+        [routerLink]="'/' + route"
+        routerLinkActive="active"
+        #link="routerLinkActive"
+        [attr.aria-current]="link.isActive ? 'page' : null"
+        (click)="menu = false"
+        >{{ labels[route] }}</a
+      >
+    </nav>
+    <div class="sidebar-note">
+      <span class="tiny-grid">▦</span><strong>Built around weeks.</strong>
+      <p>Calendar-neutral at the core.<br />Human-friendly at the surface.</p>
+      <span class="utc-label">UTC IN · UTC OUT</span>
+    </div>
+  </aside>
+  <main>
+    <router-outlet></router-outlet>
+    <footer class="app-footer">
+      <span>wkly · small details, better dates.</span
+      ><span>Open source / MIT</span>
+    </footer>
+  </main>
+</div>

@@ -200,3 +200,5 @@ type _MissingInputNames = AssertNever<
 type _UnknownInputNames = AssertNever<
   Exclude<(typeof INPUT_NAMES)[number], keyof WklyPickerInputs>
 >;
+export { createWeekRows, WklyDayCell, WklyWeekRow } from "./week-rows";
+export { validateDrafts, WklyDraft } from "./draft-validation";

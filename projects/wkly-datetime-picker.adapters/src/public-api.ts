@@ -459,6 +459,7 @@ export interface WklyDateTime {
   readonly second: number;
 }
 export function decodeIso(value: string): WklyDateTime {
+  // Wire values are canonical UTC timestamps, even for date-only selections.
   const m =
     typeof value === "string" &&
     /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.000Z$/.exec(value);
@@ -485,6 +486,7 @@ export function encodeIso(
   mode: WklySelectionMode = "datetime",
   showSeconds = false,
 ): string {
+  // Time-only mode uses the fixed wire date; date-only mode uses midnight UTC.
   const d = new WklyGregorianCalendarAdapter().epochDayToDate(
     mode.startsWith("time") ? -719528 : value.epochDay,
   );

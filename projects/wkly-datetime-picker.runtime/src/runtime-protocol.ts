@@ -1,4 +1,4 @@
-/** Plain data shared by the evergreen host and each isolated Angular runtime. */
+/** Plain data crossing the iframe boundary between the host and each Angular runtime. */
 export type WireValue = string | readonly string[] | null;
 
 export interface RuntimeConfig {
@@ -37,4 +37,25 @@ export function isRuntimeMessage(value: unknown): value is RuntimeMessage {
     typeof value === "object" &&
     typeof (value as RuntimeMessage).type === "string"
   );
+}
+
+/** Accept messages only from the expected window on the current origin. */
+export function isExpectedRuntimeMessage(
+  event: MessageEvent,
+  source: Window | null | undefined,
+  origin: string,
+): event is MessageEvent & { data: RuntimeMessage } {
+  return (
+    !!source &&
+    event.source === source &&
+    event.origin === origin &&
+    isRuntimeMessage(event.data)
+  );
+}
+
+/** Validate the fields used immediately by both runtime versions. */
+export function isRuntimeConfig(value: unknown): value is RuntimeConfig {
+  if (!value || typeof value !== "object") return false;
+  const config = value as RuntimeConfig;
+  return typeof config.locale === "string" && typeof config.mode === "string";
 }
