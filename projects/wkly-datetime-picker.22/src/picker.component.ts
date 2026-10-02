@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   effect,
@@ -154,6 +155,7 @@ export class WklyDateTimePickerComponent
     @Inject(WKLY_TRANSLATIONS) private defaultTranslations: WklyTranslations,
     @Inject(PLATFORM_ID) platform: Object,
     private host: ElementRef<HTMLElement>,
+    private changeDetector: ChangeDetectorRef,
   ) {
     super();
     this.browser = isPlatformBrowser(platform);
@@ -477,6 +479,7 @@ export class WklyDateTimePickerComponent
     if (this.initialized) {
       this.load(value);
       this.position(this.focused, true);
+      this.changeDetector.markForCheck();
     }
   }
   registerOnChange(fn: (value: WklyPickerValue) => void): void {
