@@ -15,7 +15,7 @@ for (const name of [
   assert(Object.keys(require(name)).length);
 Module._load = original;
 const load = async (name) => {
-  // Legacy Zone patches conflict with Node 16's dynamic-import promises.
+  // Load ESM modules before legacy Zone patches Node's dynamic-import promises.
   try {
     return require(name);
   } catch (error) {
@@ -25,6 +25,15 @@ const load = async (name) => {
   }
 };
 (async () => {
+  await load("@angular/compiler");
+  const { Component, NgModule } = await load("@angular/core");
+  const { BrowserModule } = await load("@angular/platform-browser");
+  const { ServerModule, renderModule } = await load("@angular/platform-server");
+  let base = await load(process.argv[2]);
+  // Node 24 can require an ESM bundle but expose only its CommonJS re-export.
+  if (!base.WklyDateTimePickerComponent)
+    base = { ...base, ...(await import(process.argv[2])) };
+  assert(base.WklyDateTimePickerComponent);
   try {
     require("zone.js/node");
   } catch (error) {
@@ -35,15 +44,6 @@ const load = async (name) => {
       throw error;
     require("zone.js/dist/zone-node");
   }
-  await load("@angular/compiler");
-  const { Component, NgModule } = await load("@angular/core");
-  const { BrowserModule } = await load("@angular/platform-browser");
-  const { ServerModule, renderModule } = await load("@angular/platform-server");
-  let base = await load(process.argv[2]);
-  // Node 24 can require an ESM bundle but expose only its CommonJS re-export.
-  if (!base.WklyDateTimePickerComponent)
-    base = { ...base, ...(await import(process.argv[2])) };
-  assert(base.WklyDateTimePickerComponent);
   class Host {}
   Component({
     selector: "server-host",

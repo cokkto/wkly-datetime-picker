@@ -11,6 +11,21 @@
       "root": "projects/wkly-datetime-picker.runtime.11",
       "sourceRoot": "projects/wkly-datetime-picker.runtime.11/src"
     },
+    "wkly-datetime-picker.runtime.13": {
+      "projectType": "application",
+      "root": "projects/wkly-datetime-picker.runtime.13",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime.13/src"
+    },
+    "wkly-datetime-picker.runtime.14": {
+      "projectType": "application",
+      "root": "projects/wkly-datetime-picker.runtime.14",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime.14/src"
+    },
+    "wkly-datetime-picker.runtime.15": {
+      "projectType": "application",
+      "root": "projects/wkly-datetime-picker.runtime.15",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime.15/src"
+    },
     "wkly-datetime-picker.runtime": {
       "projectType": "library",
       "root": "projects/wkly-datetime-picker.runtime",
@@ -36,6 +51,18 @@
     "wkly-datetime-picker.11": {
       "projectType": "library",
       "root": "projects/wkly-datetime-picker.11"
+    },
+    "wkly-datetime-picker.13": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.13"
+    },
+    "wkly-datetime-picker.14": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.14"
+    },
+    "wkly-datetime-picker.15": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.15"
     },
     "wkly-datetime-picker.18": {
       "projectType": "library",

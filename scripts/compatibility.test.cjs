@@ -8,7 +8,7 @@ test("current packages validate and global changes select all", () => {
   assert.ok(rows().length);
   assert.deepEqual(
     rows().map((row) => row.angular),
-    ["11", "18", "19", "20", "21", "22"],
+    ["11", "13", "14", "15", "18", "19", "20", "21", "22"],
   );
   assert.deepEqual(affected(["scripts/build.cjs"]), rows());
   assert.deepEqual(affected(["supported-angular.json"]), rows());

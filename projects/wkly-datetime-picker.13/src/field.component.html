@@ -1,0 +1,38 @@
+<div
+  class="field"
+  (wheel)="wheel($event)"
+  (touchstart)="touchStart($event)"
+  (touchmove)="touchMove($event)"
+  (touchend)="touchEnd($event)"
+  (touchcancel)="touchEnd($event)"
+>
+  <span class="label">{{ label }}</span>
+  <button
+    type="button"
+    [disabled]="disabled"
+    [attr.aria-label]="label + ': previous'"
+    (click)="stepBy(-1)"
+  >
+    {{ neighbor(-1) }}
+  </button>
+  <input
+    [attr.aria-label]="label"
+    [attr.aria-invalid]="invalid"
+    [disabled]="disabled"
+    [value]="display"
+    [attr.inputmode]="labels ? 'text' : 'numeric'"
+    autocomplete="off"
+    (focus)="begin($event)"
+    (input)="type($event)"
+    (blur)="finish()"
+    (keydown)="key($event)"
+  />
+  <button
+    type="button"
+    [disabled]="disabled"
+    [attr.aria-label]="label + ': next'"
+    (click)="stepBy(1)"
+  >
+    {{ neighbor(1) }}
+  </button>
+</div>

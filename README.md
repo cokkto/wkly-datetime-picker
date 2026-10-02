@@ -8,7 +8,7 @@ npm run lint
 npm run showcase:start
 ```
 
-Open **http://127.0.0.1:4200**. The private showcase keeps all examples, controls, and translations in one app. Its Angular version menu selects an isolated Angular 11 or 18–22 calendar iframe; 22 is selected by default. Use `npm run showcase -- --angular=19` (or another registered major) to choose the initial runtime. The development compiler watches source and templates; refresh after an edit.
+Open **http://127.0.0.1:4200**. The private showcase keeps all examples, controls, and translations in one app. Its Angular version menu selects an isolated Angular 11, 13–15, or 18–22 calendar iframe; 22 is selected by default. Use `npm run showcase -- --angular=14` (or another registered major) to choose the initial runtime. The development compiler watches source and templates; refresh after an edit.
 
 ## Packages
 
@@ -22,14 +22,16 @@ for local commands, adding Angular majors, and GitHub CLI diagnostics.
 | `wkly-datetime-picker.adapters` | Calendar extension contract, Gregorian conversion, UTC codec, formatting, constraints |
 | `wkly-datetime-picker` | Angular-independent presentation configuration, localization, and stylesheet |
 | `wkly-datetime-picker.11` | Angular 11 component, forms, native dialog, and optional CDK presentation |
+| `wkly-datetime-picker.13`–`.15` | Angular 13–15 components, forms, native dialog, and optional CDK presentation |
 | `wkly-datetime-picker.18` | Angular 18 component, forms, native dialog, and optional CDK presentation |
 | `wkly-datetime-picker.19`–`.22` | Angular 19–22 integrations with the same public picker API |
 | `wkly-datetime-picker.showcase` | Private evergreen Angular app, shared examples and translations, Playwright tests |
 | `wkly-datetime-picker.runtime.11` | Small Angular 11 iframe app that renders `wkly-datetime-picker.11` |
+| `wkly-datetime-picker.runtime.13`–`.15` | Isolated iframe apps for Angular 13–15 |
 | `wkly-datetime-picker.runtime.18` | Small Angular 18 iframe app that renders `wkly-datetime-picker.18` |
 | `wkly-datetime-picker.runtime.19`–`.22` | Isolated iframe apps for Angular 19–22 |
 
-Angular 11 uses TypeScript 4.1, Angular 18 uses TypeScript 5.5, and Angular 19–22 use TypeScript 5.8, 5.9, 5.9, and 6.0 respectively. Compatibility CI uses the Node version pinned in `supported-angular.json` for each package. pnpm keeps version-specific Angular dependencies in workspace importers. Library artifacts are written to `dist/<package>`; the showcase is written to `dist/showcase`. See [the Angular 11 stage plan](docs/ANGULAR-11-STAGE.md) for package boundaries and migration notes.
+Angular 11 uses TypeScript 4.1; Angular 13–15 use 4.6, 4.8, and 4.9; Angular 18 uses 5.5; and Angular 19–22 use 5.8, 5.9, 5.9, and 6.0 respectively. Compatibility CI uses the Node version pinned in `supported-angular.json` for each package. pnpm keeps version-specific Angular dependencies in workspace importers. `npm run build` builds shared packages and the newest Angular package; build a specific package with its pinned Node version through the compatibility commands in [compatibility CI](docs/COMPATIBILITY-CI.md). Library artifacts are written to `dist/<package>`; the showcase is written to `dist/showcase`. See [the Angular 11 stage plan](docs/ANGULAR-11-STAGE.md) for package boundaries and migration notes.
 
 `npm run lint` checks TypeScript and JavaScript syntax plus `no-debugger`, `no-var`, and `no-eval`. It parses each component template with the Angular compiler installed for that major, so older templates are checked with the older grammar and newer control flow with the newer grammar. It also checks shared code, the showcase, scripts, and tests. Run one version with `npm run lint -- --angular=11` (or another registered major). Install the pnpm workspace first; lint requires the versioned toolchains.
 

@@ -1,6 +1,6 @@
 # Package compatibility CI
 
-`supported-angular.json` registers the Angular packages that actually exist: 11 and 18–22.
+`supported-angular.json` registers the Angular packages that actually exist: 11, 13–15, and 18–22.
 Registering planned majors would incorrectly claim support. The workflow is
 `.github/workflows/compatibility.yml`.
 
