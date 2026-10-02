@@ -30,6 +30,30 @@
       ],
       "wkly-datetime-picker.18/cdk-overlay": [
         "projects/wkly-datetime-picker.18/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.19": [
+        "projects/wkly-datetime-picker.19/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.19/cdk-overlay": [
+        "projects/wkly-datetime-picker.19/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.20": [
+        "projects/wkly-datetime-picker.20/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.20/cdk-overlay": [
+        "projects/wkly-datetime-picker.20/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.21": [
+        "projects/wkly-datetime-picker.21/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.21/cdk-overlay": [
+        "projects/wkly-datetime-picker.21/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.22": [
+        "projects/wkly-datetime-picker.22/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.22/cdk-overlay": [
+        "projects/wkly-datetime-picker.22/cdk-overlay/public-api.ts"
       ]
     }
   },

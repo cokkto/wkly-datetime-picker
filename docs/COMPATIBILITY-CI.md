@@ -1,6 +1,6 @@
 # Package compatibility CI
 
-`supported-angular.json` registers the Angular packages that actually exist: 11 and 18.
+`supported-angular.json` registers the Angular packages that actually exist: 11 and 18–22.
 Registering planned majors would incorrectly claim support. The workflow is
 `.github/workflows/compatibility.yml`.
 
@@ -87,7 +87,7 @@ NODE_PATH="$PWD/.compat/browser/node_modules" ANGULAR_MAJOR=11 \
 
 On PowerShell set `$env:NODE_PATH` and `$env:ANGULAR_MAJOR` before the last command.
 See the workflow for the equivalent Linux runner steps.
-For Angular 18 substitute `18` and use Node 20 for `test:angular`.
+For another major, substitute its number and use the Node version in `supported-angular.json` for `test:angular`.
 
 ## Dependency policy and run diagnostics
 

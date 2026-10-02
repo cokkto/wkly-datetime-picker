@@ -1,17 +1,26 @@
 /** Plain data crossing the iframe boundary between the host and each Angular runtime. */
-export type WireValue = string | readonly string[] | null;
+import { WklyWeekOffset } from "wkly-datetime-picker.core";
+import {
+  WklyHourCycle,
+  WklyPickerValue,
+  WklySelectionMode,
+  WklyViewportPreset,
+} from "wkly-datetime-picker.adapters";
+import { WklyTranslations } from "wkly-datetime-picker";
+
+export type WireValue = WklyPickerValue;
 
 export interface RuntimeConfig {
-  mode: string;
+  mode: WklySelectionMode;
   value: WireValue;
   locale: string;
   calendar: "gregorian" | "hebrew";
   presentation: "inline" | "dialog" | "overlay" | "material";
-  weekOffset: number | null;
+  weekOffset: WklyWeekOffset | null;
   weekLabelMode: "locale" | "hidden";
-  viewportPreset: { kind: string; [key: string]: string | number };
+  viewportPreset: WklyViewportPreset;
   initialEpochDay: number | null;
-  hourCycle: string;
+  hourCycle: WklyHourCycle;
   showSeconds: boolean;
   minuteStep: number;
   min: string | null;
@@ -20,7 +29,7 @@ export interface RuntimeConfig {
   disabled: boolean;
   allowRangeAcrossDisabled: boolean;
   validation: boolean;
-  translations: Readonly<Record<string, Readonly<Record<string, string>>>>;
+  translations: WklyTranslations;
   color: string;
   size: number;
   dark: boolean;
@@ -57,5 +66,15 @@ export function isExpectedRuntimeMessage(
 export function isRuntimeConfig(value: unknown): value is RuntimeConfig {
   if (!value || typeof value !== "object") return false;
   const config = value as RuntimeConfig;
-  return typeof config.locale === "string" && typeof config.mode === "string";
+  return (
+    typeof config.locale === "string" &&
+    [
+      "datetime",
+      "date",
+      "time",
+      "datetime-range",
+      "date-range",
+      "time-range",
+    ].includes(config.mode)
+  );
 }

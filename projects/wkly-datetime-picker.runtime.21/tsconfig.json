@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@angular/*": [
+        "projects/wkly-datetime-picker.runtime.21/node_modules/@angular/*"
+      ],
+      "wkly-datetime-picker.core": [
+        "projects/wkly-datetime-picker.core/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.adapters": [
+        "projects/wkly-datetime-picker.adapters/src/public-api.ts"
+      ],
+      "wkly-datetime-picker": [
+        "projects/wkly-datetime-picker/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.21": [
+        "projects/wkly-datetime-picker.21/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.21/cdk-overlay": [
+        "projects/wkly-datetime-picker.21/cdk-overlay/public-api.ts"
+      ]
+    }
+  },
+  "files": ["src/main.ts"],
+  "include": []
+}

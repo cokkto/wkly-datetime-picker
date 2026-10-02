@@ -98,10 +98,13 @@ for (const name of [
       );
   } else {
     const packager = createRequire(path.resolve(project, "package.json"));
+    const packagerManifest = packager.resolve("ng-packagr/package.json");
+    const packagerBin = JSON.parse(fs.readFileSync(packagerManifest, "utf8"))
+      .bin["ng-packagr"];
     execFileSync(
       process.execPath,
       [
-        packager.resolve("ng-packagr/cli/main.js"),
+        path.resolve(path.dirname(packagerManifest), packagerBin),
         "-p",
         project + "/ng-package.json",
         "-c",
