@@ -1,6 +1,6 @@
 # Package compatibility CI
 
-`supported-angular.json` registers the Angular packages that actually exist: 11, 13–15, and 18–22.
+`supported-angular.json` registers the Angular packages that actually exist: 11–22.
 Registering planned majors would incorrectly claim support. The workflow is
 `.github/workflows/compatibility.yml`.
 
@@ -102,10 +102,12 @@ it does not promise identical transitive dependencies between separate fresh run
 To reproduce an install failure, download its locks, put each beside the corresponding
 generated package.json, and use `npm ci` with the same Node/npm versions from the logs.
 
-Angular 11 retains this repository's Node 16 build baseline and shared package engine
-requirement; this is a tested project combination, not Angular 11's original official
-Node support range. Consult [Angular's toolchain table](https://angular.dev/reference/versions)
-when choosing toolchains for new majors.
+Angular 11 and 12 retain this repository's Node 16 build baseline and shared package
+engine requirement; these are tested project combinations outside their original
+official Node support ranges. Angular 12 uses a View Engine library build so its
+packed bundle embeds templates for the server rendering check. Consult
+[Angular's toolchain table](https://angular.dev/reference/versions) when choosing
+toolchains for new majors.
 
 ```sh
 gh run list --branch YOUR_BRANCH --workflow compatibility.yml

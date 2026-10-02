@@ -25,6 +25,12 @@
       "wkly-datetime-picker.11/cdk-overlay": [
         "projects/wkly-datetime-picker.11/cdk-overlay/public-api.ts"
       ],
+      "wkly-datetime-picker.12": [
+        "projects/wkly-datetime-picker.12/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.12/cdk-overlay": [
+        "projects/wkly-datetime-picker.12/cdk-overlay/public-api.ts"
+      ],
       "wkly-datetime-picker.13": [
         "projects/wkly-datetime-picker.13/src/public-api.ts"
       ],
@@ -42,6 +48,18 @@
       ],
       "wkly-datetime-picker.15/cdk-overlay": [
         "projects/wkly-datetime-picker.15/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.16": [
+        "projects/wkly-datetime-picker.16/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.16/cdk-overlay": [
+        "projects/wkly-datetime-picker.16/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.17": [
+        "projects/wkly-datetime-picker.17/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.17/cdk-overlay": [
+        "projects/wkly-datetime-picker.17/cdk-overlay/public-api.ts"
       ],
       "wkly-datetime-picker.18": [
         "projects/wkly-datetime-picker.18/src/public-api.ts"

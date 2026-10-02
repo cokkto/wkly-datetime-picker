@@ -5,13 +5,13 @@ This private Angular 22 application owns the routed UI, examples, controls, and 
 ```sh
 corepack pnpm install
 npm run showcase:start       # http://127.0.0.1:4200; real UTC clock
-npm run showcase -- --angular=22  # choose initial runtime (11, 13–15, or 18–22)
+npm run showcase -- --angular=22  # choose initial runtime (11–22)
 npm run showcase:build       # dist/showcase; host and all runtimes
 ```
 
 Static hosts must fall back to index.html for Angular routes. The development/test server does this automatically. Fonts, assets, and locale data are local.
 
-The Angular runtime menu reads `supported-angular.json` and selects the highest supported major by default. Angular 11, 13–15, and 18–22 are registered. To add a major, add its `wkly-datetime-picker.N` package, a small `projects/wkly-datetime-picker.runtime.N` app with its own dependency versions, and an entry in `supported-angular.json` with the required Node version and pinned compatibility dependencies. CI creates its compatibility matrix from those entries and tests isolated packed consumers; see [compatibility CI](../../docs/COMPATIBILITY-CI.md). The build script bundles each runtime separately; the main showcase and its configs remain shared. The pnpm workspace shares its package store and keeps Angular toolchains in versioned importers.
+The Angular runtime menu reads `supported-angular.json` and selects the highest supported major by default. Angular 11–22 are registered. To add a major, add its `wkly-datetime-picker.N` package, a small `projects/wkly-datetime-picker.runtime.N` app with its own dependency versions, and an entry in `supported-angular.json` with the required Node version and pinned compatibility dependencies. CI creates its compatibility matrix from those entries and tests isolated packed consumers; see [compatibility CI](../../docs/COMPATIBILITY-CI.md). The build script bundles each runtime separately; the main showcase and its configs remain shared. The pnpm workspace shares its package store and keeps Angular toolchains in versioned importers.
 
 The host sends `wkly:configure` with mode, locale, value, bounds, translation catalog, styling, and other plain data; `wkly:jump` requests a distant scroll. Runtimes answer with `wkly:ready`, value and validation changes, open/close and viewport events, form state, height, or `wkly:error`. Both sides check same-origin messages and the matching iframe/window source. No Angular instance or callback crosses the boundary. Shared protocol types and guards are in `../wkly-datetime-picker.runtime/src/runtime-protocol.ts`.
 

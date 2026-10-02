@@ -6,12 +6,18 @@ packages:
   - projects/wkly-datetime-picker.showcase
   - projects/wkly-datetime-picker.runtime
   - projects/wkly-datetime-picker.runtime.11
+  - projects/wkly-datetime-picker.runtime.12
+  - projects/wkly-datetime-picker.12
   - projects/wkly-datetime-picker.runtime.13
   - projects/wkly-datetime-picker.13
   - projects/wkly-datetime-picker.runtime.14
   - projects/wkly-datetime-picker.14
   - projects/wkly-datetime-picker.runtime.15
   - projects/wkly-datetime-picker.15
+  - projects/wkly-datetime-picker.runtime.16
+  - projects/wkly-datetime-picker.16
+  - projects/wkly-datetime-picker.runtime.17
+  - projects/wkly-datetime-picker.17
   - projects/wkly-datetime-picker.runtime.18
   - projects/wkly-datetime-picker.18
   - projects/wkly-datetime-picker.runtime.19
