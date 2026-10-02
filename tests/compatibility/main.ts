@@ -4,6 +4,7 @@ import { BrowserModule } from "@angular/platform-browser";
 import { platformBrowserDynamic } from "@angular/platform-browser-dynamic";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import { WklyDateTimePickerModule } from "__PACKAGE__";
+/* OVERLAY_IMPORT */
 import { WklyGregorianCalendarAdapter } from "wkly-datetime-picker.adapters";
 import { absoluteWeekOf } from "wkly-datetime-picker.core";
 import { ENGLISH } from "wkly-datetime-picker";
@@ -24,6 +25,10 @@ import { ENGLISH } from "wkly-datetime-picker";
       Reset from form
     </button>
     <button id="disable" (click)="date.disable()">Disable from form</button>
+    <button id="dialog" wklyDateTimePickerDialog mode="date">
+      Open dialog
+    </button>
+    <!-- OVERLAY_TRIGGER -->
   `,
 })
 export class App {
@@ -33,7 +38,11 @@ export class App {
 }
 
 @NgModule({
-  imports: [BrowserModule, ReactiveFormsModule, WklyDateTimePickerModule],
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule,
+    WklyDateTimePickerModule /* OVERLAY_MODULE */,
+  ],
   declarations: [App],
   bootstrap: [App],
 })

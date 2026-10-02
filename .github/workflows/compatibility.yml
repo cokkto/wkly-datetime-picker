@@ -73,7 +73,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           package-manager-cache: false
-      - name: Unit contracts, build, pack, install and AOT compile consumer
+      - name: Unit contracts, build, pack, and AOT compile base and CDK consumers
         run: node scripts/compatibility.cjs test "$ANGULAR_MAJOR"
       # Browser tooling is independent of the library's historical Node version.
       - uses: actions/setup-node@v7
@@ -98,7 +98,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             .compat/${{ matrix.angular }}/package-lock.json
-            .compat/${{ matrix.angular }}/consumer/package-lock.json
+            .compat/consumer-${{ matrix.angular }}/package-lock.json
             .compat/${{ matrix.angular }}/dist/**/*.tgz
             test-results/
             playwright-report/

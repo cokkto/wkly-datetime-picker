@@ -3,7 +3,7 @@ const path = require("path");
 const http = require("http");
 const major = process.env.ANGULAR_MAJOR;
 if (!/^\d+$/.test(major || "")) throw new Error("Set ANGULAR_MAJOR");
-const root = path.resolve(".compat", major, "consumer/public");
+const root = path.resolve(".compat", `consumer-${major}`, "public");
 http
   .createServer((req, res) => {
     const name = new URL(req.url, "http://localhost").pathname;

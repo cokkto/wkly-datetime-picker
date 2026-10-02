@@ -52,7 +52,7 @@ Empty values are `null`. Complete ranges are immutable ordered tuples. Milliseco
 
 ## Angular integration
 
-Import `WklyDateTimePickerModule` from `wkly-datetime-picker.11`, and `ReactiveFormsModule` for forms:
+Import `WklyDateTimePickerModule` from the numbered package matching your Angular major, and `ReactiveFormsModule` for forms. The examples below use Angular 11:
 
 ```ts
 appointment = new FormControl('2099-12-16T13:00:00.000Z');
@@ -159,6 +159,6 @@ npm run showcase:test:e2e:update  # intentional baseline updates only
 npm run pack:check
 ```
 
-The pack check examines all registered publishable packages. Nothing is published automatically. See [API reference](docs/API.md) and [showcase instructions](projects/wkly-datetime-picker.showcase/README.md).
+The pack check examines the three shared packages and the selected Angular package (22 by default). Compatibility CI checks every registered Angular major. Nothing is published automatically. See [API reference](docs/API.md) and [showcase instructions](projects/wkly-datetime-picker.showcase/README.md).
 
 Run the showcase and its browser tests on Node 24.15+. CI builds every registered Angular package with its pinned toolchain and runs packed consumer, SSR, interaction, visual layout, and versioned showcase checks.

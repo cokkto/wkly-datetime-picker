@@ -172,16 +172,23 @@ function test(major) {
   run(process.execPath, ["scripts/test.cjs"], dir);
   run(process.execPath, ["scripts/build.cjs"], dir);
   run(process.execPath, ["scripts/pack.cjs"], dir);
-  const consumer = path.join(dir, "consumer");
+  // Keep the consumer beside the toolchain so Node cannot resolve its CDK install.
+  const consumer = path.join(root, ".compat", `consumer-${major}`);
+  fs.rmSync(consumer, { recursive: true, force: true });
   fs.mkdirSync(consumer, { recursive: true });
   const dependencies = { ...supported[major].dependencies };
-  for (const name of fs.readdirSync(path.join(dir, "dist"))) {
+  delete dependencies["@angular/cdk"];
+  for (const name of [
+    "wkly-datetime-picker.core",
+    "wkly-datetime-picker.adapters",
+    "wkly-datetime-picker",
+    supported[major].package,
+  ]) {
     const packageDir = path.join(dir, "dist", name);
-    if (!fs.existsSync(path.join(packageDir, "package.json"))) continue;
     const packed = JSON.parse(
       run("npm", ["pack", "--json"], packageDir, true),
     )[0];
-    dependencies[name] = `file:../dist/${name}/${packed.filename}`;
+    dependencies[name] = `file:../${major}/dist/${name}/${packed.filename}`;
   }
   write(path.join(consumer, "package.json"), {
     name: "wkly-consumer",
@@ -190,6 +197,8 @@ function test(major) {
   });
   fs.copyFileSync(path.join(dir, ".npmrc"), path.join(consumer, ".npmrc"));
   run("npm", ["install"], consumer);
+  if (fs.existsSync(path.join(consumer, "node_modules/@angular/cdk")))
+    throw new Error("Base consumer unexpectedly installed optional CDK");
   let source = fs
     .readFileSync(path.join(root, "tests/compatibility/main.ts"), "utf8")
     .replaceAll("__PACKAGE__", supported[major].package);
@@ -205,18 +214,13 @@ function test(major) {
     }
   }
   secondaryEntries(path.join(dir, "projects", supported[major].package));
-  source += entries
-    .map(
-      (entry, i) =>
-        `\nimport * as entry${i} from '${entry}';\nif (!Object.keys(entry${i}).length) throw new Error('Empty public entry: ${entry}');`,
-    )
-    .join("");
   // Angular 19+ defaults declarations to standalone; keep one NgModule harness.
   source = source.replace(
     "/* COMPONENT_OPTIONS */",
     Number(major) >= 14 ? "standalone: false," : "",
   );
-  fs.writeFileSync(path.join(consumer, "main.ts"), source);
+  const main = path.join(consumer, "main.ts");
+  fs.writeFileSync(main, source);
   fs.writeFileSync(
     path.join(consumer, "index.html"),
     '<!doctype html><html><head><meta charset="utf-8"><base href="/"></head><body><compat-app></compat-app></body></html>',
@@ -263,23 +267,51 @@ function test(major) {
       },
     },
   });
-  const cli = read(
-    path.join(consumer, "node_modules/@angular/cli/package.json"),
-  );
-  run(
-    process.execPath,
-    [
-      path.join(consumer, "node_modules/@angular/cli", cli.bin.ng),
-      "build",
-      "consumer",
-    ],
-    consumer,
-  );
+  function buildConsumer() {
+    const cli = read(
+      path.join(consumer, "node_modules/@angular/cli/package.json"),
+    );
+    run(
+      process.execPath,
+      [
+        path.join(consumer, "node_modules/@angular/cli", cli.bin.ng),
+        "build",
+        "consumer",
+      ],
+      consumer,
+    );
+  }
+  buildConsumer();
   fs.copyFileSync(
     path.join(root, "tests/compatibility/ssr.cjs"),
     path.join(consumer, "ssr.cjs"),
   );
   run(process.execPath, ["ssr.cjs", supported[major].package], consumer);
+  dependencies["@angular/cdk"] = supported[major].dependencies["@angular/cdk"];
+  write(path.join(consumer, "package.json"), {
+    name: "wkly-consumer",
+    private: true,
+    dependencies,
+  });
+  run("npm", ["install"], consumer);
+  source = source
+    .replace(
+      "/* OVERLAY_IMPORT */",
+      `import { WklyDateTimePickerOverlayModule } from "${supported[major].package}/cdk-overlay";`,
+    )
+    .replace("/* OVERLAY_MODULE */", ", WklyDateTimePickerOverlayModule")
+    .replace(
+      "<!-- OVERLAY_TRIGGER -->",
+      '<input id="overlay" aria-label="Open overlay" wklyDateTimePickerOverlay mode="date">',
+    );
+  source += entries
+    .map(
+      (entry, i) =>
+        `\nimport * as entry${i} from '${entry}';\nif (!Object.keys(entry${i}).length) throw new Error('Empty public entry: ${entry}');`,
+    )
+    .join("");
+  fs.writeFileSync(main, source);
+  buildConsumer();
 }
 
 function matrix() {
