@@ -32,6 +32,9 @@ The shared core/adapter unit contract source is reused for every major.
 The showcase's UI/iframe bridge suite runs in a separate Chromium job within this
 workflow. It iterates over every major in `supported-angular.json` and is also
 available locally through `npm run showcase:test:e2e`.
+That job also runs `npm run lint` and `npm run lint:test` before the build. Lint
+uses each version's installed TypeScript and Angular template parser, including
+Angular 11's older template grammar.
 
 Use **Compatibility result** as the required branch check. It fails if planning,
 shared tests, the showcase job, or any registered compatibility job fails.

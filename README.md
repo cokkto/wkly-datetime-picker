@@ -4,6 +4,7 @@ A reusable Angular date/time picker built around a continuous sequence of weeks,
 
 ```sh
 corepack pnpm install
+npm run lint
 npm run showcase:start
 ```
 
@@ -29,6 +30,8 @@ for local commands, adding Angular majors, and GitHub CLI diagnostics.
 | `wkly-datetime-picker.runtime.19`–`.22` | Isolated iframe apps for Angular 19–22 |
 
 Angular 11 uses TypeScript 4.1, Angular 18 uses TypeScript 5.5, and Angular 19–22 use TypeScript 5.8, 5.9, 5.9, and 6.0 respectively. Compatibility CI uses the Node version pinned in `supported-angular.json` for each package. pnpm keeps version-specific Angular dependencies in workspace importers. Library artifacts are written to `dist/<package>`; the showcase is written to `dist/showcase`. See [the Angular 11 stage plan](docs/ANGULAR-11-STAGE.md) for package boundaries and migration notes.
+
+`npm run lint` checks TypeScript and JavaScript syntax plus `no-debugger`, `no-var`, and `no-eval`. It parses each component template with the Angular compiler installed for that major, so older templates are checked with the older grammar and newer control flow with the newer grammar. It also checks shared code, the showcase, scripts, and tests. Run one version with `npm run lint -- --angular=11` (or another registered major). Install the pnpm workspace first; lint requires the versioned toolchains.
 
 ## UTC values
 

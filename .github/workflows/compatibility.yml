@@ -114,6 +114,8 @@ jobs:
           node-version: '24'
           package-manager-cache: false
       - run: corepack pnpm install --frozen-lockfile
+      - run: npm run lint
+      - run: npm run lint:test
       - run: npm run build
       - run: node scripts/playwright.cjs install --with-deps chromium
       - run: npm run showcase:test:e2e -- --project=chromium

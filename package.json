@@ -8,6 +8,8 @@
     "ci:matrix": "node scripts/compatibility.cjs matrix",
     "ci:test": "node --test scripts/compatibility.test.cjs",
     "build": "node scripts/build.cjs",
+    "lint": "node scripts/lint.cjs",
+    "lint:test": "node scripts/lint.test.cjs",
     "test": "node scripts/test.cjs",
     "showcase:start": "node scripts/serve.cjs",
     "showcase": "node scripts/serve.cjs",
