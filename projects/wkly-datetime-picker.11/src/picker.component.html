@@ -1,15 +1,17 @@
 <section
   class="wkly"
   [attr.dir]="direction"
-  [attr.aria-label]="ariaLabel || 'Date and time picker'"
-  [attr.aria-describedby]="ariaDescribedBy"
+  [attr.aria-label]="
+    this[WklyPickerInputsPropertyKeys.AriaLabel] || 'Date and time picker'
+  "
+  [attr.aria-describedby]="this[WklyPickerInputsPropertyKeys.AriaDescribedBy]"
   (focusout)="touched()"
 >
   <header class="toolbar">
     <button
       *ngIf="hasDate"
       type="button"
-      [disabled]="disabled"
+      [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
       [attr.aria-label]="t(viewMode === 'calendar' ? 'manual' : 'calendar')"
       (click)="toggleView()"
     >
@@ -19,20 +21,25 @@
       *ngIf="hasDate"
       class="year-control"
       type="button"
-      [disabled]="disabled"
+      [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
       [attr.aria-label]="t('year')"
       (click)="toggleView(true)"
     >
       {{ title }}
     </button>
     <span class="spacer"></span
-    ><button type="button" class="now" [disabled]="disabled" (click)="now()">
+    ><button
+      type="button"
+      class="now"
+      [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
+      (click)="now()"
+    >
       {{ t("now") }}
     </button>
     <button
       *ngIf="presentation === 'transient'"
       type="button"
-      [disabled]="disabled"
+      [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
       [attr.aria-label]="t('close')"
       (click)="cancel()"
     >
@@ -42,18 +49,26 @@
   <ng-container *ngIf="hasDate && viewMode === 'calendar'">
     <div
       role="grid"
-      [attr.aria-label]="ariaLabel || 'Calendar'"
+      [attr.aria-label]="
+        this[WklyPickerInputsPropertyKeys.AriaLabel] || 'Calendar'
+      "
       [attr.aria-multiselectable]="isRange"
     >
       <div
         role="row"
         class="week-head"
         [class.no-label]="
-          compact || (weekLabelMode === 'hidden' && !weekLabelFormatter)
+          compact ||
+          (this[WklyPickerInputsPropertyKeys.WeekLabelMode] === 'hidden' &&
+            !this[WklyPickerInputsPropertyKeys.WeekLabelFormatter])
         "
       >
         <span
-          *ngIf="!compact && (weekLabelMode !== 'hidden' || weekLabelFormatter)"
+          *ngIf="
+            !compact &&
+            (this[WklyPickerInputsPropertyKeys.WeekLabelMode] !== 'hidden' ||
+              this[WklyPickerInputsPropertyKeys.WeekLabelFormatter])
+          "
           role="columnheader"
           aria-label="Week"
         ></span
@@ -73,12 +88,18 @@
               role="row"
               class="week-row"
               [class.no-label]="
-                compact || (weekLabelMode === 'hidden' && !weekLabelFormatter)
+                compact ||
+                (this[WklyPickerInputsPropertyKeys.WeekLabelMode] ===
+                  'hidden' &&
+                  !this[WklyPickerInputsPropertyKeys.WeekLabelFormatter])
               "
             >
               <span
                 *ngIf="
-                  !compact && (weekLabelMode !== 'hidden' || weekLabelFormatter)
+                  !compact &&
+                  (this[WklyPickerInputsPropertyKeys.WeekLabelMode] !==
+                    'hidden' ||
+                    this[WklyPickerInputsPropertyKeys.WeekLabelFormatter])
                 "
                 role="rowheader"
                 class="week-number"
@@ -91,12 +112,16 @@
                 [attr.aria-colindex]="
                   dayIndex +
                   (compact ||
-                  (weekLabelMode === 'hidden' && !weekLabelFormatter)
+                  (this[WklyPickerInputsPropertyKeys.WeekLabelMode] ===
+                    'hidden' &&
+                    !this[WklyPickerInputsPropertyKeys.WeekLabelFormatter])
                     ? 1
                     : 2)
                 "
                 [attr.aria-selected]="selected(cell.epochDay)"
-                [attr.aria-disabled]="cell.disabled || disabled"
+                [attr.aria-disabled]="
+                  cell.disabled || this[WklyPickerInputsPropertyKeys.Disabled]
+                "
                 [class.range]="inRange(cell.epochDay)"
                 [class.hidden]="cell.hidden"
                 [class.odd-month]="cell.date && cell.date.month % 2 === 1"
@@ -110,7 +135,9 @@
                   [attr.data-day]="cell.epochDay"
                   [attr.aria-label]="cell.accessible"
                   [attr.aria-current]="cell.epochDay === today ? 'date' : null"
-                  [attr.aria-disabled]="cell.disabled || disabled"
+                  [attr.aria-disabled]="
+                    cell.disabled || this[WklyPickerInputsPropertyKeys.Disabled]
+                  "
                   [attr.tabindex]="
                     !cell.hidden && cell.epochDay === focused ? 0 : -1
                   "
@@ -131,7 +158,9 @@
     <div class="week-navigation">
       <button
         type="button"
-        [disabled]="disabled || !canMoveWeek(-1)"
+        [disabled]="
+          this[WklyPickerInputsPropertyKeys.Disabled] || !canMoveWeek(-1)
+        "
         [attr.aria-label]="t('previous')"
         (click)="moveWeek(-1)"
       >
@@ -139,7 +168,9 @@
       ><span>{{ title }}</span
       ><button
         type="button"
-        [disabled]="disabled || !canMoveWeek(1)"
+        [disabled]="
+          this[WklyPickerInputsPropertyKeys.Disabled] || !canMoveWeek(1)
+        "
         [attr.aria-label]="t('next')"
         (click)="moveWeek(1)"
       >
@@ -150,7 +181,7 @@
   <ng-container *ngFor="let draft of drafts; let i = index">
     <fieldset
       *ngIf="(i === 0 || isRange) && (hasTime || viewMode === 'manual')"
-      [disabled]="disabled"
+      [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
     >
       <legend *ngIf="isRange">{{ t(i === 0 ? "start" : "end") }}</legend>
       <div *ngIf="hasDate && viewMode === 'manual'" class="date-fields">
@@ -160,7 +191,7 @@
           [value]="draft.date.day"
           [min]="1"
           [max]="31"
-          [disabled]="disabled"
+          [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
           [invalid]="!!errors.length"
           (valueChange)="field(i, 'day', $event)"
           (complete)="finish()"
@@ -172,7 +203,7 @@
           [min]="1"
           [max]="monthCount(draft)"
           [labels]="months(draft)"
-          [disabled]="disabled"
+          [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
           [invalid]="!!errors.length"
           (valueChange)="field(i, 'month', $event)"
           (complete)="finish()"
@@ -183,20 +214,24 @@
           [value]="draft.date.year"
           [min]="adapter.supportedYearRange[0]"
           [max]="adapter.supportedYearRange[1]"
-          [disabled]="disabled"
+          [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
           [invalid]="!!errors.length"
           (valueChange)="field(i, 'year', $event)"
           (complete)="finish()"
         ></wkly-field>
       </div>
-      <div *ngIf="hasTime" class="time-fields" [class.seconds]="showSeconds">
+      <div
+        *ngIf="hasTime"
+        class="time-fields"
+        [class.seconds]="this[WklyPickerInputsPropertyKeys.ShowSeconds]"
+      >
         <wkly-field
           [label]="t('hour')"
           [locale]="effectiveLocale"
           [value]="displayHour(draft)"
           [min]="effectiveHourCycle === 'h12' ? 1 : 0"
           [max]="effectiveHourCycle === 'h12' ? 12 : 23"
-          [disabled]="disabled"
+          [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
           [invalid]="!!errors.length"
           (valueChange)="field(i, 'hour', $event)"
           (complete)="finish()"
@@ -206,29 +241,42 @@
           [locale]="effectiveLocale"
           [value]="draft.minute"
           [max]="59"
-          [step]="minuteStep > 0 && 60 % minuteStep === 0 ? minuteStep : 1"
-          [disabled]="disabled"
+          [step]="
+            this[WklyPickerInputsPropertyKeys.MinuteStep] > 0 &&
+            60 % this[WklyPickerInputsPropertyKeys.MinuteStep] === 0
+              ? this[WklyPickerInputsPropertyKeys.MinuteStep]
+              : 1
+          "
+          [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
           [invalid]="!!errors.length"
           (valueChange)="field(i, 'minute', $event)"
           (complete)="finish()"
         ></wkly-field>
         <wkly-field
-          *ngIf="showSeconds"
+          *ngIf="this[WklyPickerInputsPropertyKeys.ShowSeconds]"
           [label]="t('second')"
           [locale]="effectiveLocale"
           [value]="draft.second"
           [max]="59"
-          [step]="secondStep > 0 && 60 % secondStep === 0 ? secondStep : 1"
-          [disabled]="disabled"
+          [step]="
+            this[WklyPickerInputsPropertyKeys.SecondStep] > 0 &&
+            60 % this[WklyPickerInputsPropertyKeys.SecondStep] === 0
+              ? this[WklyPickerInputsPropertyKeys.SecondStep]
+              : 1
+          "
+          [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
           [invalid]="!!errors.length"
           (valueChange)="field(i, 'second', $event)"
           (complete)="finish()"
         ></wkly-field>
         <div class="period">
           <button
-            *ngIf="effectiveHourCycle === 'h12' || hourCycle === 'switchable'"
+            *ngIf="
+              effectiveHourCycle === 'h12' ||
+              this[WklyPickerInputsPropertyKeys.HourCycle] === 'switchable'
+            "
             type="button"
-            [disabled]="disabled"
+            [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
             [attr.aria-pressed]="
               effectiveHourCycle === 'h12' && (draft.hour || 0) < 12
             "
@@ -237,15 +285,21 @@
             {{ t("am") }}</button
           ><button
             type="button"
-            [disabled]="disabled || hourCycle !== 'switchable'"
+            [disabled]="
+              this[WklyPickerInputsPropertyKeys.Disabled] ||
+              this[WklyPickerInputsPropertyKeys.HourCycle] !== 'switchable'
+            "
             [attr.aria-pressed]="effectiveHourCycle === 'h24'"
             (click)="period(i, '24')"
           >
             24</button
           ><button
-            *ngIf="effectiveHourCycle === 'h12' || hourCycle === 'switchable'"
+            *ngIf="
+              effectiveHourCycle === 'h12' ||
+              this[WklyPickerInputsPropertyKeys.HourCycle] === 'switchable'
+            "
             type="button"
-            [disabled]="disabled"
+            [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
             [attr.aria-pressed]="
               effectiveHourCycle === 'h12' && (draft.hour || 0) >= 12
             "

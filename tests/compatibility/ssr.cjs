@@ -39,7 +39,10 @@ const load = async (name) => {
   const { Component, NgModule } = await load("@angular/core");
   const { BrowserModule } = await load("@angular/platform-browser");
   const { ServerModule, renderModule } = await load("@angular/platform-server");
-  const base = await load(process.argv[2]);
+  let base = await load(process.argv[2]);
+  // Node 24 can require an ESM bundle but expose only its CommonJS re-export.
+  if (!base.WklyDateTimePickerComponent)
+    base = { ...base, ...(await import(process.argv[2])) };
   assert(base.WklyDateTimePickerComponent);
   class Host {}
   Component({

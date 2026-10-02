@@ -127,6 +127,13 @@ function prepare(major) {
         !["node_modules", "e2e"].includes(path.basename(source)),
     });
   }
+  if (Number(major) >= 22) {
+    // TypeScript 6 checks inherited options while building shared packages.
+    const configFile = path.join(dir, "tsconfig.json");
+    const config = read(configFile);
+    config.compilerOptions.ignoreDeprecations = "6.0";
+    write(configFile, config);
+  }
   write(path.join(dir, "package.json"), {
     name: "wkly-compatibility",
     private: true,
@@ -162,6 +169,7 @@ function test(major) {
     throw new Error(`Use Node ${supported[major].node} for Angular ${major}`);
   process.env.WKLY_ANGULAR = major;
   run("npm", ["install"], dir);
+  run(process.execPath, ["scripts/test.cjs"], dir);
   run(process.execPath, ["scripts/build.cjs"], dir);
   run(process.execPath, ["scripts/pack.cjs"], dir);
   const consumer = path.join(dir, "consumer");
@@ -215,6 +223,7 @@ function test(major) {
   );
   write(path.join(consumer, "tsconfig.json"), {
     compilerOptions: {
+      ...(Number(major) >= 22 ? { ignoreDeprecations: "6.0" } : {}),
       target: "es2018",
       module: "es2020",
       moduleResolution: "node",
@@ -294,8 +303,11 @@ function matrix() {
       .split("\0")
       .filter(Boolean);
   }
-  const include = affected(files);
-  const output = `matrix=${JSON.stringify({ include })}\nhas-packages=${include.length > 0}\n`;
+  const include = rows();
+  const changed = affected(files);
+  // Every registered package must pass the browser and consumer contracts on
+  // every CI run. Keep the affected set for release planning and diagnostics.
+  const output = `matrix=${JSON.stringify({ include })}\nhas-packages=${include.length > 0}\naffected=${JSON.stringify(changed.map((row) => row.angular))}\n`;
   if (process.env.GITHUB_OUTPUT)
     fs.appendFileSync(process.env.GITHUB_OUTPUT, output);
   process.stdout.write(output);

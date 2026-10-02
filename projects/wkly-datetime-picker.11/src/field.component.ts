@@ -9,97 +9,8 @@ import { floorMod } from "wkly-datetime-picker.core";
 import { normalizeDigits } from "wkly-datetime-picker.adapters";
 @Component({
   selector: "wkly-field",
-  template: `<div
-    class="field"
-    (wheel)="wheel($event)"
-    (touchstart)="touchStart($event)"
-    (touchmove)="touchMove($event)"
-    (touchend)="touchEnd($event)"
-    (touchcancel)="touchEnd($event)"
-  >
-    <span class="label">{{ label }}</span>
-    <button
-      type="button"
-      [disabled]="disabled"
-      [attr.aria-label]="label + ': previous'"
-      (click)="stepBy(-1)"
-    >
-      {{ neighbor(-1) }}
-    </button>
-    <input
-      [attr.aria-label]="label"
-      [attr.aria-invalid]="invalid"
-      [disabled]="disabled"
-      [value]="display"
-      [attr.inputmode]="labels ? 'text' : 'numeric'"
-      autocomplete="off"
-      (focus)="begin($event)"
-      (input)="type($event)"
-      (blur)="finish()"
-      (keydown)="key($event)"
-    />
-    <button
-      type="button"
-      [disabled]="disabled"
-      [attr.aria-label]="label + ': next'"
-      (click)="stepBy(1)"
-    >
-      {{ neighbor(1) }}
-    </button>
-  </div>`,
-  styles: [
-    `
-      .field {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        min-width: 0;
-        text-align: center;
-        touch-action: pan-x;
-      }
-      .label {
-        font-size: 11px;
-        color: var(--wkly-muted-color, #54616e);
-        margin-bottom: 4px;
-      }
-      button,
-      input {
-        font: inherit;
-        box-sizing: border-box;
-        min-height: 44px;
-        width: 100%;
-        border: 0;
-        text-align: center;
-        background: transparent;
-        color: inherit;
-        border-radius: 7px;
-      }
-      button {
-        color: var(--wkly-muted-color, #54616e);
-        cursor: pointer;
-      }
-      input {
-        font-size: 18px;
-        font-weight: 650;
-        background: var(--wkly-range-color, #e5f1ee);
-        border-block: 2px solid var(--wkly-accent-color, #176c55);
-      }
-      input[aria-invalid="true"] {
-        border-color: var(--wkly-error-color, #b42318);
-      }
-      :focus-visible {
-        outline: 2px solid var(--wkly-focus-color, #124ee0);
-        outline-offset: 1px;
-      }
-      button:disabled,
-      input:disabled {
-        opacity: 0.45;
-      }
-      button:hover:not(:disabled) {
-        background: var(--wkly-range-color, #e5f1ee);
-      }
-    `,
-  ],
+  templateUrl: "./field.component.html",
+  styleUrls: ["./field.component.css"],
 })
 export class WklyFieldComponent implements OnDestroy {
   @Input() value: number | null = 0;
@@ -269,6 +180,7 @@ export class WklyFieldComponent implements OnDestroy {
     this.valueChange.emit(this.value);
   }
   private applyTouchY(y: number): void {
+    // Count total gesture steps so repeated move events do not duplicate changes.
     if (this.disabled) return;
     const delta = this.touchY - y;
     const steps =

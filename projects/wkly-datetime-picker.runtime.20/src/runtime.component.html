@@ -1,0 +1,145 @@
+<div
+  *ngIf="config as c"
+  class="runtime-stage"
+  [class.dark]="c.dark"
+  [attr.style]="
+    '--wkly-accent-color:' + c.color + ';--wkly-size-multiplier:' + c.size
+  "
+>
+  <wkly-datetime-picker
+    *ngIf="c.presentation === 'inline'"
+    #picker
+    [formControl]="form"
+    [value]="value"
+    [mode]="c.mode"
+    [locale]="c.locale"
+    [calendarAdapter]="adapter"
+    [weekOffset]="c.weekOffset"
+    [weekLabelMode]="c.weekLabelMode"
+    [viewportPreset]="c.viewportPreset"
+    [initialEpochDay]="c.initialEpochDay"
+    [hourCycle]="c.hourCycle"
+    [showSeconds]="c.showSeconds"
+    [minuteStep]="c.minuteStep"
+    [min]="c.min"
+    [max]="c.max"
+    [required]="c.required"
+    [disabled]="c.disabled"
+    [isDateDisabled]="c.validation ? unavailableDate : null"
+    [isTimeDisabled]="c.validation ? unavailableTime : null"
+    [allowRangeAcrossDisabled]="c.allowRangeAcrossDisabled"
+    [translations]="c.translations"
+    (valueChange)="onValue($event)"
+    (validationChange)="onValidation($event)"
+    (viewportChange)="send('wkly:viewportChange', $event)"
+    (opened)="send('wkly:opened')"
+    (closed)="onClosed($event)"
+  >
+  </wkly-datetime-picker>
+
+  <div *ngIf="c.presentation === 'dialog'" class="trigger-demo">
+    <span class="trigger-icon">▣</span>
+    <p>A focused space to choose a moment.</p>
+    <button
+      class="primary"
+      wklyDateTimePickerDialog
+      [mode]="c.mode"
+      [value]="value"
+      [locale]="c.locale"
+      [calendarAdapter]="adapter"
+      [weekOffset]="c.weekOffset"
+      [weekLabelMode]="c.weekLabelMode"
+      [viewportPreset]="c.viewportPreset"
+      [hourCycle]="c.hourCycle"
+      [showSeconds]="c.showSeconds"
+      [minuteStep]="c.minuteStep"
+      [min]="c.min"
+      [max]="c.max"
+      [required]="c.required"
+      [disabled]="c.disabled"
+      [isDateDisabled]="c.validation ? unavailableDate : null"
+      [isTimeDisabled]="c.validation ? unavailableTime : null"
+      [allowRangeAcrossDisabled]="c.allowRangeAcrossDisabled"
+      [translations]="c.translations"
+      (valueChange)="onValue($event)"
+      (validationChange)="onValidation($event)"
+      (opened)="send('wkly:opened')"
+      (closed)="onClosed($event)"
+    >
+      Open dialog
+    </button>
+  </div>
+
+  <div *ngIf="c.presentation === 'overlay'" class="trigger-demo">
+    <label
+      >Choose date and time
+      <input
+        aria-label="Choose date and time"
+        placeholder="Select a date"
+        wklyDateTimePickerOverlay
+        [mode]="c.mode"
+        [value]="value"
+        [locale]="c.locale"
+        [calendarAdapter]="adapter"
+        [weekOffset]="c.weekOffset"
+        [weekLabelMode]="c.weekLabelMode"
+        [viewportPreset]="c.viewportPreset"
+        [hourCycle]="c.hourCycle"
+        [showSeconds]="c.showSeconds"
+        [minuteStep]="c.minuteStep"
+        [min]="c.min"
+        [max]="c.max"
+        [required]="c.required"
+        [disabled]="c.disabled"
+        [isDateDisabled]="c.validation ? unavailableDate : null"
+        [isTimeDisabled]="c.validation ? unavailableTime : null"
+        [allowRangeAcrossDisabled]="c.allowRangeAcrossDisabled"
+        [translations]="c.translations"
+        (valueChange)="onValue($event)"
+        (validationChange)="onValidation($event)"
+        (opened)="send('wkly:opened')"
+        (closed)="onClosed($event)"
+    /></label>
+  </div>
+
+  <div *ngIf="c.presentation === 'material'" class="trigger-demo">
+    <mat-form-field appearance="outline"
+      ><mat-label>Material date and time</mat-label>
+      <input
+        matInput
+        wklyDateTimePickerOverlay
+        #overlay="wklyOverlay"
+        [mode]="c.mode"
+        [value]="value"
+        [locale]="c.locale"
+        [calendarAdapter]="adapter"
+        [weekOffset]="c.weekOffset"
+        [weekLabelMode]="c.weekLabelMode"
+        [viewportPreset]="c.viewportPreset"
+        [hourCycle]="c.hourCycle"
+        [showSeconds]="c.showSeconds"
+        [minuteStep]="c.minuteStep"
+        [min]="c.min"
+        [max]="c.max"
+        [required]="c.required"
+        [disabled]="c.disabled"
+        [isDateDisabled]="c.validation ? unavailableDate : null"
+        [isTimeDisabled]="c.validation ? unavailableTime : null"
+        [allowRangeAcrossDisabled]="c.allowRangeAcrossDisabled"
+        [translations]="c.translations"
+        (valueChange)="onValue($event)"
+        (validationChange)="onValidation($event)"
+        (opened)="send('wkly:opened')"
+        (closed)="onClosed($event)"
+      />
+      <button
+        matSuffix
+        mat-button
+        aria-label="Open Material picker"
+        (click)="overlay.open()"
+      >
+        ▦
+      </button>
+    </mat-form-field>
+  </div>
+</div>

@@ -36,6 +36,8 @@ import {
   WklyCloseReason,
   WklyJumpOptions,
   WklyPickerInputs,
+  WklyPickerInputsPropertyKeys,
+  WklyPickerOutputsPropertyKeys,
 } from "./config";
 import { WklyDateTimePickerComponent } from "./picker.component";
 export interface WklyPresentationRef {
@@ -153,33 +155,37 @@ export abstract class WklyTriggerBase
   }
   protected abstract create(): WklyPresentationRef;
   @HostListener("click") open(): void {
-    if (this.disabled || this.ref) return;
+    if (this[WklyPickerInputsPropertyKeys.Disabled] || this.ref) return;
     this.ref = this.create();
     const picker = this.ref.component.instance;
     this.copy();
     this.subscriptions = [
-      picker.valueChange.subscribe((value) => {
-        this.value = value;
+      picker[WklyPickerOutputsPropertyKeys.ValueChange].subscribe((value) => {
+        this[WklyPickerInputsPropertyKeys.Value] = value;
         this.change(value);
-        this.valueChange.emit(value);
+        this[WklyPickerOutputsPropertyKeys.ValueChange].emit(value);
         this.display();
       }),
-      picker.validationChange.subscribe((errors) => {
-        this.errors = errors;
-        this.validationChange.emit(errors);
-        this.validation();
-      }),
-      picker.closed.subscribe((reason) => this.close(reason)),
-      picker.viewportChange.subscribe((value) =>
-        this.viewportChange.emit(value),
+      picker[WklyPickerOutputsPropertyKeys.ValidationChange].subscribe(
+        (errors) => {
+          this.errors = errors;
+          this[WklyPickerOutputsPropertyKeys.ValidationChange].emit(errors);
+          this.validation();
+        },
       ),
-      picker.viewModeChange.subscribe((value) =>
-        this.viewModeChange.emit(value),
+      picker[WklyPickerOutputsPropertyKeys.Closed].subscribe((reason) =>
+        this.close(reason),
+      ),
+      picker[WklyPickerOutputsPropertyKeys.ViewportChange].subscribe((value) =>
+        this[WklyPickerOutputsPropertyKeys.ViewportChange].emit(value),
+      ),
+      picker[WklyPickerOutputsPropertyKeys.ViewModeChange].subscribe((value) =>
+        this[WklyPickerOutputsPropertyKeys.ViewModeChange].emit(value),
       ),
     ];
     this.ref.component.changeDetectorRef.detectChanges();
     picker.focusDay();
-    this.opened.emit();
+    this[WklyPickerOutputsPropertyKeys.Opened].emit();
   }
   @HostListener("keydown", ["$event"]) key(event: KeyboardEvent): void {
     if (
@@ -202,15 +208,15 @@ export abstract class WklyTriggerBase
     this.subscriptions = [];
     ref.destroy();
     this.touched();
-    this.closed.emit(reason);
+    this[WklyPickerOutputsPropertyKeys.Closed].emit(reason);
   }
   ngOnChanges(): void {
     [
-      "showSeconds",
-      "allowRangeAcrossDisabled",
-      "required",
-      "disabled",
-      "closeOnBackdrop",
+      WklyPickerInputsPropertyKeys.ShowSeconds,
+      WklyPickerInputsPropertyKeys.AllowRangeAcrossDisabled,
+      WklyPickerInputsPropertyKeys.Required,
+      WklyPickerInputsPropertyKeys.Disabled,
+      WklyPickerInputsPropertyKeys.CloseOnBackdrop,
     ].forEach(
       (key) => ((this as any)[key] = coerceBoolean((this as any)[key])),
     );
@@ -218,7 +224,9 @@ export abstract class WklyTriggerBase
     this.display();
     if (this.ref) {
       this.copy();
-      this.ref.component.instance.ngOnChanges({ value: true });
+      this.ref.component.instance.ngOnChanges({
+        [WklyPickerInputsPropertyKeys.Value]: true,
+      });
       this.ref.component.changeDetectorRef.detectChanges();
     }
   }
@@ -234,28 +242,31 @@ export abstract class WklyTriggerBase
     const host = this.element.nativeElement as HTMLInputElement;
     if (host.tagName === "INPUT") {
       host.readOnly = true;
+      const value = this[WklyPickerInputsPropertyKeys.Value];
       host.value =
-        this.value === null
+        value === null
           ? ""
-          : typeof this.value === "string"
-            ? this.value
-            : this.value.join(" — ");
-      host.disabled = this.disabled;
+          : typeof value === "string"
+            ? value
+            : value.join(" — ");
+      host.disabled = this[WklyPickerInputsPropertyKeys.Disabled];
       host.setAttribute("aria-haspopup", "dialog");
     }
   }
   private checkValue(): void {
     this.errors = validateSelection(
-      this.value,
+      this[WklyPickerInputsPropertyKeys.Value],
       this,
-      this.calendarAdapter ||
-        new WklyGregorianCalendarAdapter(this.locale || "en-US"),
+      this[WklyPickerInputsPropertyKeys.CalendarAdapter] ||
+        new WklyGregorianCalendarAdapter(
+          this[WklyPickerInputsPropertyKeys.Locale] || "en-US",
+        ),
     );
-    this.validationChange.emit(this.errors);
+    this[WklyPickerOutputsPropertyKeys.ValidationChange].emit(this.errors);
     this.validation();
   }
   writeValue(value: WklyPickerValue): void {
-    this.value = value;
+    this[WklyPickerInputsPropertyKeys.Value] = value;
     this.checkValue();
     this.display();
     if (this.ref) this.ref.component.instance.writeValue(value);
@@ -267,7 +278,7 @@ export abstract class WklyTriggerBase
     this.touched = fn;
   }
   setDisabledState(value: boolean): void {
-    this.disabled = value;
+    this[WklyPickerInputsPropertyKeys.Disabled] = value;
     this.display();
     if (this.ref) this.ref.component.instance.setDisabledState(value);
   }
@@ -324,7 +335,7 @@ export class WklyDateTimePickerDialogDirective extends WklyTriggerBase {
     return this.service.open(
       this.element.nativeElement,
       (reason) => this.close(reason),
-      this.closeOnBackdrop,
+      this[WklyPickerInputsPropertyKeys.CloseOnBackdrop],
     );
   }
 }

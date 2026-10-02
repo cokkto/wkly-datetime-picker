@@ -11,6 +11,16 @@
       "root": "projects/wkly-datetime-picker.runtime.11",
       "sourceRoot": "projects/wkly-datetime-picker.runtime.11/src"
     },
+    "wkly-datetime-picker.runtime": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.runtime",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime/src"
+    },
+    "wkly-datetime-picker.runtime.18": {
+      "projectType": "application",
+      "root": "projects/wkly-datetime-picker.runtime.18",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime.18/src"
+    },
     "wkly-datetime-picker": {
       "projectType": "library",
       "root": "projects/wkly-datetime-picker"
@@ -26,6 +36,46 @@
     "wkly-datetime-picker.11": {
       "projectType": "library",
       "root": "projects/wkly-datetime-picker.11"
+    },
+    "wkly-datetime-picker.18": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.18"
+    },
+    "wkly-datetime-picker.19": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.19"
+    },
+    "wkly-datetime-picker.runtime.19": {
+      "projectType": "application",
+      "root": "projects/wkly-datetime-picker.runtime.19",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime.19/src"
+    },
+    "wkly-datetime-picker.20": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.20"
+    },
+    "wkly-datetime-picker.runtime.20": {
+      "projectType": "application",
+      "root": "projects/wkly-datetime-picker.runtime.20",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime.20/src"
+    },
+    "wkly-datetime-picker.21": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.21"
+    },
+    "wkly-datetime-picker.runtime.21": {
+      "projectType": "application",
+      "root": "projects/wkly-datetime-picker.runtime.21",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime.21/src"
+    },
+    "wkly-datetime-picker.22": {
+      "projectType": "library",
+      "root": "projects/wkly-datetime-picker.22"
+    },
+    "wkly-datetime-picker.runtime.22": {
+      "projectType": "application",
+      "root": "projects/wkly-datetime-picker.runtime.22",
+      "sourceRoot": "projects/wkly-datetime-picker.runtime.22/src"
     }
   }
 }

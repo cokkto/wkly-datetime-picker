@@ -26,3 +26,48 @@ test("packed public imports, adapter rendering and reactive forms", async ({
   await expect(page.locator("#value")).toHaveText("2020-02-20T00:00:00.000Z");
   expect(errors).toEqual([]);
 });
+
+test("picker visual layout at desktop and mobile widths", async ({
+  page,
+}, testInfo) => {
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    const picker = page.locator("wkly-datetime-picker .wkly");
+    const grid = picker.getByRole("grid");
+    const selected = picker.locator("button.day.selected");
+    await expect(grid).toBeVisible();
+    await expect(selected).toBeVisible();
+    const layout = await page.evaluate(() => {
+      const selectors = [
+        "wkly-datetime-picker .wkly",
+        ".toolbar",
+        '[role="grid"]',
+        "button.day.selected",
+      ];
+      return selectors.map((selector) => {
+        const element = document.querySelector(selector);
+        const box = element.getBoundingClientRect();
+        return {
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          bottom: box.bottom,
+          width: box.width,
+          height: box.height,
+        };
+      });
+    });
+    const [outer, header, calendar, day] = layout;
+    expect(outer.width).toBeGreaterThan(250);
+    expect(outer.right).toBeLessThanOrEqual(width + 1);
+    expect(header.bottom).toBeLessThanOrEqual(calendar.top + 1);
+    expect(day.left).toBeGreaterThanOrEqual(calendar.left - 1);
+    expect(day.right).toBeLessThanOrEqual(calendar.right + 1);
+    expect(day.height).toBeGreaterThan(20);
+    await testInfo.attach(`angular-${process.env.ANGULAR_MAJOR}-${width}.png`, {
+      body: await picker.screenshot(),
+      contentType: "image/png",
+    });
+  }
+});

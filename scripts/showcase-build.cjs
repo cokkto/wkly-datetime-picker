@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, "..");
 const hostRoot = path.join(root, "projects/wkly-datetime-picker.showcase");
 const hostRequire = createRequire(path.join(hostRoot, "package.json"));
 
-function angularPlugin(ts, configPath) {
+function angularPlugin(ts, configPath, compilerCli) {
   return {
     name: "angular-ts",
     setup(build) {
@@ -65,10 +65,30 @@ function angularPlugin(ts, configPath) {
             path.resolve(file).replace(/\.js$/, ".ts").toLowerCase(),
             contents,
           );
-        const program = ts.createProgram(parsed.fileNames, options, host);
-        const errors = ts
-          .getPreEmitDiagnostics(program)
-          .filter((d) => d.category === ts.DiagnosticCategory.Error);
+        // Signal inputs need Angular's compiler to emit runtime input metadata.
+        const program = compilerCli
+          ? new compilerCli.NgtscProgram(
+              parsed.fileNames,
+              {
+                ...options,
+                enableIvy: true,
+                compilationMode: "full",
+              },
+              host,
+            )
+          : ts.createProgram(parsed.fileNames, options, host);
+        const errors = (
+          compilerCli
+            ? [
+                ...program.getTsOptionDiagnostics(),
+                ...program.getTsSyntacticDiagnostics(),
+                ...program.getTsSemanticDiagnostics(),
+                ...program.getNgOptionDiagnostics(),
+                ...program.getNgStructuralDiagnostics(),
+                ...program.getNgSemanticDiagnostics(),
+              ]
+            : ts.getPreEmitDiagnostics(program)
+        ).filter((d) => d.category === ts.DiagnosticCategory.Error);
         if (errors.length)
           throw new Error(
             ts.formatDiagnosticsWithColorAndContext(errors, {
@@ -100,7 +120,40 @@ function angularPlugin(ts, configPath) {
   };
 }
 
+function runtimeDependenciesPlugin(runtimeRoot) {
+  return {
+    name: "runtime-dependencies",
+    setup(build) {
+      build.onResolve(
+        {
+          filter:
+            /^(@angular\/|rxjs(?:\/|$)|zone\.js(?:\/|$)|tslib(?:\/|$)|reflect-metadata$)/,
+        },
+        (args) => {
+          if (args.pluginData?.runtimeResolved) return;
+          return build.resolve(args.path, {
+            resolveDir: runtimeRoot,
+            kind: args.kind,
+            pluginData: { runtimeResolved: true },
+          });
+        },
+      );
+    },
+  };
+}
+
 const majors = Object.keys(supported).sort((a, b) => Number(a) - Number(b));
+const angularOption = process.argv.find((arg) => arg.startsWith("--angular="));
+const angularIndex = process.argv.indexOf("--angular");
+const initialAngular = angularOption
+  ? angularOption.slice("--angular=".length)
+  : angularIndex >= 0
+    ? process.argv[angularIndex + 1]
+    : majors[majors.length - 1];
+if (!majors.includes(initialAngular))
+  throw new Error(
+    `Unsupported Angular ${initialAngular}; choose ${majors.join(", ")}`,
+  );
 const hostEsbuild = hostRequire("esbuild");
 const builds = [
   {
@@ -120,7 +173,10 @@ const builds = [
           path.join(hostRoot, "tsconfig.host.json"),
         ),
       ],
-      define: { WKLY_RUNTIME_VERSIONS: JSON.stringify(majors) },
+      define: {
+        WKLY_RUNTIME_VERSIONS: JSON.stringify(majors),
+        WKLY_INITIAL_ANGULAR: JSON.stringify(initialAngular),
+      },
     },
   },
 ];
@@ -131,15 +187,6 @@ for (const major of majors) {
     `projects/wkly-datetime-picker.runtime.${major}`,
   );
   const runtimeRequire = createRequire(path.join(runtimeRoot, "package.json"));
-  const runtimeDependencies = require(
-    path.join(runtimeRoot, "package.json"),
-  ).dependencies;
-  const alias = Object.fromEntries(
-    Object.keys(runtimeDependencies).map((name) => [
-      name,
-      path.join(runtimeRoot, "node_modules", name),
-    ]),
-  );
   builds.push({
     esbuild: runtimeRequire("esbuild"),
     options: {
@@ -150,12 +197,21 @@ for (const major of majors) {
       format: "iife",
       sourcemap: true,
       target: "es2018",
+      conditions: ["style"],
       tsconfig: `projects/wkly-datetime-picker.runtime.${major}/tsconfig.json`,
-      alias,
       plugins: [
+        runtimeDependenciesPlugin(runtimeRoot),
         angularPlugin(
           runtimeRequire("typescript"),
           path.join(runtimeRoot, "tsconfig.json"),
+          Number(major) >= 18
+            ? createRequire(
+                path.join(
+                  root,
+                  `projects/wkly-datetime-picker.${major}/package.json`,
+                ),
+              )("@angular/compiler-cli")
+            : undefined,
         ),
       ],
       define: { WKLY_E2E: process.env.WKLY_E2E === "1" ? "true" : "false" },

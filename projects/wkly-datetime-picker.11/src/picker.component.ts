@@ -25,14 +25,11 @@ import {
   createWeekGenerator,
   firstEpochDayOf,
   integer,
-  orderedRange,
-  WklyWeek,
   WklyWeekGenerator,
   WklyWeekOffset,
 } from "wkly-datetime-picker.core";
 import {
   decodeIso,
-  encodeIso,
   error,
   resolveWeekOffset,
   validateSelection,
@@ -42,8 +39,13 @@ import {
   WklyGregorianCalendarAdapter,
   WklyPickerValue,
   WklyValidationError,
-  WklyValidationException,
 } from "wkly-datetime-picker.adapters";
+import {
+  createWeekRows,
+  validateDrafts,
+  WklyDraft as Draft,
+  WklyWeekRow as Row,
+} from "wkly-datetime-picker";
 import {
   coerceBoolean,
   ENGLISH,
@@ -56,6 +58,8 @@ import {
   WklyConfiguration,
   WklyJumpOptions,
   WklyPickerInputs,
+  WklyPickerInputsPropertyKeys,
+  WklyPickerOutputsPropertyKeys,
   WklyStrings,
   WklyTranslations,
 } from "./config";
@@ -63,27 +67,6 @@ declare class ResizeObserver {
   constructor(callback: () => void);
   observe(element: Element): void;
   disconnect(): void;
-}
-interface Draft {
-  date: WklyCalendarDate;
-  hour: number | null;
-  minute: number | null;
-  second: number | null;
-  present: boolean;
-}
-interface DayCell {
-  epochDay: number;
-  date: WklyCalendarDate | null;
-  label: string;
-  accessible: string;
-  annotation: string;
-  hidden: boolean;
-  disabled: boolean;
-}
-interface Row {
-  week: WklyWeek;
-  label: string;
-  cells: DayCell[];
 }
 @Component({
   selector: "wkly-datetime-picker",
@@ -134,6 +117,7 @@ export class WklyDateTimePickerComponent
   paddingTop = 0;
   initialized = false;
   compact = false;
+  readonly WklyPickerInputsPropertyKeys = WklyPickerInputsPropertyKeys;
   private baseWeek = 0;
   private firstSupportedDay = 0;
   private lastSupportedDay = 0;
@@ -172,20 +156,26 @@ export class WklyDateTimePickerComponent
     if (this.initialized) {
       if (
         Object.keys(changes).length === 1 &&
-        changes.value &&
-        this.emittedValue === JSON.stringify(this.value)
+        changes[WklyPickerInputsPropertyKeys.Value] &&
+        this.emittedValue ===
+          JSON.stringify(this[WklyPickerInputsPropertyKeys.Value])
       ) {
         this.emittedValue = null;
         return;
       }
       const focus = this.focused;
       this.configure();
-      if (changes.value || changes.mode || changes.calendarAdapter) {
-        this.load(this.value);
+      if (
+        changes[WklyPickerInputsPropertyKeys.Value] ||
+        changes[WklyPickerInputsPropertyKeys.Mode] ||
+        changes[WklyPickerInputsPropertyKeys.CalendarAdapter]
+      ) {
+        this.load(this[WklyPickerInputsPropertyKeys.Value]);
         this.position(this.focused, true);
       } else {
         this.check();
-        if (changes.viewportPreset) this.position(focus, true);
+        if (changes[WklyPickerInputsPropertyKeys.ViewportPreset])
+          this.position(focus, true);
         else this.scrollToEpochDay(focus);
       }
     }
@@ -193,39 +183,42 @@ export class WklyDateTimePickerComponent
   initialize(): void {
     if (this.initialized) return;
     this.configure();
+    const initialEpochDay = this[WklyPickerInputsPropertyKeys.InitialEpochDay];
     this.today = this.browser
       ? Math.floor(this.clock.now().getTime() / 86400000)
-      : this.initialEpochDay === null
+      : initialEpochDay === null
         ? 0
-        : this.initialEpochDay;
+        : initialEpochDay;
     this.focused =
-      this.initialEpochDay === null
+      initialEpochDay === null
         ? this.defaults.initialEpochDay === undefined
           ? this.today
           : this.defaults.initialEpochDay
-        : this.initialEpochDay;
-    this.load(this.value);
+        : initialEpochDay;
+    this.load(this[WklyPickerInputsPropertyKeys.Value]);
     this.initialized = true;
     this.position(this.focused, true);
   }
   configure(): void {
     this.configErrors = [];
     [
-      "showSeconds",
-      "allowRangeAcrossDisabled",
-      "required",
-      "disabled",
-      "closeOnBackdrop",
+      WklyPickerInputsPropertyKeys.ShowSeconds,
+      WklyPickerInputsPropertyKeys.AllowRangeAcrossDisabled,
+      WklyPickerInputsPropertyKeys.Required,
+      WklyPickerInputsPropertyKeys.Disabled,
+      WklyPickerInputsPropertyKeys.CloseOnBackdrop,
     ].forEach(
       (key) => ((this as any)[key] = coerceBoolean((this as any)[key])),
     );
     this.effectiveLocale =
-      this.locale || this.defaults.locale || this.defaultLocale;
+      this[WklyPickerInputsPropertyKeys.Locale] ||
+      this.defaults.locale ||
+      this.defaultLocale;
     this.direction = /^(ar|he|fa|ur)(-|$)/.test(this.effectiveLocale)
       ? "rtl"
       : "ltr";
     this.adapter =
-      this.calendarAdapter ||
+      this[WklyPickerInputsPropertyKeys.CalendarAdapter] ||
       new WklyGregorianCalendarAdapter(this.effectiveLocale);
     try {
       let firstDay: number | undefined;
@@ -234,16 +227,16 @@ export class WklyDateTimePickerComponent
       } catch (_) {}
       this.effectiveOffset = resolveWeekOffset(
         this.effectiveLocale,
-        this.weekOffset,
+        this[WklyPickerInputsPropertyKeys.WeekOffset],
         this.defaults.weekOffset,
         firstDay,
       );
-      integer(this.weekCacheSize);
-      integer(this.overscanWeeks);
+      integer(this[WklyPickerInputsPropertyKeys.WeekCacheSize]);
+      integer(this[WklyPickerInputsPropertyKeys.OverscanWeeks]);
       if (
-        this.weekCacheSize < 0 ||
-        this.overscanWeeks < 0 ||
-        this.overscanWeeks > 50
+        this[WklyPickerInputsPropertyKeys.WeekCacheSize] < 0 ||
+        this[WklyPickerInputsPropertyKeys.OverscanWeeks] < 0 ||
+        this[WklyPickerInputsPropertyKeys.OverscanWeeks] > 50
       )
         throw new RangeError();
       if (
@@ -254,10 +247,10 @@ export class WklyDateTimePickerComponent
           "datetime-range",
           "date-range",
           "time-range",
-        ].includes(this.mode)
+        ].includes(this[WklyPickerInputsPropertyKeys.Mode])
       )
         throw new RangeError();
-      const preset = this.viewportPreset;
+      const preset = this[WklyPickerInputsPropertyKeys.ViewportPreset];
       if (preset.kind === "weeks") {
         integer(preset.visibleWeekCount);
         if (preset.visibleWeekCount < 1 || preset.visibleWeekCount > 52)
@@ -273,18 +266,23 @@ export class WklyDateTimePickerComponent
         }
       this.generator = createWeekGenerator({
         weekOffset: this.effectiveOffset,
-        cacheSize: this.weekCacheSize,
+        cacheSize: this[WklyPickerInputsPropertyKeys.WeekCacheSize],
       });
     } catch (_) {
-      this.configErrors.push(error("configuration-error", this.weekOffset));
+      this.configErrors.push(
+        error(
+          "configuration-error",
+          this[WklyPickerInputsPropertyKeys.WeekOffset],
+        ),
+      );
       this.generator = createWeekGenerator();
       this.effectiveOffset = 0;
     }
     this.setSupportedScrollRange();
     this.effectiveHourCycle =
-      this.hourCycle === "h12"
+      this[WklyPickerInputsPropertyKeys.HourCycle] === "h12"
         ? "h12"
-        : this.hourCycle === "locale"
+        : this[WklyPickerInputsPropertyKeys.HourCycle] === "locale"
           ? new Intl.DateTimeFormat(this.effectiveLocale, {
               hour: "numeric",
               timeZone: "UTC",
@@ -368,26 +366,31 @@ export class WklyDateTimePickerComponent
   t(key: string): string {
     return (
       this.strings[key] ||
-      ((this.translations || this.defaultTranslations)[
-        this.effectiveLocale.split("-")[0]
-      ] || {})[key] ||
+      ((this[WklyPickerInputsPropertyKeys.Translations] ||
+        this.defaultTranslations)[this.effectiveLocale.split("-")[0]] || {})[
+        key
+      ] ||
       ENGLISH[key] ||
       key
     );
   }
   get isRange(): boolean {
-    return this.mode.endsWith("-range");
+    return this[WklyPickerInputsPropertyKeys.Mode].endsWith("-range");
   }
   get hasDate(): boolean {
-    return !this.mode.startsWith("time");
+    return !this[WklyPickerInputsPropertyKeys.Mode].startsWith("time");
   }
   get hasTime(): boolean {
-    return this.mode !== "date" && this.mode !== "date-range";
+    return (
+      this[WklyPickerInputsPropertyKeys.Mode] !== "date" &&
+      this[WklyPickerInputsPropertyKeys.Mode] !== "date-range"
+    );
   }
   get submitVisible(): boolean {
     return (
       this.presentation === "transient" &&
-      (this.mode !== "date" || this.viewMode === "manual")
+      (this[WklyPickerInputsPropertyKeys.Mode] !== "date" ||
+        this.viewMode === "manual")
     );
   }
   get title(): string {
@@ -407,7 +410,11 @@ export class WklyDateTimePickerComponent
     }
   }
   get canSubmit(): boolean {
-    return !this.disabled && !this.errors.length && this.pendingValue !== null;
+    return (
+      !this[WklyPickerInputsPropertyKeys.Disabled] &&
+      !this.errors.length &&
+      this.pendingValue !== null
+    );
   }
   private blank(day: number): Draft {
     const safe = Math.max(
@@ -447,7 +454,7 @@ export class WklyDateTimePickerComponent
     } else this.check();
   }
   writeValue(value: WklyPickerValue): void {
-    this.value = value;
+    this[WklyPickerInputsPropertyKeys.Value] = value;
     if (this.initialized) {
       this.load(value);
       this.position(this.focused, true);
@@ -460,7 +467,7 @@ export class WklyDateTimePickerComponent
     this.onTouched = fn;
   }
   setDisabledState(disabled: boolean): void {
-    this.disabled = disabled;
+    this[WklyPickerInputsPropertyKeys.Disabled] = disabled;
   }
   validate(_control: AbstractControl): ValidationErrors | null {
     return this.errors.length ? { wkly: this.errors } : null;
@@ -475,80 +482,28 @@ export class WklyDateTimePickerComponent
     const changed = JSON.stringify(this.errors) !== JSON.stringify(errors);
     this.errors = errors;
     if (changed) {
-      this.validationChange.emit(errors);
+      this[WklyPickerOutputsPropertyKeys.ValidationChange].emit(errors);
       this.validatorChanged();
     }
   }
   check(): void {
-    const errors: WklyValidationError[] = this.configErrors.slice();
-    const values: string[] = [];
-    this.drafts.slice(0, this.isRange ? 2 : 1).forEach((draft, index) => {
-      const endpoint = this.isRange
-        ? index === 0
-          ? "start"
-          : "end"
-        : "single";
-      if (!draft.present) {
-        if (
-          (this.required || this.drafts.some((d) => d.present)) &&
-          !errors.some((e) => e.code === "incomplete")
-        )
-          errors.push(error("incomplete", draft, undefined, endpoint));
-        return;
-      }
-      if (this.hasDate)
-        for (const e of this.adapter.validateDate(draft.date))
-          errors.push(error(e.code as any, draft.date, e.field, endpoint));
-      if (
-        this.hasDate &&
-        [draft.date.day, draft.date.month, draft.date.year].some(
-          (v) => v === null || Number.isNaN(v),
-        )
-      )
-        errors.push(error("incomplete", draft.date, "date", endpoint));
-      if (
-        this.hasTime &&
-        [draft.hour, draft.minute, this.showSeconds ? draft.second : 0].some(
-          (v) => v === null,
-        )
-      )
-        errors.push(error("incomplete", draft, "time", endpoint));
-      if (!errors.length)
-        try {
-          values.push(
-            encodeIso(
-              {
-                epochDay: this.hasDate
-                  ? this.adapter.dateToEpochDay(draft.date)
-                  : -719528,
-                hour: draft.hour!,
-                minute: draft.minute!,
-                second: draft.second!,
-              },
-              this.mode,
-              this.showSeconds,
-            ),
-          );
-        } catch (e) {
-          errors.push(
-            ...(e instanceof WklyValidationException
-              ? e.errors
-              : [error("invalid-calendar-date", draft)]),
-          );
-        }
+    const result = validateDrafts({
+      drafts: this.drafts,
+      configErrors: this.configErrors,
+      adapter: this.adapter,
+      selection: this,
+      mode: this[WklyPickerInputsPropertyKeys.Mode],
+      isRange: this.isRange,
+      hasDate: this.hasDate,
+      hasTime: this.hasTime,
+      showSeconds: this[WklyPickerInputsPropertyKeys.ShowSeconds],
+      required: this[WklyPickerInputsPropertyKeys.Required],
     });
-    let value: WklyPickerValue = null;
-    if (values.length === (this.isRange ? 2 : 1))
-      value = this.isRange
-        ? orderedRange(values[0], values[1], (a, b) => a.localeCompare(b))
-        : values[0];
-    if (value !== null || !errors.some((e) => e.code === "incomplete"))
-      errors.push(...validateSelection(value, this, this.adapter));
-    this.pendingValue = errors.length ? null : value;
-    this.report(errors);
+    this.pendingValue = result.pendingValue;
+    this.report(result.errors);
   }
   finish(): void {
-    if (this.disabled) return;
+    if (this[WklyPickerInputsPropertyKeys.Disabled]) return;
     if (this.viewMode === "manual" && this.hasDate) this.positionOnManualDate();
     this.check();
     if (this.presentation === "inline" && this.canSubmit) this.commit();
@@ -556,11 +511,14 @@ export class WklyDateTimePickerComponent
   private commit(): void {
     if (!this.canSubmit) return;
     const next = this.pendingValue;
-    if (JSON.stringify(next) !== JSON.stringify(this.value)) {
-      this.value = next;
+    if (
+      JSON.stringify(next) !==
+      JSON.stringify(this[WklyPickerInputsPropertyKeys.Value])
+    ) {
+      this[WklyPickerInputsPropertyKeys.Value] = next;
       this.emittedValue = JSON.stringify(next);
       this.onChange(next);
-      this.valueChange.emit(next);
+      this[WklyPickerOutputsPropertyKeys.ValueChange].emit(next);
     }
     this.onTouched();
   }
@@ -568,24 +526,30 @@ export class WklyDateTimePickerComponent
     this.check();
     if (!this.canSubmit) return;
     this.commit();
-    if (this.presentation === "transient") this.closed.emit(reason);
+    if (this.presentation === "transient")
+      this[WklyPickerOutputsPropertyKeys.Closed].emit(reason);
   }
   cancel(reason: WklyCloseReason = "close-button"): void {
-    if (this.disabled) return;
-    this.load(this.value);
+    if (this[WklyPickerInputsPropertyKeys.Disabled]) return;
+    this.load(this[WklyPickerInputsPropertyKeys.Value]);
     this.onTouched();
-    this.closed.emit(reason);
+    this[WklyPickerOutputsPropertyKeys.Closed].emit(reason);
   }
   now(): void {
-    if (this.disabled) return;
+    if (this[WklyPickerInputsPropertyKeys.Disabled]) return;
     const n = this.clock.now();
     const day = Math.floor(n.getTime() / 86400000);
     this.drafts = [0, 1].map((index) => ({
       date: this.blank(day).date,
       hour: n.getUTCHours(),
-      minute: Math.floor(n.getUTCMinutes() / this.minuteStep) * this.minuteStep,
-      second: this.showSeconds
-        ? Math.floor(n.getUTCSeconds() / this.secondStep) * this.secondStep
+      minute:
+        Math.floor(
+          n.getUTCMinutes() / this[WklyPickerInputsPropertyKeys.MinuteStep],
+        ) * this[WklyPickerInputsPropertyKeys.MinuteStep],
+      second: this[WklyPickerInputsPropertyKeys.ShowSeconds]
+        ? Math.floor(
+            n.getUTCSeconds() / this[WklyPickerInputsPropertyKeys.SecondStep],
+          ) * this[WklyPickerInputsPropertyKeys.SecondStep]
         : 0,
       present: index === 0 || this.isRange,
     }));
@@ -602,14 +566,14 @@ export class WklyDateTimePickerComponent
     this.submit("now");
   }
   toggleView(year = false): void {
-    if (this.disabled || !this.hasDate) return;
+    if (this[WklyPickerInputsPropertyKeys.Disabled] || !this.hasDate) return;
     this.viewMode = year
       ? "manual"
       : this.viewMode === "calendar"
         ? "manual"
         : "calendar";
     if (this.viewMode === "calendar") this.positionOnManualDate();
-    this.viewModeChange.emit(this.viewMode);
+    this[WklyPickerOutputsPropertyKeys.ViewModeChange].emit(this.viewMode);
     if (this.viewMode === "calendar") setTimeout(() => this.resetScroll());
     if (year && this.browser)
       setTimeout(() => {
@@ -650,7 +614,7 @@ export class WklyDateTimePickerComponent
     return this.months(draft).length || 12;
   }
   field(index: number, field: string, value: number | null): void {
-    if (this.disabled) return;
+    if (this[WklyPickerInputsPropertyKeys.Disabled]) return;
     const draft = this.drafts[index];
     draft.present = true;
     if (field === "day" || field === "year" || field === "month") {
@@ -691,7 +655,7 @@ export class WklyDateTimePickerComponent
         : draft.hour;
   }
   period(index: number, period: "am" | "pm" | "24"): void {
-    if (this.disabled) return;
+    if (this[WklyPickerInputsPropertyKeys.Disabled]) return;
     if (period === "24") this.effectiveHourCycle = "h24";
     else {
       this.effectiveHourCycle = "h12";
@@ -725,10 +689,11 @@ export class WklyDateTimePickerComponent
       return true;
     try {
       const date = this.adapter.epochDayToDate(day);
+      const isDateDisabled = this[WklyPickerInputsPropertyKeys.IsDateDisabled];
       if (
-        this.isDateDisabled &&
-        this.isDateDisabled(day, {
-          mode: this.mode,
+        isDateDisabled &&
+        isDateDisabled(day, {
+          mode: this[WklyPickerInputsPropertyKeys.Mode],
           endpoint: this.isRange
             ? this.drafts[0]?.present && !this.drafts[1]?.present
               ? "end"
@@ -738,15 +703,18 @@ export class WklyDateTimePickerComponent
         })
       )
         return true;
-      if (this.min && day < decodeIso(this.min).epochDay) return true;
-      if (this.max && day > decodeIso(this.max).epochDay) return true;
+      const min = this[WklyPickerInputsPropertyKeys.Min];
+      const max = this[WklyPickerInputsPropertyKeys.Max];
+      if (min && day < decodeIso(min).epochDay) return true;
+      if (max && day > decodeIso(max).epochDay) return true;
       return false;
     } catch (_) {
       return true;
     }
   }
   select(day: number): void {
-    if (this.disabled || this.dayDisabled(day)) return;
+    if (this[WklyPickerInputsPropertyKeys.Disabled] || this.dayDisabled(day))
+      return;
     this.focused = day;
     const index =
       this.isRange && this.drafts[0].present && !this.drafts[1].present ? 1 : 0;
@@ -767,7 +735,7 @@ export class WklyDateTimePickerComponent
     this.finish();
     if (
       this.presentation === "transient" &&
-      this.mode === "date" &&
+      this[WklyPickerInputsPropertyKeys.Mode] === "date" &&
       this.viewMode === "calendar"
     )
       this.submit("auto-submit");
@@ -803,8 +771,9 @@ export class WklyDateTimePickerComponent
       Math.min(this.lastSupportedDay, day),
     );
     this.anchorWeek = absoluteWeekOf(day, this.effectiveOffset);
-    this.clipMonth = preset && this.viewportPreset.kind === "full-month";
-    if (preset && this.viewportPreset.kind !== "weeks") {
+    const viewportPreset = this[WklyPickerInputsPropertyKeys.ViewportPreset];
+    this.clipMonth = preset && viewportPreset.kind === "full-month";
+    if (preset && viewportPreset.kind !== "weeks") {
       const d = this.adapter.epochDayToDate(day);
       this.initialMonth = d.year + "/" + d.monthCode;
       const start = this.adapter.dateToEpochDay({ ...d, day: 1 }),
@@ -813,19 +782,19 @@ export class WklyDateTimePickerComponent
       this.visibleCount =
         absoluteWeekOf(end, this.effectiveOffset) - this.firstWeek + 1;
       if (
-        this.viewportPreset.kind === "full-month-and-around" &&
+        viewportPreset.kind === "full-month-and-around" &&
         !this.configErrors.length
       ) {
-        const before = this.viewportPreset.extraWeeksBefore || 0,
-          after = this.viewportPreset.extraWeeksAfter || 0;
+        const before = viewportPreset.extraWeeksBefore || 0,
+          after = viewportPreset.extraWeeksAfter || 0;
         this.firstWeek -= before;
         this.visibleCount += before + after;
       }
     } else {
-      if (this.viewportPreset.kind === "weeks")
+      if (viewportPreset.kind === "weeks")
         this.visibleCount = this.configErrors.length
           ? 6
-          : this.viewportPreset.visibleWeekCount;
+          : viewportPreset.visibleWeekCount;
       this.firstWeek =
         this.anchorWeek -
         (options.align === "start"
@@ -895,61 +864,33 @@ export class WklyDateTimePickerComponent
     return this.clampFirstWeek(this.firstWeek + delta) !== this.firstWeek;
   }
   moveWeek(delta: number): void {
-    if (!this.disabled) this.showFirstWeek(this.firstWeek + delta);
+    if (!this[WklyPickerInputsPropertyKeys.Disabled])
+      this.showFirstWeek(this.firstWeek + delta);
   }
   private renderRows(): void {
-    const overscan = Math.max(0, Math.min(50, this.overscanWeeks || 0));
+    // Keep the virtual scroll offset here; row data is shared across Angular versions.
+    const overscan = Math.max(
+      0,
+      Math.min(50, this[WklyPickerInputsPropertyKeys.OverscanWeeks] || 0),
+    );
     const start = this.firstWeek - overscan;
     this.paddingTop = (start - this.baseWeek) * this.rowHeight;
-    this.rows = Array.from(
-      { length: this.visibleCount + 2 * overscan },
-      (_, i) => {
-        const week = this.generator.getWeek(start + i);
-        const supported =
-          week.epochDays[6] >= this.firstSupportedDay &&
-          week.epochDays[0] <= this.lastSupportedDay;
-        return {
-          week,
-          label: supported
-            ? this.weekLabelFormatter
-              ? this.weekLabelFormatter(week, this.adapter)
-              : this.adapter.formatWeekLabel(week, this.weekLabelMode)
-            : "",
-          cells: week.epochDays.map((epochDay, j) => {
-            let date: WklyCalendarDate | null = null;
-            if (
-              epochDay >= this.firstSupportedDay &&
-              epochDay <= this.lastSupportedDay
-            )
-              try {
-                date = this.adapter.epochDayToDate(epochDay);
-              } catch (_) {}
-            const hidden =
-              !date ||
-              (this.clipMonth &&
-                date.year + "/" + date.monthCode !== this.initialMonth);
-            return {
-              epochDay,
-              date,
-              hidden,
-              disabled: this.dayDisabled(epochDay),
-              label: date ? this.adapter.formatDay(date) : "",
-              accessible: date ? this.adapter.formatAccessibleDate(date) : "",
-              annotation:
-                date &&
-                !hidden &&
-                (date.day === 1 ||
-                  (week.absoluteWeek === this.firstWeek && j === 0))
-                  ? this.adapter.formatMonth(date) +
-                    " " +
-                    this.adapter.formatYear(date)
-                  : "",
-            };
-          }),
-        };
-      },
-    );
-    this.viewportChange.emit({
+    this.rows = createWeekRows({
+      generator: this.generator,
+      adapter: this.adapter,
+      startWeek: start,
+      count: this.visibleCount + 2 * overscan,
+      firstVisibleWeek: this.firstWeek,
+      firstSupportedDay: this.firstSupportedDay,
+      lastSupportedDay: this.lastSupportedDay,
+      clipMonth: this.clipMonth,
+      initialMonth: this.initialMonth,
+      weekLabelMode: this[WklyPickerInputsPropertyKeys.WeekLabelMode],
+      weekLabelFormatter:
+        this[WklyPickerInputsPropertyKeys.WeekLabelFormatter] || null,
+      isDayDisabled: (day) => this.dayDisabled(day),
+    });
+    this[WklyPickerOutputsPropertyKeys.ViewportChange].emit({
       firstVisibleAbsoluteWeek: this.firstWeek,
       lastVisibleAbsoluteWeek: this.firstWeek + this.visibleCount - 1,
       anchorAbsoluteWeek: this.anchorWeek,

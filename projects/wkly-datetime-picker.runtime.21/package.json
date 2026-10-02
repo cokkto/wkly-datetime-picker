@@ -1,0 +1,26 @@
+{
+  "name": "wkly-datetime-picker.runtime.21",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Isolated Angular 21 calendar runtime",
+  "dependencies": {
+    "@angular/animations": "21.2.25",
+    "@angular/cdk": "21.2.14",
+    "@angular/common": "21.2.25",
+    "@angular/compiler": "21.2.25",
+    "@angular/core": "21.2.25",
+    "@angular/forms": "21.2.25",
+    "@angular/material": "21.2.14",
+    "@angular/platform-browser": "21.2.25",
+    "@angular/platform-browser-dynamic": "21.2.25",
+    "@hebcal/core": "^5.9.0",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1",
+    "zone.js": "0.16.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5",
+    "typescript": "5.9.3"
+  }
+}
