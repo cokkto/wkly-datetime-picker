@@ -1,0 +1,42 @@
+{
+  "name": "wkly-datetime-picker.14",
+  "version": "14.0.0",
+  "description": "Angular 14 integration for WKLY date and time picker",
+  "license": "MIT",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/core": ">=14 <15",
+    "@angular/common": ">=14 <15",
+    "@angular/forms": ">=14 <15",
+    "@angular/cdk": ">=14 <15",
+    "rxjs": "^6.5.3 || ^7.4.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular/cdk": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "wkly-datetime-picker.core": "^0.1.0",
+    "wkly-datetime-picker.adapters": "^0.1.0",
+    "wkly-datetime-picker": "^0.1.0",
+    "tslib": "^2.0.0"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build.cjs wkly-datetime-picker.14"
+  },
+  "devDependencies": {
+    "@angular/animations": "14.3.0",
+    "@angular/common": "14.3.0",
+    "@angular/compiler": "14.3.0",
+    "@angular/compiler-cli": "14.3.0",
+    "@angular/core": "14.3.0",
+    "@angular/forms": "14.3.0",
+    "@angular/platform-browser": "14.3.0",
+    "@angular/cdk": "14.2.7",
+    "ng-packagr": "14.2.2",
+    "rxjs": "7.8.2",
+    "typescript": "4.8.4",
+    "zone.js": "0.11.8"
+  }
+}

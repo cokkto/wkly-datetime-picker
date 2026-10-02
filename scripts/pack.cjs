@@ -1,10 +1,10 @@
 const { execFileSync } = require("child_process");
 const fs = require("fs");
-const angularPackages = Object.entries(require("../supported-angular.json"))
-  .filter(
-    ([major]) =>
-      !process.env.WKLY_ANGULAR || major === process.env.WKLY_ANGULAR,
-  )
+const supported = require("../supported-angular.json");
+const selectedAngular =
+  process.env.WKLY_ANGULAR || Object.keys(supported).at(-1);
+const angularPackages = Object.entries(supported)
+  .filter(([major]) => major === selectedAngular)
   .map(([, info]) => info.package);
 for (const name of [
   "wkly-datetime-picker.core",

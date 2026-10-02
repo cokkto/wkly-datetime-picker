@@ -7,11 +7,11 @@ const root = path.resolve(__dirname, "..");
 process.chdir(root);
 const tsc = require.resolve("typescript/bin/tsc");
 const supported = require("../supported-angular.json");
+const selectedAngular =
+  process.env.WKLY_ANGULAR ||
+  (process.argv[2] ? undefined : Object.keys(supported).at(-1));
 const angularPackages = Object.entries(supported)
-  .filter(
-    ([major]) =>
-      !process.env.WKLY_ANGULAR || major === process.env.WKLY_ANGULAR,
-  )
+  .filter(([major]) => !selectedAngular || major === selectedAngular)
   .map(([, info]) => info.package);
 for (const name of [
   "wkly-datetime-picker.core",
