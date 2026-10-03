@@ -10,7 +10,8 @@
     </ul>
   </section>
 </section>
-<p *ngIf="!catalogue && !demo" role="alert">
+<wkly-angular-contract *ngIf="contracts"></wkly-angular-contract>
+<p *ngIf="!catalogue && !demo && !contracts" role="alert">
   Unknown test case or layout. <a href="/">Browse test cases</a>
 </p>
 <div

@@ -6,15 +6,6 @@ This is the current work tracker for WKLY. Update a milestone when its implement
 
 The workspace has three shared packages and numbered Angular integration build targets for 11–22. `supported-angular.json` drives isolated compatibility builds and packed-consumer tests. The showcase has an evergreen host and independently compiled versioned testbeds. The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. No workflow yet maps the internal build artifacts to that public name, publishes packages, or updates release versions automatically. No confirmed product regressions are currently open.
 
-## Milestone 3 — Cover public Angular behavior
-
-- [ ] Exercise `scrollToAbsoluteWeek`, `scrollToCalendarDate`, and `scrollToValue` on inline and transient pickers, including pre-1970 and adapter-boundary dates.
-- [ ] Test `WKLY_CONFIG` precedence, localization fallback, and focus/validation behavior after runtime input changes.
-- [ ] Resolve the mismatch between locale identifiers and translation catalog keys: `locale` accepts values such as `en-GB` and `he-IL`, but label lookup currently uses only `en` and `he`. Define consistent matching and fallback for regional and language-only entries, then add tests for both. When resolved, update the root README's localization examples and precedence rules, `docs/API.md`, and any affected domain documentation to match the implemented behavior.
-- [ ] Assert calendar grid semantics, selected/current/disabled states, accessible names, and range endpoint changes in a browser.
-
-**Done when:** public methods and accessibility behavior have observable browser assertions.
-
 ## Milestone 4 — Add a Hijri calendar example and adapter coverage
 
 - [ ] Choose and document the supported Hijri calendar variant, conversion rules, supported interval, and any dependency. Implement a showcase Hijri adapter using the public `WklyCalendarAdapter` contract, following the Hebrew example's source-only distribution model. Keep public values canonical Gregorian UTC strings.

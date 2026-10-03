@@ -24,4 +24,5 @@ export class TestbedComponent {
       ? this.demos.find((demo) => demo.id === this.segments[2])
       : undefined;
   readonly catalogue = window.location.pathname === "/";
+  readonly contracts = window.location.pathname === "/contracts";
 }

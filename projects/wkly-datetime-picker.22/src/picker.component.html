@@ -111,7 +111,11 @@
                 >{{ row.label }}</span
               >
               <div
-                *ngFor="let cell of row.cells; let dayIndex = index"
+                *ngFor="
+                  let cell of row.cells;
+                  let dayIndex = index;
+                  trackBy: trackCell
+                "
                 role="gridcell"
                 [attr.data-weekday-index]="dayIndex"
                 [attr.aria-colindex]="

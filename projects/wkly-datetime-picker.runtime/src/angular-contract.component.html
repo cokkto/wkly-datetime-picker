@@ -1,0 +1,93 @@
+<div class="testbed-layout layout-empty">
+  <main class="testbed-content">
+    <button (click)="write()">Write value</button>
+    <button (click)="cancelJump()">Jump and immediately close</button>
+    <button (click)="locale = 'en-GB'; offset = 4">
+      Explicit configuration
+    </button>
+    <button (click)="locale = ''; offset = null">
+      Application configuration
+    </button>
+    <button (click)="language('en-GB')">British locale</button>
+    <button (click)="language('en-US')">US locale</button>
+    <button (click)="language('he-IL')">Hebrew locale</button>
+    <button (click)="language('he')">Hebrew language locale</button>
+    <button (click)="language('fi-FI')">Finnish locale</button>
+    <button (click)="catalog()">Input catalog</button>
+    <button (click)="translations = {}">Empty catalog</button>
+    <button (click)="translations = null">Injected catalog</button>
+    <button (click)="minuteStep = 15">Step 15</button>
+    <button (click)="min = '2100-01-01T00:00:00.000Z'">Future minimum</button>
+    <button (click)="min = null">Clear minimum</button>
+    <button (click)="disabled = !disabled">Toggle disabled</button>
+    <button (click)="mode = 'datetime-range'; value = null">Range mode</button>
+    <button (click)="initial = -16">Explicit initial day</button>
+    <div *ngFor="let method of ['week', 'calendar', 'value']">
+      <button
+        *ngFor="let boundary of ['past', 'min', 'max']"
+        (click)="jump($any(method), $any(boundary))"
+      >
+        Jump {{ method }} {{ boundary }}
+      </button>
+    </div>
+    <output data-testid="contract-value">{{ diagnostics }}</output>
+    <output data-testid="contract-errors">{{ codes }}</output>
+    <output data-testid="contract-emissions">{{ emissions }}</output>
+    <output data-testid="target-day">{{ targetDay }}</output>
+    <wkly-datetime-picker
+      *ngIf="presentation === 'inline'"
+      #inline
+      [value]="value"
+      [mode]="mode"
+      [calendarAdapter]="adapter"
+      [locale]="locale"
+      [weekOffset]="offset"
+      [initialEpochDay]="initial"
+      [translations]="translations"
+      [min]="min"
+      [required]="required"
+      [disabled]="disabled"
+      [minuteStep]="minuteStep"
+      [isDateDisabled]="unavailable"
+      [allowRangeAcrossDisabled]="true"
+      hourCycle="h24"
+      ariaLabel="Contract calendar"
+      ariaDescribedBy="contract-description"
+      (valueChange)="commit($event)"
+      (validationChange)="validation($event)"
+    >
+    </wkly-datetime-picker>
+    <button
+      *ngIf="presentation === 'dialog'"
+      wklyDateTimePickerDialog
+      #dialog="wklyDialog"
+      [value]="value"
+      [mode]="mode"
+      [calendarAdapter]="adapter"
+      [locale]="locale"
+      [weekOffset]="offset"
+      [translations]="translations"
+      hourCycle="h24"
+      (valueChange)="commit($event)"
+      (validationChange)="validation($event)"
+    >
+      Open contract dialog
+    </button>
+    <input
+      *ngIf="presentation === 'overlay'"
+      wklyDateTimePickerOverlay
+      #overlay="wklyOverlay"
+      aria-label="Open contract overlay"
+      [value]="value"
+      [mode]="mode"
+      [calendarAdapter]="adapter"
+      [locale]="locale"
+      [weekOffset]="offset"
+      [translations]="translations"
+      hourCycle="h24"
+      (valueChange)="commit($event)"
+      (validationChange)="validation($event)"
+    />
+    <p id="contract-description">Choose a date and time.</p>
+  </main>
+</div>

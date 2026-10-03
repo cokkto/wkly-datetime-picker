@@ -27,6 +27,8 @@ For example, `/cases/empty/date-range`, `/cases/form/dialog`, `/cases/contained/
 
 Controls, diagnostics and layouts are shared source. Testbeds include their own bounded shell CSS and picker theme rules.
 
+The versioned `/contracts` route hosts public Angular API checks with scoped configuration and localization providers. Query parameters `presentation=inline|dialog|overlay` and `calendar=gregorian|hebrew` select the fixture, and `initial=<epochDay>` sets an explicit initial anchor. Its buttons call public jump methods and update runtime inputs; outputs expose committed values, validation codes, and emission counts.
+
 ## Playwright
 
 ```sh

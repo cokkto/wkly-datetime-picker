@@ -12,6 +12,8 @@ The calendar renders continuous absolute-week rows with a recentered scroll runw
 
 Forms use `ControlValueAccessor` and `Validator`. Programmatic writes do not call the registered change callback. Invalid drafts retain the last committed value. Explicit picker inputs override application configuration, which precedes locale defaults. Register Angular locale data in the host application. CSS variables in `src/picker.component.css` control theme and size; the built package exposes `picker.css`.
 
+Label resolution is shared across Angular majors: `WKLY_LOCALIZATION` overrides precede case-insensitive catalog lookup from the full locale to broader tags, followed by built-in English. Regional catalogs can inherit missing keys from language entries. A picker input catalog replaces `WKLY_TRANSLATIONS`; `null` retains injection. Dialogs and overlays inherit scoped providers from their trigger's injector. See the [consumer localization examples](../README.md#choose-a-locale-and-time-format) and [API reference](API.md) for precedence and fallback rules.
+
 ## Commands and related work
 
 ```sh

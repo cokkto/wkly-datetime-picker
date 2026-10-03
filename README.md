@@ -261,16 +261,21 @@ registerLocaleData(enGb);
 
 ### Translate buttons and messages
 
-English action and validation labels are included. Supply a `WklyTranslations` catalog for other languages, using language keys such as `en` or `he`; for example, `en-GB` uses the `en` entry.
+English action and validation labels are included. Supply a `WklyTranslations` catalog with regional keys such as `en-GB` or `he-IL`, language keys such as `en` or `he`, or both. For each label, lookup tries the full locale and then progressively broader tags: `en-GB` checks `en-GB`, then `en`; `zh-Hant-TW` checks `zh-Hant-TW`, `zh-Hant`, then `zh`. Catalog keys are case-insensitive. A regional entry can override some labels while inheriting others from its language entry.
 
 Add a catalog to the host component, importing `WklyTranslations` from `@wkly/datetime-picker`:
 
 ```ts
 translations: WklyTranslations = {
-  en: {
+  'en-GB': {
     confirm: 'Book this time',
+  },
+  en: {
     now: 'Use current time',
     'below-minimum': 'Choose a later booking date.',
+  },
+  'he-IL': {
+    now: 'עכשיו',
   },
 };
 ```
@@ -284,7 +289,7 @@ translations: WklyTranslations = {
 </wkly-datetime-picker>
 ```
 
-Missing labels fall back to English. Available keys cover actions, date/time fields, navigation, range endpoints, and validation codes; see the [English label catalog](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker/src/public-api.ts). An input catalog replaces the injected catalog for that picker. `WKLY_LOCALIZATION` overrides individual keys before catalog lookup; the injection tokens are described below.
+Label precedence is `WKLY_LOCALIZATION` overrides, matching regional/script catalog entries, the language catalog entry, then built-in English. Unknown keys fall back to the key itself. An input catalog replaces the injected `WKLY_TRANSLATIONS` catalog for that picker, including when the input is empty; `null` uses the injected catalog. Lookup does not use a different region's entry. Available keys cover actions, date/time fields, navigation, range endpoints, and validation codes; see the [English label catalog](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker/src/public-api.ts). The injection tokens are described below.
 
 ## Use a different calendar
 
