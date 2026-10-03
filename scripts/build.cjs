@@ -1,3 +1,5 @@
+// Build shared packages before Angular packages. Published artifacts receive the
+// consumer README and API reference; project-local READMEs remain source docs.
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");

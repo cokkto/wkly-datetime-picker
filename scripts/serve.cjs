@@ -1,3 +1,4 @@
+// Hostnames isolate independently compiled Angular testbeds on one local port.
 const supported = require("../supported-angular.json");
 const majors = Object.keys(supported);
 const fs = require("fs");

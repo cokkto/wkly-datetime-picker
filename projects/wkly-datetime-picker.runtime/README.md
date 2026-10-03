@@ -1,7 +1,15 @@
-# Shared showcase and testbed source
+# Shared showcase and testbed runtime
 
-This private project provides the shared picker template/controller, configuration types, locale registration, picker theme rules, and four bounded testbed layouts. Each `wkly-datetime-picker.runtime.N` compiles this source independently with its own Angular, TypeScript, Material, and CDK dependencies. Version-specific modules import the matching picker package; their component wrappers use the shared template.
+This private project provides the shared picker controller and template, configuration types, locale registration, theme rules, and four bounded testbed layouts. Each `wkly-datetime-picker.runtime.N` compiles it independently with its matching Angular, TypeScript, Material, and CDK dependencies. The versioned runtime module imports `wkly-datetime-picker.N`; the evergreen showcase imports the newest runtime module directly.
 
-The evergreen showcase imports the latest runtime module directly. Configuration and events use Angular inputs/outputs, with no iframe or window-message protocol. Shared catalogue data and controls live in `wkly-datetime-picker.showcase/src`; they are also compiled into each testbed.
+`src/runtime-controller.ts` manages configuration and picker events. `src/testbed.component.ts` and its template render a single controlled case. `src/runtime-protocol.ts` defines local TypeScript configuration and event types; communication uses Angular inputs and outputs, with no iframe or window-message transport. The catalogue and controls live in `projects/wkly-datetime-picker.showcase/src/` and are compiled into each testbed.
 
-Test routes are `/cases/{empty|contained|form|booking}/<example-id>`. `/` lists every combination. The empty fixture is the default for component regression tests. The other three verify a finite integration contract, not arbitrary consumer CSS. Shell selectors avoid picker internals; the showcase stylesheet is never included in a testbed.
+The testbed index is `/`. Case routes are `/cases/{empty|contained|form|booking}/<example-id>`. The `empty` layout is the minimal component fixture; the others exercise bounded integration layouts. Testbed CSS avoids the picker internals and does not include the showcase stylesheet.
+
+```sh
+npm run showcase:start
+npm run showcase:build
+npm run showcase:test:e2e -- --project=angular-22-chromium
+```
+
+See [showcase usage](../../docs/SHOWCASE.md) for hosts and case IDs, and the [test project README](../wkly-datetime-picker.tests/README.md) for active assertions.

@@ -1,6 +1,6 @@
 # Evergreen showcase and versioned testbeds
 
-The default host serves the latest Angular showcase. It preserves the single/range, localization, calendar, validation, virtual scrolling, presentation, and styling catalogue, with live controls and diagnostics. Pickers render directly in the page. Version links navigate to separate apps; the catalogue does not embed them.
+The default host serves the latest Angular showcase. Its catalogue covers single/range selection, localization, calendars, validation, virtual scrolling, presentation, and styling, with live controls and diagnostics. Pickers render directly in the page. Version links navigate to separate apps.
 
 ```sh
 npm run showcase:start
@@ -8,7 +8,7 @@ npm run showcase:build
 node scripts/serve.cjs --prebuilt
 ```
 
-Use Node 24.15+ for the combined build. Existing per-version TypeScript compilers, dependency resolution, Angular compiler handling, Angular 11 ngcc preparation, and esbuild watching are retained. The default app uses the latest runtime compiler too. Each app is compiled independently into `dist/showcase` or `dist/showcase/runtime/N`.
+Use Node 24.15+ for the combined build. Each app uses its version-specific TypeScript and Angular compiler; Angular 11 dependencies receive ngcc preparation. esbuild watches source and templates. The default app uses the latest runtime compiler. Each app is compiled independently into `dist/showcase` or `dist/showcase/runtime/N`.
 
 The generic Node HTTP server serves `wkly.localhost:4200` (and localhost/127.0.0.1 aliases) as the showcase, and `v11.wkly.localhost:4200` through `v22.wkly.localhost:4200` as testbeds. It falls back to the selected app's index for extensionless navigation, returns 404 for missing assets and unknown hosts, and prevents cross-app paths. `--prebuilt` does not load Angular or build tools. `WKLY_OUTPUT` changes the build/serve directory (use the same value for both commands), allowing isolated concurrent servers. `PORT` changes the port; `WKLY_DOMAIN` changes the local host suffix (custom domains require local DNS). Standard `.localhost` names must resolve to loopback in the browser/environment.
 
@@ -23,9 +23,9 @@ Each version exposes `/` as a case index and `/cases/<layout>/<example-id>` as a
 | `form` | Actual form with neighboring native inputs and a submit button |
 | `booking` | Small realistic page with header, responsive columns, summary and footer |
 
-For example, `/cases/empty/date-range`, `/cases/form/dialog`, `/cases/contained/overlay`, and `/cases/booking/material` work on every version. Native dialog and CDK overlay pickers attach to the actual top-level document. CDK coverage uses WKLY's existing anchored CDK dialog presentation, supported across all versions; it does not require the newer `@angular/cdk/dialog` package.
+For example, `/cases/empty/date-range`, `/cases/form/dialog`, `/cases/contained/overlay`, and `/cases/booking/material` work on every version. Native dialog and CDK overlay pickers attach to the top-level document. The anchored overlay uses WKLY's CDK integration.
 
-Controls, diagnostics and layouts are shared source. Testbeds include their own bounded shell CSS and picker theme rules, never the showcase stylesheet. Tests deliberately do not attempt to support infinitely many consumer resets or layouts.
+Controls, diagnostics and layouts are shared source. Testbeds include their own bounded shell CSS and picker theme rules.
 
 ## Playwright
 

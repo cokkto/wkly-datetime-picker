@@ -1,6 +1,6 @@
 # Public API
 
-The Angular components, module, forms integration, and optional CDK entry point live in the versioned `wkly-datetime-picker.N` packages for Angular 11–22. Choose the package matching your Angular major. `wkly-datetime-picker` provides Angular-independent presentation configuration, translations, input names, and CSS; date adapters remain in `wkly-datetime-picker.adapters`.
+The published picker uses `@wkly/datetime-picker@N.x.x` for Angular N, with separate version lines for Angular 11–22. The Angular components, module, forms integration, and optional CDK entry point come from the selected version. The `wkly-datetime-picker` source project provides Angular-independent presentation configuration, translations, input names, and CSS; date adapters live in `wkly-datetime-picker.adapters`.
 
 All APIs are exported from public package entry points. Emitted TypeScript declarations contain complete signatures and readonly contracts.
 
@@ -97,4 +97,4 @@ Forms methods follow ControlValueAccessor/Validator: writeValue, registerOnChang
 
 ## Optional CDK entry point
 
-`wkly-datetime-picker.N/cdk-overlay` exports `WklyDateTimePickerOverlayModule`, `WklyDateTimePickerOverlayDirective` (`[wklyDateTimePickerOverlay]`, exportAs wklyOverlay), and `WklyDateTimePickerOverlayService` for registered majors N (11–22). The directive inherits the shared API. Service open(trigger,onCancel,backdrop=true) returns WklyPresentationRef using CDK Overlay and its focus trap. Install the matching Angular CDK major and include overlay-prebuilt.css. Base/native-dialog imports do not load CDK.
+`@wkly/datetime-picker/cdk-overlay` exports `WklyDateTimePickerOverlayModule`, `WklyDateTimePickerOverlayDirective` (`[wklyDateTimePickerOverlay]`, exportAs wklyOverlay), and `WklyDateTimePickerOverlayService` for registered majors N (11–22). The directive inherits the shared API. Service open(trigger,onCancel,backdrop=true) returns WklyPresentationRef using CDK Overlay and its focus trap. Install the matching Angular CDK major and include overlay-prebuilt.css. Base/native-dialog imports do not load CDK.

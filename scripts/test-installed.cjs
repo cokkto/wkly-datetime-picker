@@ -1,3 +1,4 @@
+// Resolve contracts from freshly packed shared packages in an isolated consumer.
 const fs = require("fs");
 const path = require("path");
 const { execFileSync, spawnSync } = require("child_process");
