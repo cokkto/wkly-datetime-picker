@@ -347,7 +347,8 @@ export class WklyDateTimePickerComponent
         const row = this.host.nativeElement.querySelector(
           ".week-row",
         ) as HTMLElement;
-        const height = row?.getBoundingClientRect().height;
+        // CSS heights and scrollTop use layout pixels; client rectangles include zoom.
+        const height = row ? parseFloat(getComputedStyle(row).height) : 0;
         if (height && height !== this.rowHeight) {
           this.rowHeight = height;
           this.scrollHeight = this.rowHeight * 2001;
@@ -809,8 +810,9 @@ export class WklyDateTimePickerComponent
     this.resetScroll();
   }
   private resetScroll(): void {
+    // Round week boundaries to avoid scrollTop truncation under CSS zoom.
     if (this.scroller)
-      this.scroller.nativeElement.scrollTop = 1000 * this.rowHeight;
+      this.scroller.nativeElement.scrollTop = Math.round(1000 * this.rowHeight);
   }
   scroll(event: Event): void {
     const element = event.target as HTMLElement;
@@ -823,7 +825,7 @@ export class WklyDateTimePickerComponent
     const requestedFirst = this.baseWeek + index;
     const first = this.clampFirstWeek(requestedFirst);
     if (requestedFirst !== first) {
-      element.scrollTop = (first - this.baseWeek) * this.rowHeight;
+      element.scrollTop = Math.round((first - this.baseWeek) * this.rowHeight);
     }
     if (first === this.firstWeek) return;
     this.clipMonth = false;
@@ -847,7 +849,9 @@ export class WklyDateTimePickerComponent
     this.snapPending = false;
     // Align the current virtual week without rebuilding or rebasing its rows.
     const element = this.scroller.nativeElement;
-    const target = (this.firstWeek - this.baseWeek) * this.rowHeight;
+    const target = Math.round(
+      (this.firstWeek - this.baseWeek) * this.rowHeight,
+    );
     if (element.scrollTop !== target) element.scrollTop = target;
   }
   private showFirstWeek(week: number): void {

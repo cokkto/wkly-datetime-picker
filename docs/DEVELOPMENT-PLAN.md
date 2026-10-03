@@ -4,15 +4,7 @@ This is the current work tracker for WKLY. Update a milestone when its implement
 
 ## Current state
 
-The workspace has three shared packages and numbered Angular integration build targets for 11–22. `supported-angular.json` drives isolated compatibility builds and packed-consumer tests. The showcase has an evergreen host and independently compiled versioned testbeds. The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. No workflow yet maps the internal build artifacts to that public name, publishes packages, or updates release versions automatically. The browser geometry regressions below remain open.
-
-## Milestone 1 — Resolve confirmed layout regressions
-
-- [ ] Fix day-column overflow at narrow width and CSS zoom, tracked as [M02-LAYOUT-01](REGRESSIONS.md#m02-layout-01--day-columns-overflow).
-- [ ] Fit the requested number of complete week rows under fractional CSS zoom, tracked as [M02-LAYOUT-02](REGRESSIONS.md#m02-layout-02--fractional-zoom-clips-weeks).
-- [ ] Rerun geometry checks across the affected browser profiles and refresh screenshots only after correctness assertions pass.
-
-**Done when:** the focused layout assertions pass without skips or expected-failure annotations.
+The workspace has three shared packages and numbered Angular integration build targets for 11–22. `supported-angular.json` drives isolated compatibility builds and packed-consumer tests. The showcase has an evergreen host and independently compiled versioned testbeds. The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. No workflow yet maps the internal build artifacts to that public name, publishes packages, or updates release versions automatically. No confirmed product regressions are currently open.
 
 ## Milestone 2 — Complete value and validation contracts
 
