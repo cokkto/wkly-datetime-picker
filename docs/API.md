@@ -20,6 +20,10 @@ All APIs are exported from public package entry points. Emitted TypeScript decla
 
 `WklyCalendarAbstractAdapter` implements the `WklyCalendarAdapter` contract with abstract calendar operations and protected `getDateTimeFormatter(options?, locale?)` and `getNumberFormatter(options?, locale?)` helpers. Each adapter instance reuses formatters for matching locale and options. Custom adapters can extend this class or implement `WklyCalendarAdapter` directly.
 
+Source-only examples are [`ShowcaseHebrewCalendarAdapter(locale='he-IL')`](../projects/wkly-datetime-picker.showcase/src/hebrew-adapter.ts), requiring `@hebcal/core`, and [`ShowcaseHijriCalendarAdapter(locale='ar-EG')`](../projects/wkly-datetime-picker.showcase/src/hijri-adapter.ts), requiring only WKLY and `Intl`. Neither is exported by an npm package. Both support Gregorian UTC 1900-01-01..2100-12-31 inclusive; Hijri uses the tabular civil `islamic-civil` variant and month codes `M01..M12`. See [calendar rules](CORE-AND-ADAPTERS.md). Viewport presets handle partial boundary months without requiring conversion of unsupported dates.
+
+`calendarMonthBounds(adapter, epochDay)` in the shared presentation package returns a frozen inclusive pair of full-month epoch-day coordinates from a supported anchor. The coordinates may extend beyond the adapter's supported interval; viewport rendering applies the adapter bounds separately. It never asks the adapter to convert an unsupported month edge.
+
 `WklyCalendarDate` has calendarId, year, one-based ordinal month, stable monthCode, day, and optional era. `WklyCalendarMonth` has month, monthCode, and label. `WklyCalendarDateError` has code, optional field, and messageKey.
 
 | `WklyCalendarAdapter` member | Contract |

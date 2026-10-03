@@ -14,7 +14,7 @@ export interface RuntimeConfig {
   mode: WklySelectionMode;
   value: WireValue;
   locale: string;
-  calendar: "gregorian" | "hebrew";
+  calendar: "gregorian" | "hebrew" | "hijri";
   presentation: "inline" | "dialog" | "overlay" | "material";
   weekOffset: WklyWeekOffset | null;
   weekLabelMode: "locale" | "hidden";

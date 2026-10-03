@@ -295,7 +295,7 @@ Label precedence is `WKLY_LOCALIZATION` overrides, matching regional/script cata
 
 The included calendar adapter is `WklyGregorianCalendarAdapter`, available from `wkly-datetime-picker.adapters`. It is selected automatically and supports Gregorian years `0000..9999` with localized labels. `WklyCalendarAbstractAdapter` is an optional base class for custom adapters, providing reusable locale formatters.
 
-For another calendar, supply a `WklyCalendarAdapter` through `[calendarAdapter]`. The [Hebrew calendar example](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker.showcase/src/hebrew-adapter.ts) shows a complete implementation using `@hebcal/core`. It is an example to adapt into your application, rather than an included adapter.
+For another calendar, supply a `WklyCalendarAdapter` through `[calendarAdapter]`. The [Hebrew adapter](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker.showcase/src/hebrew-adapter.ts) and [Hijri adapter](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker.showcase/src/hijri-adapter.ts) are available as source from Git; neither is shipped in npm packages. Copy their source into your application. Hebrew requires `@hebcal/core`; Hijri has no additional dependency beyond WKLY and the platform's `Intl` calendar formatting.
 
 After adding that example as `calendar/hebrew-adapter.ts` and installing its `@hebcal/core` dependency, configure it in your component:
 
@@ -316,6 +316,22 @@ calendarAdapter = new ShowcaseHebrewCalendarAdapter('he-IL');
 ```
 
 Register the matching Angular locale data and supply Hebrew action labels as needed. The adapter changes calendar conversion and date formatting; selected values remain Gregorian UTC strings.
+
+For Hijri, copy `hijri-adapter.ts` and use the same picker binding with Arabic locale data and action labels:
+
+```ts
+import { ShowcaseHijriCalendarAdapter } from './calendar/hijri-adapter';
+
+calendarAdapter = new ShowcaseHijriCalendarAdapter('ar-EG');
+```
+
+```html
+<wkly-datetime-picker mode="date" [(value)]="value" locale="ar-EG"
+  [calendarAdapter]="calendarAdapter">
+</wkly-datetime-picker>
+```
+
+Both examples support Gregorian UTC dates `1900-01-01..2100-12-31`, inclusive. Hijri implements `islamic-civil`, the tabular civil variant: a Friday epoch (Gregorian `0622-07-19`), alternating 30/29-day months, and leap years 2, 5, 7, 10, 13, 16, 18, 21, 24, 26, and 29 in each 30-year cycle. The last month has 30 days in leap years. This follows [Unicode's civil calendar definition](https://github.com/unicode-org/cldr/blob/main/common/bcp47/calendar.xml); it does not implement moon-sighting or Umm al-Qura rules. Conversion uses integer arithmetic; `Intl` supplies localized month labels only. The showcase's calendar page connects Gregorian, Hebrew, and Hijri selections to the same UTC day.
 
 A custom adapter provides supported date bounds, reversible date conversion, month lists, validation, and display/accessibility labels. It must preserve invalid manual drafts for validation and stable month identities across years. See the [calendar adapter contract](https://github.com/cokkto/wkly-datetime-picker/blob/main/docs/API.md#adapters) for the complete interface.
 

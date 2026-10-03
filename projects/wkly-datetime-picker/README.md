@@ -13,6 +13,8 @@ The package depends on [core](../../docs/CORE-AND-ADAPTERS.md) and adapters, nev
 
 Renderable rows are derived from absolute weeks and the active calendar adapter. Month and year labels annotate those rows; they are not calendar containers. The default overscan is three weeks on each side of the visible viewport. Draft validation reports invalid dates without silently changing the committed value.
 
+`calendarMonthBounds` derives full-month coordinates from a supported anchor, including partial adapter boundary months. It avoids converting unsupported month edges; the numbered pickers use it for viewport positioning. Source and installed unit contracts cover this boundary behavior.
+
 ```sh
 npm run build
 npm test

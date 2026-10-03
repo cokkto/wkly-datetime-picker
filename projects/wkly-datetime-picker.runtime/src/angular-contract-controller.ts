@@ -9,6 +9,7 @@ import {
 } from "wkly-datetime-picker.adapters";
 import { absoluteWeekOf, firstEpochDayOf } from "wkly-datetime-picker.core";
 import { ShowcaseHebrewCalendarAdapter } from "../../wkly-datetime-picker.showcase/src/hebrew-adapter";
+import { ShowcaseHijriCalendarAdapter } from "../../wkly-datetime-picker.showcase/src/hijri-adapter";
 
 interface JumpTarget {
   close?(): void;
@@ -30,7 +31,9 @@ export class AngularContractController {
   readonly adapter =
     this.calendar === "hebrew"
       ? new ShowcaseHebrewCalendarAdapter("he-IL")
-      : new WklyGregorianCalendarAdapter("en-GB");
+      : this.calendar === "hijri"
+        ? new ShowcaseHijriCalendarAdapter("ar")
+        : new WklyGregorianCalendarAdapter("en-GB");
   locale = "";
   offset: 0 | 4 | null = null;
   initial: number | null = this.params.has("initial")

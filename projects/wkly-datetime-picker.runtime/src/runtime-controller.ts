@@ -14,6 +14,7 @@ import {
 } from "wkly-datetime-picker.adapters";
 import { floorMod } from "wkly-datetime-picker.core";
 import { ShowcaseHebrewCalendarAdapter } from "../../wkly-datetime-picker.showcase/src/hebrew-adapter";
+import { ShowcaseHijriCalendarAdapter } from "../../wkly-datetime-picker.showcase/src/hijri-adapter";
 import { RuntimeConfig, RuntimeMessage } from "./runtime-protocol";
 
 @Directive()
@@ -36,7 +37,9 @@ export class RuntimeController implements OnChanges {
       this.adapter =
         next.calendar === "hebrew"
           ? new ShowcaseHebrewCalendarAdapter(next.locale)
-          : new WklyGregorianCalendarAdapter(next.locale);
+          : next.calendar === "hijri"
+            ? new ShowcaseHijriCalendarAdapter(next.locale)
+            : new WklyGregorianCalendarAdapter(next.locale);
       this.value = next.value as WklyPickerValue;
       // Host configuration should update the form without reporting a user edit.
       this.form.setValue(this.value, { emitEvent: false });

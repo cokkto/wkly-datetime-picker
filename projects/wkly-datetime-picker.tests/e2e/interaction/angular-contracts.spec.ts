@@ -20,7 +20,7 @@ for (const presentation of ["dialog", "overlay"])
   });
 
 for (const presentation of ["inline", "dialog", "overlay"])
-  for (const calendar of ["gregorian", "hebrew"])
+  for (const calendar of ["gregorian", "hebrew", "hijri"])
     for (const method of ["week", "calendar", "value"])
       test(`${presentation} ${calendar}: public ${method} jumps focus pre-1970 and adapter boundaries`, async ({
         page,
@@ -38,9 +38,13 @@ for (const presentation of ["inline", "dialog", "overlay"])
           const picker = page.locator("wkly-datetime-picker");
           await expect(picker).toBeVisible();
           const min =
-            calendar === "hebrew" ? Date.UTC(1900, 0, 1) / 86400000 : -719528;
+            calendar !== "gregorian"
+              ? Date.UTC(1900, 0, 1) / 86400000
+              : -719528;
           const max =
-            calendar === "hebrew" ? Date.UTC(2100, 11, 31) / 86400000 : 2932896;
+            calendar !== "gregorian"
+              ? Date.UTC(2100, 11, 31) / 86400000
+              : 2932896;
           const requested =
             boundary === "past" ? -16 : boundary === "min" ? min : max;
           const day =

@@ -14,6 +14,19 @@ import {
 } from "wkly-datetime-picker.adapters";
 /** Rendered buffer weeks on each side of the visible calendar. */
 export const DEFAULT_OVERSCAN_WEEKS = 3;
+/** Full month coordinates may extend beyond an adapter's supported interval. */
+export function calendarMonthBounds(
+  adapter: WklyCalendarAdapter,
+  epochDay: number,
+): readonly [number, number] {
+  const date = adapter.epochDayToDate(epochDay);
+  // Convert only the supported anchor; day 1 can be outside the adapter's range.
+  const first = epochDay - date.day + 1;
+  return Object.freeze([
+    first,
+    first + adapter.getDaysInMonth(date.year, date.monthCode) - 1,
+  ]) as readonly [number, number];
+}
 export type WklyCloseReason =
   | "submit"
   | "auto-submit"

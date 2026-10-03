@@ -17,7 +17,11 @@ import {
   WklyViewportPreset,
   WklyValidationError,
 } from "wkly-datetime-picker.adapters";
-import { decodeIso, resolveWeekOffset } from "wkly-datetime-picker.adapters";
+import {
+  decodeIso,
+  encodeIso,
+  resolveWeekOffset,
+} from "wkly-datetime-picker.adapters";
 import {
   RuntimeConfig,
   RuntimeMessage,
@@ -99,7 +103,8 @@ export class DemoComponent implements OnInit, OnDestroy {
     this.reset();
     if (
       this.config.id === "gregorian-pair" ||
-      this.config.id === "hebrew-pair"
+      this.config.id === "hebrew-pair" ||
+      this.config.id === "hijri-pair"
     ) {
       this.pairSubscription = this.pairs.changed.subscribe((value) =>
         this.setExternal(value),
@@ -114,7 +119,8 @@ export class DemoComponent implements OnInit, OnDestroy {
       mode: this.mode,
       value: this.value,
       locale: this.locale,
-      calendar: this.config.calendar === "hebrew" ? "hebrew" : "gregorian",
+      calendar: (this.config.calendar ||
+        "gregorian") as RuntimeConfig["calendar"],
       presentation: (this.config.presentation ||
         "inline") as RuntimeConfig["presentation"],
       weekOffset: this.weekOffset,
@@ -211,6 +217,9 @@ export class DemoComponent implements OnInit, OnDestroy {
     this.value = value;
     this.emitted++;
     this.selection.emit(value);
+    // Companions receive a programmatic value, so synchronization emits no extra user edits.
+    if (this.config.id.endsWith("-pair") && typeof value === "string")
+      this.pairs.select(encodeIso(decodeIso(value), "date"));
   }
   clear(): void {
     this.value = null;

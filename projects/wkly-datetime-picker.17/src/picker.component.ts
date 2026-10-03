@@ -42,6 +42,7 @@ import {
   WklyValidationError,
 } from "wkly-datetime-picker.adapters";
 import {
+  calendarMonthBounds,
   resolveWklyTranslation,
   createWeekRows,
   validateDrafts,
@@ -779,8 +780,7 @@ export class WklyDateTimePickerComponent
     if (preset && viewportPreset.kind !== "weeks") {
       const d = this.adapter.epochDayToDate(day);
       this.initialMonth = d.year + "/" + d.monthCode;
-      const start = this.adapter.dateToEpochDay({ ...d, day: 1 }),
-        end = start + this.adapter.getDaysInMonth(d.year, d.monthCode) - 1;
+      const [start, end] = calendarMonthBounds(this.adapter, day);
       this.firstWeek = absoluteWeekOf(start, this.effectiveOffset);
       this.visibleCount =
         absoluteWeekOf(end, this.effectiveOffset) - this.firstWeek + 1;

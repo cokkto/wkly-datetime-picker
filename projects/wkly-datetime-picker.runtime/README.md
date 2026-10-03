@@ -6,6 +6,8 @@ This private project provides the shared picker controller and template, configu
 
 The testbed index is `/`. Case routes are `/cases/{empty|contained|form|booking}/<example-id>`. The `empty` layout is the minimal component fixture; the others exercise bounded integration layouts. Testbed CSS avoids the picker internals and does not include the showcase stylesheet.
 
+The `hebrew` and `hijri` cases use the Git source adapters; `hijri` displays the tabular civil calendar with `ar-EG` labels and digits. `/calendars` connects Gregorian, Hebrew, and Hijri date pickers through the shared selection service on every supported Angular version.
+
 ```sh
 npm run showcase:start
 npm run showcase:build
