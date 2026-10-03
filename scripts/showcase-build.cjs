@@ -1,10 +1,31 @@
 const fs = require("fs");
 const path = require("path");
+const { execFileSync } = require("child_process");
 const { createRequire } = require("module");
 const supported = require("../supported-angular.json");
 const root = path.resolve(__dirname, "..");
 const hostRoot = path.join(root, "projects/wkly-datetime-picker.showcase");
 const hostRequire = createRequire(path.join(hostRoot, "package.json"));
+
+function prepareLegacyAngular() {
+  if (!supported["11"]) return;
+  // Angular 11 dependencies use View Engine metadata; esbuild needs ngcc's in-place module output.
+  execFileSync(
+    process.execPath,
+    [
+      path.join(root, "node_modules/@angular/compiler-cli/ngcc/main-ngcc.js"),
+      "--source",
+      path.join(root, "node_modules"),
+      "--properties",
+      "module",
+      "main",
+      "--first-only",
+      "--loglevel",
+      "warn",
+    ],
+    { cwd: root, stdio: "inherit" },
+  );
+}
 
 function angularPlugin(ts, configPath, compilerCli) {
   return {
@@ -235,8 +256,9 @@ function assets() {
   }
 }
 
-module.exports = { assets, builds, majors };
+module.exports = { assets, builds, majors, prepareLegacyAngular };
 if (require.main === module) {
+  prepareLegacyAngular();
   assets();
   Promise.all(
     builds.map(({ esbuild, options }) => esbuild.build(options)),

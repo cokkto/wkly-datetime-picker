@@ -27,6 +27,21 @@ test("packed public imports, adapter rendering and reactive forms", async ({
   expect(errors).toEqual([]);
 });
 
+test("packed native dialog and optional CDK overlay open", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  await page.locator("#dialog").click();
+  await expect(page.locator("dialog[open]")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("dialog[open]")).toHaveCount(0);
+  await page.locator("#overlay").click();
+  await expect(page.locator('.cdk-overlay-pane[role="dialog"]')).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(page.locator('.cdk-overlay-pane[role="dialog"]')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test("picker visual layout at desktop and mobile widths", async ({
   page,
 }, testInfo) => {

@@ -1,19 +1,41 @@
-const { assets, builds, majors } = require("./showcase-build.cjs");
+const {
+  assets,
+  builds,
+  majors,
+  prepareLegacyAngular,
+} = require("./showcase-build.cjs");
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
 const output = path.resolve(__dirname, "../dist/showcase");
 
 (async () => {
-  assets();
-  const contexts = await Promise.all(
-    builds.map(async ({ esbuild, options }) => {
-      const context = await esbuild.context(options);
-      await context.rebuild();
-      await context.watch();
-      return context;
-    }),
-  );
+  const prebuilt = process.argv.includes("--prebuilt");
+  let contexts = [];
+  if (prebuilt) {
+    for (const file of [
+      path.join(output, "index.html"),
+      path.join(output, "main.js"),
+      ...majors.map((major) =>
+        path.join(output, "runtime", major, "index.html"),
+      ),
+      ...majors.map((major) => path.join(output, "runtime", major, "main.js")),
+    ]) {
+      if (!fs.existsSync(file))
+        throw new Error(`Missing showcase asset: ${file}`);
+    }
+  } else {
+    prepareLegacyAngular();
+    assets();
+    contexts = await Promise.all(
+      builds.map(async ({ esbuild, options }) => {
+        const context = await esbuild.context(options);
+        await context.rebuild();
+        await context.watch();
+        return context;
+      }),
+    );
+  }
   const server = http.createServer((req, res) => {
     const pathname = decodeURIComponent((req.url || "/").split("?")[0]);
     const requested = path.resolve(output, "." + pathname);

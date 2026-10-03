@@ -1,0 +1,21 @@
+.runtime-stage wkly-datetime-picker {
+  --wkly-accent-color: inherit;
+  --wkly-size-multiplier: inherit;
+}
+
+.runtime-stage:not(.dark) wkly-datetime-picker {
+  --wkly-accent-color-alternate: color-mix(
+    in srgb,
+    var(--wkly-accent-color) 45%,
+    white
+  );
+  --wkly-range-color: color-mix(in srgb, var(--wkly-accent-color) 14%, white);
+}
+
+.runtime-stage.dark wkly-datetime-picker {
+  --wkly-accent-color-alternate: color-mix(
+    in srgb,
+    var(--wkly-accent-color) 45%,
+    #21232b
+  );
+}

@@ -3,7 +3,9 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { createHash } = require("node:crypto");
 const { rows, affected } = require("./compatibility.cjs");
+const { verifyPackedConsumer } = require("./verify-packed-consumer.cjs");
 test("current packages validate and global changes select all", () => {
   assert.ok(rows().length);
   assert.deepEqual(
@@ -26,6 +28,10 @@ test("future packages and transitive shared dependencies need no script changes"
     fs.copyFileSync(
       __filename.replace(".test.cjs", ".cjs"),
       path.join(dir, "scripts/compatibility.cjs"),
+    );
+    fs.copyFileSync(
+      path.join(__dirname, "verify-packed-consumer.cjs"),
+      path.join(dir, "scripts/verify-packed-consumer.cjs"),
     );
     const metadata = {};
     const base = require("../supported-angular.json")["11"];
@@ -81,6 +87,116 @@ test("future packages and transitive shared dependencies need no script changes"
       node: "bad",
     };
     assert.throws(() => fixture.rows(metadata), /Node/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("packed consumer verifies local tarball identity and public entry paths", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wkly-packed-"));
+  const consumer = path.join(dir, "consumer");
+  const dist = path.join(dir, "dist");
+  const names = [
+    "wkly-datetime-picker.core",
+    "wkly-datetime-picker.adapters",
+    "wkly-datetime-picker",
+    "wkly-datetime-picker.11",
+  ];
+  const dependencies = {};
+  const lock = { packages: { "": { dependencies } } };
+  const write = (file, value) =>
+    fs.writeFileSync(file, JSON.stringify(value, null, 2));
+  try {
+    for (const name of names) {
+      const spec = `file:../dist/${name}/${name}-1.0.0.tgz`;
+      const packedDir = path.join(dist, name);
+      const installedDir = path.join(consumer, "node_modules", name);
+      fs.mkdirSync(packedDir, { recursive: true });
+      fs.mkdirSync(installedDir, { recursive: true });
+      const manifest = {
+        name,
+        version: "1.0.0",
+        main: "index.js",
+        types: "index.d.ts",
+        ...(name.endsWith(".11")
+          ? {
+              exports: {
+                "./cdk-overlay": {
+                  types: "./overlay.d.ts",
+                  default: "./overlay.js",
+                },
+              },
+            }
+          : {}),
+      };
+      for (const packageDir of [packedDir, installedDir]) {
+        write(path.join(packageDir, "package.json"), manifest);
+        for (const file of [
+          "index.js",
+          "index.d.ts",
+          "LICENSE",
+          "README.md",
+          "API.md",
+          ...(name.endsWith(".11") ? ["overlay.js", "overlay.d.ts"] : []),
+        ])
+          fs.writeFileSync(path.join(packageDir, file), "fixture\n");
+      }
+      const tarball = Buffer.from(`${name} tarball`);
+      fs.writeFileSync(path.join(packedDir, `${name}-1.0.0.tgz`), tarball);
+      dependencies[name] = spec;
+      lock.packages[`node_modules/${name}`] = {
+        version: "1.0.0",
+        resolved: spec,
+        integrity:
+          "sha512-" + createHash("sha512").update(tarball).digest("base64"),
+      };
+    }
+    write(path.join(consumer, "package-lock.json"), lock);
+    const options = { consumer, dist, names, dependencies };
+    verifyPackedConsumer(options);
+    lock.packages["node_modules/wkly-datetime-picker.core"].integrity =
+      "sha512-wrong";
+    write(path.join(consumer, "package-lock.json"), lock);
+    assert.throws(() => verifyPackedConsumer(options), /integrity mismatch/);
+    lock.packages["node_modules/wkly-datetime-picker.core"].integrity =
+      "sha512-" +
+      createHash("sha512")
+        .update(Buffer.from("wkly-datetime-picker.core tarball"))
+        .digest("base64");
+    lock.packages["node_modules/other/node_modules/wkly-datetime-picker.core"] =
+      { version: "1.0.0" };
+    write(path.join(consumer, "package-lock.json"), lock);
+    assert.throws(
+      () => verifyPackedConsumer(options),
+      /Unexpected WKLY install/,
+    );
+    delete lock.packages[
+      "node_modules/other/node_modules/wkly-datetime-picker.core"
+    ];
+    write(path.join(consumer, "package-lock.json"), lock);
+    fs.rmSync(path.join(consumer, "node_modules", names[0], "index.d.ts"));
+    assert.throws(() => verifyPackedConsumer(options), /Missing or escaped/);
+    fs.writeFileSync(
+      path.join(consumer, "node_modules", names[0], "index.d.ts"),
+      "fixture\n",
+    );
+    for (const packageDir of [
+      path.join(dist, names[3]),
+      path.join(consumer, "node_modules", names[3]),
+    ]) {
+      const secondary = path.join(packageDir, "cdk-overlay");
+      fs.mkdirSync(secondary);
+      write(path.join(secondary, "package.json"), {
+        module: "../overlay.js",
+      });
+    }
+    verifyPackedConsumer(options);
+    const cdkDir = path.join(consumer, "node_modules", "@angular", "cdk");
+    fs.mkdirSync(cdkDir, { recursive: true });
+    write(path.join(cdkDir, "package.json"), { version: "11.2.13" });
+    lock.packages["node_modules/@angular/cdk"] = { version: "11.2.13" };
+    write(path.join(consumer, "package-lock.json"), lock);
+    verifyPackedConsumer({ ...options, cdkVersion: "11.2.13" });
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

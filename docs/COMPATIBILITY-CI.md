@@ -19,11 +19,19 @@ each toolchain as well as in the independent shared job. The existing pnpm devel
 workspace and its lockfile are not used or modified. Shared packages build first,
 then the selected Angular package runs its own ng-packagr configuration. Package
 boundaries and npm pack contents are checked. Actual tarballs are installed into a
-fresh consumer, including local shared packages instead of registry copies.
+fresh consumer beside the toolchain, including local shared packages instead of
+registry copies. Its first install omits the optional CDK, AOT compiles the inline
+picker and native dialog, and checks server rendering. CDK is then installed at the
+matching major, and a second AOT build compiles the overlay entry point and trigger.
+Both installs verify that the lockfile points to the exact local tarballs by SHA-512,
+that installed versions and dependencies match the packed manifests, and that all
+declared JavaScript and declaration entry paths exist. The base manifest and lockfile
+are saved before CDK is added.
 
 The consumer AOT compiles public package imports and discovered secondary ng-packagr
-entry points. One reusable browser contract checks Gregorian adapter rendering,
-date selection, reactive form updates in both directions and disabled state. A desktop
+entry points. Browser contracts check Gregorian adapter rendering, native-dialog and
+CDK-overlay opening, date selection, reactive form updates in both directions and
+disabled state. A desktop
 and mobile visual contract checks bounds, visibility and overlap, and attaches picker
 screenshots for each major. It is a layout check rather than a pixel baseline. A
 server-rendering contract checks shared imports without Angular and rendering without
@@ -32,6 +40,8 @@ The shared core/adapter unit contract source is reused for every major.
 The showcase's UI/iframe bridge suite runs in a separate Chromium job within this
 workflow. It iterates over every major in `supported-angular.json` and is also
 available locally through `npm run showcase:test:e2e`.
+Before bundling, the showcase build runs Angular 11's ngcc over the hoisted workspace
+dependencies so its View Engine modules have Ivy metadata for the esbuild runtime.
 That job also runs `npm run lint` and `npm run lint:test` before the build. Lint
 uses each version's installed TypeScript and Angular template parser, including
 Angular 11's older template grammar.
@@ -79,7 +89,8 @@ npm run test:angular -- 11
 ```
 
 `prepare` replaces only `.compat/11`. `test:angular` installs, builds, packs, AOT
-compiles and runs SSR. Browser tests use a separate modern Node installation:
+compiles and runs SSR; it replaces the generated `.compat/consumer-11` on each run.
+Browser tests use a separate modern Node installation:
 
 ```sh
 npm install --prefix .compat/browser --no-audit --no-fund @playwright/test@1.58.2
@@ -96,7 +107,8 @@ For another major, substitute its number and use the Node version in `supported-
 
 Direct compatibility dependencies are pinned in the manifest. Transitive dependencies
 resolve on a fresh run, deliberately avoiding twelve large committed lockfiles.
-Both generated install lockfiles, packed tarballs, and failure traces are uploaded as
+Both generated install lockfiles, the consumer's base-stage lockfile, packed tarballs,
+and failure traces are uploaded as
 `compatibility-N` artifacts. This gives a record of the actual dependency resolution;
 it does not promise identical transitive dependencies between separate fresh runs.
 To reproduce an install failure, download its locks, put each beside the corresponding
