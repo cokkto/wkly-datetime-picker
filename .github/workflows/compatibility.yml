@@ -87,7 +87,7 @@ jobs:
           npm install --prefix .compat/browser --no-audit --no-fund @playwright/test@1.58.2
           node .compat/browser/node_modules/@playwright/test/cli.js install --with-deps chromium
       - name: Packed package browser and visual contracts
-        run: node .compat/browser/node_modules/@playwright/test/cli.js test --config tests/compatibility/playwright.config.cjs
+        run: node .compat/browser/node_modules/@playwright/test/cli.js test --config projects/wkly-datetime-picker.tests/compatibility/playwright.config.cjs
         env:
           NODE_PATH: ${{ github.workspace }}/.compat/browser/node_modules
       - uses: actions/upload-artifact@v7

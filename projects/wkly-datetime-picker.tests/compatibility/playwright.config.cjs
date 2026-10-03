@@ -16,8 +16,9 @@ module.exports = defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: "node tests/compatibility/server.cjs",
-    cwd: path.resolve(__dirname, "../.."),
+    command:
+      "node projects/wkly-datetime-picker.tests/compatibility/server.cjs",
+    cwd: path.resolve(__dirname, "../../.."),
     url: "http://127.0.0.1:4300",
     reuseExistingServer: false,
   },

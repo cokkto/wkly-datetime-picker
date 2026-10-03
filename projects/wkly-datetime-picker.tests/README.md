@@ -25,7 +25,7 @@ The project is registered in the pnpm workspace. It also supports `npm --prefix 
 - `e2e/visual/`: geometry invariants and screenshot comparisons.
 - `e2e/runtime-bridge.spec.ts`: existing integration checks across Angular 11–22.
 - Other top-level `e2e/*.spec.ts` and the original named Chromium baselines are retained historical pre-iframe tests. They were already excluded by the old config. They are not counted as executed coverage; port remaining scenarios before enabling them.
-- `tests/compatibility/` at repository root remains the generated packed Angular consumer/SSR test infrastructure.
+- `compatibility/`: packed Angular consumer, SSR, browser contracts and their server/configuration. Compatibility workspace preparation copies these fixtures as part of `projects/`.
 
 ## Matrix and interpretation
 

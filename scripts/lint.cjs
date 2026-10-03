@@ -208,7 +208,6 @@ async function main() {
     }
     for (const directory of [
       "scripts",
-      "tests",
       "projects/wkly-datetime-picker.tests",
     ]) {
       for (const file of filesIn(path.join(root, directory))) {

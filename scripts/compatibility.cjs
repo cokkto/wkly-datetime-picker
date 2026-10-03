@@ -116,7 +116,6 @@ function prepare(major) {
   for (const name of [
     "projects",
     "scripts",
-    "tests",
     "docs",
     "tsconfig.json",
     "supported-angular.json",
@@ -215,7 +214,13 @@ function test(major) {
     path.join(consumer, "package.base.json"),
   );
   let source = fs
-    .readFileSync(path.join(root, "tests/compatibility/main.ts"), "utf8")
+    .readFileSync(
+      path.join(
+        root,
+        "projects/wkly-datetime-picker.tests/compatibility/main.ts",
+      ),
+      "utf8",
+    )
     .replaceAll("__PACKAGE__", supported[major].package);
   const entries = [];
   function secondaryEntries(folder, prefix = "") {
@@ -298,7 +303,10 @@ function test(major) {
   }
   buildConsumer();
   fs.copyFileSync(
-    path.join(root, "tests/compatibility/ssr.cjs"),
+    path.join(
+      root,
+      "projects/wkly-datetime-picker.tests/compatibility/ssr.cjs",
+    ),
     path.join(consumer, "ssr.cjs"),
   );
   run(process.execPath, ["ssr.cjs", supported[major].package], consumer);
