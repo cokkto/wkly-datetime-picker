@@ -36,7 +36,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "node scripts/serve.cjs",
+    command: process.env.CI
+      ? "node scripts/serve.cjs --prebuilt"
+      : "node scripts/serve.cjs",
     url: "http://127.0.0.1:4200",
     reuseExistingServer: false,
     env: { WKLY_E2E: "1" },

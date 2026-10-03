@@ -244,7 +244,7 @@ function test(major) {
       ...(Number(major) >= 22 ? { ignoreDeprecations: "6.0" } : {}),
       target: "es2018",
       module: "es2020",
-      moduleResolution: "node",
+      moduleResolution: Number(major) >= 21 ? "bundler" : "node",
       experimentalDecorators: true,
       emitDecoratorMetadata: true,
       skipLibCheck: true,

@@ -120,6 +120,9 @@ jobs:
       - run: npm run lint:test
       - run: npm run build
       - run: node scripts/playwright.cjs install --with-deps chromium
+      - run: npm run showcase:build
+        env:
+          WKLY_E2E: '1'
       - run: npm run showcase:test:e2e -- --project=chromium
       - uses: actions/upload-artifact@v7
         if: always()
