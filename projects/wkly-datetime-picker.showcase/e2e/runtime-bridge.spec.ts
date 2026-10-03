@@ -20,6 +20,34 @@ for (const major of Object.keys(supported)) {
         await expect(
           page.locator(`iframe[data-runtime-version='${major}']`).first(),
         ).toBeVisible();
+        if (route === "styling") {
+          for (const [id, accent, size] of [
+            ["default-style", "#176c55", "1"],
+            ["custom-style", "#5146a5", "1.15"],
+            ["dark-style", "#0e76b7", "1"],
+            ["large-style", "#854320", "1.3"],
+          ]) {
+            const picker = page
+              .getByTestId(id)
+              .frameLocator(`iframe[data-runtime-version='${major}']`)
+              .locator("wkly-datetime-picker");
+            await expect(picker).toHaveCSS("--wkly-accent-color", accent);
+            await expect(picker).toHaveCSS("--wkly-size-multiplier", size);
+          }
+          const indigo = page
+            .getByTestId("custom-style")
+            .frameLocator(`iframe[data-runtime-version='${major}']`)
+            .locator("wkly-datetime-picker");
+          await expect(indigo.locator("button.day.selected")).toHaveCSS(
+            "background-color",
+            "rgb(81, 70, 165)",
+          );
+          await expect(indigo).toHaveCSS(
+            "--wkly-accent-color-alternate",
+            /#5146a5/,
+          );
+          await expect(indigo).toHaveCSS("--wkly-range-color", /#5146a5/);
+        }
       }
       await page.reload();
       await page

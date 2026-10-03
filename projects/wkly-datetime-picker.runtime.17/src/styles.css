@@ -1,5 +1,6 @@
 @import "@angular/cdk/overlay-prebuilt.css";
 @import "@angular/material/prebuilt-themes/indigo-pink.css";
+@import "../../wkly-datetime-picker.runtime/src/palette.css";
 
 html,
 body {
