@@ -1,10 +1,22 @@
 import { expect } from "../fixtures";
 import type { Page } from "@playwright/test";
-export async function openPicker(page: Page, id = "virtual-weeks") {
+export async function openPicker(
+  page: Page,
+  id = "virtual-weeks",
+  locale?: string,
+) {
   await page.goto(`/cases/empty/${id}`);
   const panel = page.getByTestId(id);
   const picker = page.locator("wkly-datetime-picker");
   await expect(picker).toBeVisible();
+  if (locale) {
+    await panel.getByText("Configure this example", { exact: true }).click();
+    await panel
+      .getByRole("combobox", { name: "Locale", exact: true })
+      .selectOption(locale);
+    await expect(panel.getByTestId("context")).toContainText(`${locale} ·`);
+    await panel.getByText("Configure this example", { exact: true }).click();
+  }
   const scroller = picker.locator(".week-scroll");
   if (id !== "time" && id !== "time-range")
     await expect(scroller.locator(".week-row").first()).toBeAttached();

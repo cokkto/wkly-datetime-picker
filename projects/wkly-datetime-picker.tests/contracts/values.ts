@@ -88,6 +88,39 @@ for (const mode of [
       ),
     );
   });
+  test(`${mode}: date predicate applicability`, () => {
+    assert.deepEqual(
+      validateSelection(
+        value,
+        {
+          mode,
+          allowRangeAcrossDisabled: true,
+          isDateDisabled: () => true,
+        },
+        adapter,
+      ),
+      mode.startsWith("time")
+        ? []
+        : (range ? [low, high] : [low]).map((v, i) =>
+            error("disabled-endpoint", v, "date", endpoints[i] as any),
+          ),
+    );
+  });
+  test(`${mode}: aligned steps accepted`, () => {
+    assert.deepEqual(
+      validateSelection(
+        value,
+        {
+          mode,
+          minuteStep: 15,
+          secondStep: 30,
+          showSeconds: true,
+        },
+        adapter,
+      ),
+      [],
+    );
+  });
   test(`${mode}: hidden fields rejected`, () => {
     const bad = low.replace("00.000Z", "01.000Z");
     assert.deepEqual(

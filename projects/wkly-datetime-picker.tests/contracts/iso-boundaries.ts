@@ -6,6 +6,7 @@ import {
   gregorianDay,
   WklyGregorianCalendarAdapter,
   WklyValidationException,
+  validateSelection,
 } from "wkly-datetime-picker.adapters";
 const adapter = new WklyGregorianCalendarAdapter();
 for (const [year, month, day, epoch, iso] of [
@@ -21,6 +22,19 @@ for (const [year, month, day, epoch, iso] of [
     assert.equal(adapter.dateToEpochDay(date), epoch);
     assert.equal(decodeIso(iso).epochDay, epoch);
     assert.equal(encodeIso(decodeIso(iso), "datetime", true), iso);
+    assert.deepEqual(
+      validateSelection(
+        iso,
+        {
+          mode: "datetime",
+          showSeconds: true,
+          min: iso,
+          max: iso,
+        },
+        adapter,
+      ),
+      [],
+    );
   });
 test("reject days immediately outside Gregorian interval", () => {
   for (const day of [-719529, 2932897])

@@ -172,3 +172,62 @@ test("additional validators run for malformed ISO, skip empty and wrong shape", 
   validateSelection([a, b], config, adapter);
   assert.deepEqual(calls, ["invalid"]);
 });
+
+for (const mode of ["date-range", "datetime-range", "time-range"] as const)
+  test(`${mode}: range callback orders endpoints while validators retain input`, () => {
+    const pair =
+      mode === "time-range"
+        ? (["0000-01-01T10:00:00.000Z", "0000-01-01T12:00:00.000Z"] as const)
+        : ([a, b] as const);
+    const input = [pair[1], pair[0]] as const;
+    const first = error("custom-validator", pair, "range");
+    const second = error("custom-validator", input);
+    const calls: string[] = [];
+    assert.deepEqual(
+      validateSelection(
+        input,
+        {
+          mode,
+          rangeValidator: (value, actualMode) => {
+            assert.deepEqual(value, pair);
+            assert.equal(actualMode, mode);
+            calls.push("range");
+            return first;
+          },
+          validators: [
+            (value) => {
+              assert.equal(value, input);
+              calls.push("accept");
+              return null;
+            },
+            (value) => {
+              assert.equal(value, input);
+              calls.push("reject");
+              return second;
+            },
+          ],
+        },
+        adapter,
+      ),
+      [first, second],
+    );
+    assert.deepEqual(calls, ["range", "accept", "reject"]);
+    const failure = new Error("range value validator failure");
+    assert.throws(
+      () =>
+        validateSelection(
+          input,
+          {
+            mode,
+            validators: [
+              (value) => {
+                assert.equal(value, input);
+                throw failure;
+              },
+            ],
+          },
+          adapter,
+        ),
+      (e) => e === failure,
+    );
+  });
