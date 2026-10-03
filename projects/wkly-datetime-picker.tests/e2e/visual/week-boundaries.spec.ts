@@ -11,33 +11,35 @@ for (const zoom of [0.8, 1, 1.25, 1.5])
       element.style.setProperty("--wkly-size-multiplier", "1.15");
     }, zoom);
     for (const step of ["initial", "navigation", "scroll"]) {
-      if (step === "navigation")
-        await picker
-          .getByRole("button", { name: "Next week", exact: true })
-          .click();
-      if (step === "scroll")
-        await scroller.evaluate((element: HTMLElement) => {
-          element.scrollTop += element.clientHeight * 0.35;
-        });
-      await expect
-        .poll(() =>
-          scroller.evaluate((element: HTMLElement) => {
-            const view = element.getBoundingClientRect();
-            const rows = Array.from(
-              element.querySelectorAll<HTMLElement>(".week-row"),
-              (row) => row.getBoundingClientRect(),
-            );
-            return {
-              completeWeeks: rows.filter(
-                (r) => r.top >= view.top - 1 && r.bottom <= view.bottom + 1,
-              ).length,
-              heightFitsFourWeeks:
-                !!rows.length &&
-                Math.abs(view.height - 4 * rows[0].height) <= 1,
-            };
-          }),
-        )
-        .toEqual({ completeWeeks: 4, heightFitsFourWeeks: true });
+      await test.step(`${step}: four complete weeks`, async () => {
+        if (step === "navigation")
+          await picker
+            .getByRole("button", { name: "Next week", exact: true })
+            .click();
+        if (step === "scroll")
+          await scroller.evaluate((element: HTMLElement) => {
+            element.scrollTop += element.clientHeight * 0.35;
+          });
+        await expect
+          .poll(() =>
+            scroller.evaluate((element: HTMLElement) => {
+              const view = element.getBoundingClientRect();
+              const rows = Array.from(
+                element.querySelectorAll<HTMLElement>(".week-row"),
+                (row) => row.getBoundingClientRect(),
+              );
+              return {
+                completeWeeks: rows.filter(
+                  (r) => r.top >= view.top - 1 && r.bottom <= view.bottom + 1,
+                ).length,
+                heightFitsFourWeeks:
+                  !!rows.length &&
+                  Math.abs(view.height - 4 * rows[0].height) <= 1,
+              };
+            }),
+          )
+          .toEqual({ completeWeeks: 4, heightFitsFourWeeks: true });
+      });
     }
   });
 for (const width of SCREEN_TYPES_MAIN)

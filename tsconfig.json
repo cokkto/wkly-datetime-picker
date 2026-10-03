@@ -93,6 +93,6 @@
       ]
     }
   },
-  "include": ["projects/**/*.ts", "projects/wkly-datetime-picker.tests/e2e/helpers/constants.js"],
+  "include": ["projects/**/*.ts"],
   "exclude": ["**/e2e/**", "projects/wkly-datetime-picker.tests/**"]
 }
