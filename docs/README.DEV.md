@@ -28,10 +28,43 @@ The watcher serves the evergreen showcase at `http://wkly.localhost:4200` (also 
 | `npm run showcase:build` | Build the evergreen app and all versioned testbeds |
 | `npm run showcase:browsers` | Install Playwright Chromium, Firefox, and WebKit engines |
 | `npm run showcase:test:e2e -- --project=angular-22-chromium` | Run active browser specs for one major/browser; the full command runs all configured projects |
+| `npm run showcase:test:e2e:update` | Regenerate screenshot baselines while running the full suite; use the filters below for smaller updates |
 | `npm run ci:test` and `npm run ci:matrix` | Check compatibility planning and inspect the supported matrix |
 | `npm run format` | Format code and configuration after every set of edits, including docs |
 
 The root formatter currently covers TypeScript, HTML, CSS, CommonJS, and JSON, but not Markdown. Review Markdown links and formatting directly. Browser tests write reports to `playwright-report/` and `test-results/`. Screenshots use Windows baselines; run baseline updates deliberately and review the resulting images. The [test README](../projects/wkly-datetime-picker.tests/README.md) describes active suites and known coverage limits.
+
+### Playwright filters and screenshot updates
+
+Pass Playwright arguments after `--`. Use `--project` to select one Angular version and browser; without it, matching tests run across all configured projects. `--grep` matches test titles using a regular expression, and `$` anchors the end of the title.
+
+Run one test:
+
+```sh
+npm run showcase:test:e2e -- --project=angular-22-chromium --grep "rendered weeks 360 zoom 1$"
+```
+
+Run two tests (`|` matches either title, and `[.]` matches a literal decimal point):
+
+```sh
+npm run showcase:test:e2e -- --project=angular-22-chromium --grep "rendered weeks 360 zoom 1$|rendered weeks 768 zoom 1[.]25$"
+```
+
+Update all three screenshot baselines in the screenshot spec for one browser profile:
+
+```sh
+npm run showcase:test:e2e:update -- --project=angular-22-chromium visual/snapshots.spec.ts
+```
+
+Update the image for just one test:
+
+```sh
+npm run showcase:test:e2e:update -- --project=angular-22-chromium visual/snapshots.spec.ts --grep "rendered weeks 360 zoom 1$"
+```
+
+The spec path also works with `showcase:test:e2e` to run that file without updating images. Repeat `--project` to select multiple browser/version profiles. Add `--list` to any of these commands to preview the selected tests without launching browsers or changing images; add `--retries=0` when investigating failures.
+
+Screenshot baselines live in `projects/wkly-datetime-picker.tests/e2e/baselines/<browser>/` and are shared across Angular versions within each browser profile. Updating Angular 22 Chromium therefore updates the images used by the other Angular Chromium projects too.
 
 ## Package release model
 
