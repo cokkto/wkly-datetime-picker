@@ -1,6 +1,7 @@
 import { test, expect } from "../fixtures";
 import { openPicker } from "../helpers/picker";
-for (const width of [360, 768, 1440])
+import { SCREEN_TYPES_MAIN, SCREEN_SIZE } from "../helpers/constants";
+for (const width of SCREEN_TYPES_MAIN)
   for (const zoom of [0.8, 1, 1.25, 1.5])
     test(`week geometry viewport ${width} CSS zoom ${zoom}`, async ({
       page,
@@ -65,7 +66,10 @@ for (const width of [360, 768, 1440])
         .locator(".day.selected")
         .getAttribute("data-day");
       await page.setViewportSize({
-        width: width === 360 ? 1440 : 360,
+        width:
+          width === SCREEN_SIZE.MOBILE
+            ? SCREEN_SIZE.DESKTOP
+            : SCREEN_SIZE.MOBILE,
         height: 844,
       });
       await expect(picker.locator(`.day[data-day='${selected}']`)).toHaveClass(

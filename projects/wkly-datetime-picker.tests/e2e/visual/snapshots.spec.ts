@@ -1,9 +1,10 @@
 import { test, expect } from "../fixtures";
 import { openPicker } from "../helpers/picker";
+import { SCREEN_SIZE } from "../helpers/constants";
 for (const [width, zoom] of [
-  [360, 1],
-  [768, 1.25],
-  [1440, 0.8],
+  [SCREEN_SIZE.MOBILE, 1],
+  [SCREEN_SIZE.TABLET, 1.25],
+  [SCREEN_SIZE.DESKTOP, 0.8],
 ])
   test(`rendered weeks ${width} zoom ${zoom}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });

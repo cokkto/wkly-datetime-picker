@@ -1,5 +1,6 @@
 import { test, expect } from "../fixtures";
 import { openPicker, visibleDays } from "../helpers/picker";
+import { SCREEN_TYPES_MAIN, SCREEN_SIZE } from "../helpers/constants";
 test("keyboard crosses week boundaries and pages without committing focus", async ({
   page,
 }) => {
@@ -32,7 +33,7 @@ test("resize after navigation preserves selection and usable keyboard focus", as
 }) => {
   const { picker, panel } = await openPicker(page);
   const before = await panel.getByTestId("value").textContent();
-  for (const width of [360, 1440, 768, 390]) {
+  for (const width of [...SCREEN_TYPES_MAIN, SCREEN_SIZE.MOBILE_LARGE]) {
     await page.setViewportSize({ width, height: 844 });
     await picker
       .getByRole("button", { name: "Next week", exact: true })

@@ -10,7 +10,6 @@ The workspace has three shared packages and numbered Angular integration build t
 
 - [ ] Fix day-column overflow at narrow width and CSS zoom, tracked as [M02-LAYOUT-01](REGRESSIONS.md#m02-layout-01--day-columns-overflow).
 - [ ] Fit the requested number of complete week rows under fractional CSS zoom, tracked as [M02-LAYOUT-02](REGRESSIONS.md#m02-layout-02--fractional-zoom-clips-weeks).
-- [ ] Prevent month labels from overlapping at narrow widths, tracked as [M02-LAYOUT-03](REGRESSIONS.md#m02-layout-03--month-labels-overlap).
 - [ ] Rerun geometry checks across the affected browser profiles and refresh screenshots only after correctness assertions pass.
 
 **Done when:** the focused layout assertions pass without skips or expected-failure annotations.

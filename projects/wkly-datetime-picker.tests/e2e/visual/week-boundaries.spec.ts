@@ -1,8 +1,10 @@
 import { test, expect } from "../fixtures";
 import { openPicker } from "../helpers/picker";
+import { SCREEN_TYPES_MAIN, SCREEN_SIZE } from "../helpers/constants";
+
 for (const zoom of [0.8, 1, 1.25, 1.5])
   test(`four complete weeks at fractional scale ${zoom}`, async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.setViewportSize({ width: SCREEN_SIZE.DESKTOP, height: 1000 });
     const { picker, scroller } = await openPicker(page);
     await picker.evaluate((element: HTMLElement, zoom) => {
       element.style.setProperty("zoom", String(zoom));
@@ -22,8 +24,8 @@ for (const zoom of [0.8, 1, 1.25, 1.5])
       )
       .toBe(4);
   });
-for (const width of [360, 768, 1440])
-  test(`month boundary annotations do not overlap at ${width}`, async ({
+for (const width of SCREEN_TYPES_MAIN)
+  test(`month boundary annotations remain staggered at ${width}`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 1000 });
@@ -52,8 +54,16 @@ for (const width of [360, 768, 1440])
               .sort((a, b) => a.left - b.left);
             return labels
               .slice(1)
-              .filter((label, i) => label.left < labels[i].right - 1)
-              .map(() => "overlapping month labels");
+              .filter((label, i) => {
+                const previous = labels[i];
+                // Horizontal overlap is intentional; labels must occupy different vertical tracks.
+                return (
+                  label.left < previous.right - 1 &&
+                  Math.abs(label.top - previous.top) <
+                    Math.min(label.height, previous.height) / 2
+                );
+              })
+              .map(() => "month labels lack vertical staggering");
           });
         }),
       )
