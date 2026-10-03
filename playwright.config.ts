@@ -1,13 +1,21 @@
 const { defineConfig, devices } = require("./scripts/playwright-api.cjs");
 export default defineConfig({
-  testDir: "./projects/wkly-datetime-picker.showcase/e2e",
-  testMatch: "runtime-bridge.spec.ts",
+  testDir: "./projects/wkly-datetime-picker.tests/e2e",
+  testMatch: [
+    "runtime-bridge.spec.ts",
+    "**/interaction/*.spec.ts",
+    "**/visual/*.spec.ts",
+  ],
   fullyParallel: true,
   timeout: 30000,
   expect: { timeout: 7000 },
   retries: process.env.CI ? 1 : 0,
   workers: 2,
-  reporter: [["list"], ["html", { open: "never" }]],
+  reporter: [
+    ["list"],
+    ["html", { open: "never" }],
+    ["json", { outputFile: "test-results/results.json" }],
+  ],
   use: {
     baseURL: "http://127.0.0.1:4200",
     timezoneId: "UTC",
@@ -17,6 +25,11 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   projects: [
+    { name: "edge", use: { ...devices["Desktop Edge"], channel: "msedge" } },
+    {
+      name: "chromium-hidpi",
+      use: { ...devices["Desktop Chrome"], deviceScaleFactor: 1.5 },
+    },
     {
       name: "chromium",
       use: {
@@ -40,7 +53,7 @@ export default defineConfig({
       ? "node scripts/serve.cjs --prebuilt"
       : "node scripts/serve.cjs",
     url: "http://127.0.0.1:4200",
-    reuseExistingServer: false,
+    reuseExistingServer: process.env.WKLY_E2E_REUSE_SERVER === "1",
     env: { WKLY_E2E: "1" },
     timeout: 60000,
   },

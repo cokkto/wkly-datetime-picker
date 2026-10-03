@@ -73,6 +73,7 @@ function affected(files, metadata = supported) {
   );
   const changed = new Set();
   for (const file of files) {
+    if (file.startsWith("projects/wkly-datetime-picker.tests/")) return all;
     const owner = packages.find((name) => file.startsWith(`projects/${name}/`));
     if (!owner) return all; // Build, tests, metadata, unknown/deleted paths: conservative full run.
     changed.add(owner);

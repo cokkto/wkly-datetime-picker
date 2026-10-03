@@ -11,6 +11,7 @@
     "lint": "node scripts/lint.cjs",
     "lint:test": "node scripts/lint.test.cjs",
     "test": "node scripts/test.cjs",
+    "test:installed": "node scripts/test-installed.cjs",
     "showcase:start": "node scripts/serve.cjs",
     "showcase": "node scripts/serve.cjs",
     "showcase:build": "node scripts/showcase-build.cjs",

@@ -1,0 +1,10 @@
+{
+  "name": "wkly-datetime-picker.tests",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "test": "cd ../.. && npm test",
+    "test:installed": "cd ../.. && npm run test:installed",
+    "test:e2e": "cd ../.. && node scripts/playwright.cjs test"
+  }
+}

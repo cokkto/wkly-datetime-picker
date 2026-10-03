@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { test, expect } from "../fixtures";
 
 for (const [name, direction] of [
   ["up", 1],
@@ -10,7 +10,9 @@ for (const [name, direction] of [
     test.skip(info.project.name !== "mobile");
     await page.goto("/single");
     const panel = page.getByTestId("datetime");
-    const minute = panel.getByRole("textbox", { name: "Minute", exact: true });
+    const minute = panel
+      .frameLocator("iframe")
+      .getByRole("textbox", { name: "Minute", exact: true });
     const before = Number(await minute.inputValue());
     const shown = (steps: number) =>
       String((before + direction * steps + 60) % 60).padStart(2, "0");

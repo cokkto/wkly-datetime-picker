@@ -94,5 +94,5 @@
     }
   },
   "include": ["projects/**/*.ts"],
-  "exclude": ["**/e2e/**"]
+  "exclude": ["**/e2e/**", "projects/wkly-datetime-picker.tests/**"]
 }

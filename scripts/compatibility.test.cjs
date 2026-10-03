@@ -15,6 +15,10 @@ test("current packages validate and global changes select all", () => {
   assert.deepEqual(affected(["scripts/build.cjs"]), rows());
   assert.deepEqual(affected(["supported-angular.json"]), rows());
   assert.deepEqual(
+    affected(["projects/wkly-datetime-picker.tests/contracts/values.ts"]),
+    rows(),
+  );
+  assert.deepEqual(
     affected(["projects/wkly-datetime-picker.core/src/public-api.ts"]),
     rows(),
   );

@@ -206,7 +206,11 @@ async function main() {
         : lintScript(file, newest, undefined, compiler);
       checked++;
     }
-    for (const directory of ["scripts", "tests"]) {
+    for (const directory of [
+      "scripts",
+      "tests",
+      "projects/wkly-datetime-picker.tests",
+    ]) {
       for (const file of filesIn(path.join(root, directory))) {
         errors += lintScript(
           file,

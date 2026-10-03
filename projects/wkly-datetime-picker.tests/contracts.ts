@@ -17,14 +17,9 @@ import {
   validateSelection,
   WklyGregorianCalendarAdapter,
 } from "wkly-datetime-picker.adapters";
-import { ShowcaseHebrewCalendarAdapter } from "../projects/wkly-datetime-picker.showcase/src/hebrew-adapter";
+import { ShowcaseHebrewCalendarAdapter } from "../wkly-datetime-picker.showcase/src/hebrew-adapter";
 import { createWeekRows, validateDrafts } from "wkly-datetime-picker";
-let count = 0;
-function test(name: string, action: () => void): void {
-  action();
-  count++;
-  console.log("PASS " + name);
-}
+import { test } from "./helpers/harness";
 const a = new WklyGregorianCalendarAdapter("en-GB");
 class FormatterProbe extends WklyGregorianCalendarAdapter {
   dateFormatter(
@@ -319,4 +314,3 @@ test("overnight datetime crossing checks only times actually inside the interval
     ).some((e) => e.code === "range-crosses-disabled"),
   );
 });
-console.log(`${count} contract groups passed`);

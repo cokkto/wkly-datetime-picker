@@ -6,6 +6,8 @@ settings:
 
 importers:
 
+  projects/wkly-datetime-picker.tests: {}
+
   .:
     devDependencies:
       '@angular/animations':
