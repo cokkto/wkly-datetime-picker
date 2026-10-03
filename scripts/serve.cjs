@@ -1,10 +1,16 @@
-const { assets, builds, majors } = require("./showcase-build.cjs");
+const {
+  assets,
+  builds,
+  majors,
+  prepareLegacyAngular,
+} = require("./showcase-build.cjs");
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
 const output = path.resolve(__dirname, "../dist/showcase");
 
 (async () => {
+  prepareLegacyAngular();
   assets();
   const contexts = await Promise.all(
     builds.map(async ({ esbuild, options }) => {

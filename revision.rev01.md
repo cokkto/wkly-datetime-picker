@@ -6,16 +6,15 @@
 
 - [`supported-angular.json`](supported-angular.json) registers Angular 11–22 with pinned Node, Angular, TypeScript, CLI, and CDK toolchains. Each numbered package declares a matching Angular and optional CDK peer range. The shared packages have no Angular dependency.
 - [Compatibility CI](.github/workflows/compatibility.yml) builds each registered major, packs the shared and matching Angular packages, installs their tarballs in a generated consumer, AOT compiles public imports, runs SSR, and exercises a browser contract. The showcase job separately runs lint and Chromium interaction tests. The planner includes every registered major on each CI run.
-- The consumer previously installed CDK unconditionally and only checked that secondary entry points exported symbols. The current change compiles inline and native-dialog use without CDK, then installs the matching CDK and compiles and opens an overlay trigger. Local Angular 11 and 22 tarball builds, SSR checks, and all three Chromium contracts pass. The other majors and CI still need verification. `pack:check` verifies tarball contents and dependency boundaries; it does not substitute for consumer installation.
+- The packed-consumer gate installs all four local tarballs without CDK, compiles inline and native-dialog use, and checks SSR. It then installs the matching CDK and compiles and opens the overlay. Both installs verify lockfile tarball SHA-512, local dependency resolution, installed manifests, and public entry paths. Fresh local runs passed for every registered Angular major (11–22), including three Chromium contracts per major.
+- Local shared contracts, lint, root build, and all 84 showcase Chromium tests pass. The showcase build now processes Angular 11 View Engine dependencies with ngcc before bundling its iframe runtime. A GitHub compatibility workflow result for this change is still pending.
 - [`tests/contracts.ts`](tests/contracts.ts) still has broad validation tests without direct `rangeValidator` or `validators` assertions, exact ISO year-boundary checks, or a non-UTC host run. The browser suite still lacks direct jump-method, provider-precedence, and complete ARIA state assertions.
 
-## Milestone 1 — Verify the packed consumer matrix (in progress)
+## Milestone 1 — Confirm the compatibility CI result
 
-- [ ] Run the revised two-stage consumer gate for every registered major (11–22) with its pinned Node version. Confirm that the base tarballs install and AOT compile inline and native-dialog use without CDK, and that the matching CDK makes the secondary overlay entry point compile and run. Retain the installed-package SSR and browser checks.
-- [ ] Check the generated consumer lockfiles and all tarball manifests for dependency resolution to the packed shared versions, absent workspace paths, public declaration/module paths, package files, and optional CDK behavior. Pack in dependency order: core, adapters, presentation, then the numbered Angular package; install all four local tarballs as one dependency graph.
-- [ ] Record a green full compatibility result after these checks; fix any per-major failure before claiming the matrix is verified.
+- [ ] Run this change through the GitHub compatibility workflow and require successful planner, shared, Angular 11–22, and showcase jobs. Inspect uploaded tarballs and both consumer lockfiles for any failing major, then fix and rerun.
 
-**Exit:** the packages intended for publication install, type-check, build, and run from tarballs in isolated consumers for all advertised Angular majors, both with and without optional CDK.
+**Exit:** a green compatibility workflow verifies the packages and showcase in clean CI environments before publication work starts.
 
 ## Milestone 2 — Fill specific value-contract gaps
 

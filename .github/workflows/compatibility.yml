@@ -98,6 +98,8 @@ jobs:
           if-no-files-found: ignore
           path: |
             .compat/${{ matrix.angular }}/package-lock.json
+            .compat/consumer-${{ matrix.angular }}/package.base.json
+            .compat/consumer-${{ matrix.angular }}/package-lock.base.json
             .compat/consumer-${{ matrix.angular }}/package-lock.json
             .compat/${{ matrix.angular }}/dist/**/*.tgz
             test-results/

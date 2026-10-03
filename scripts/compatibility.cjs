@@ -2,6 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const { verifyPackedConsumer } = require("./verify-packed-consumer.cjs");
 const root = path.resolve(__dirname, "..");
 const read = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const write = (file, value) =>
@@ -178,12 +179,13 @@ function test(major) {
   fs.mkdirSync(consumer, { recursive: true });
   const dependencies = { ...supported[major].dependencies };
   delete dependencies["@angular/cdk"];
-  for (const name of [
+  const names = [
     "wkly-datetime-picker.core",
     "wkly-datetime-picker.adapters",
     "wkly-datetime-picker",
     supported[major].package,
-  ]) {
+  ];
+  for (const name of names) {
     const packageDir = path.join(dir, "dist", name);
     const packed = JSON.parse(
       run("npm", ["pack", "--json"], packageDir, true),
@@ -197,8 +199,20 @@ function test(major) {
   });
   fs.copyFileSync(path.join(dir, ".npmrc"), path.join(consumer, ".npmrc"));
   run("npm", ["install"], consumer);
-  if (fs.existsSync(path.join(consumer, "node_modules/@angular/cdk")))
-    throw new Error("Base consumer unexpectedly installed optional CDK");
+  verifyPackedConsumer({
+    consumer,
+    dist: path.join(dir, "dist"),
+    names,
+    dependencies,
+  });
+  fs.copyFileSync(
+    path.join(consumer, "package-lock.json"),
+    path.join(consumer, "package-lock.base.json"),
+  );
+  fs.copyFileSync(
+    path.join(consumer, "package.json"),
+    path.join(consumer, "package.base.json"),
+  );
   let source = fs
     .readFileSync(path.join(root, "tests/compatibility/main.ts"), "utf8")
     .replaceAll("__PACKAGE__", supported[major].package);
@@ -294,6 +308,13 @@ function test(major) {
     dependencies,
   });
   run("npm", ["install"], consumer);
+  verifyPackedConsumer({
+    consumer,
+    dist: path.join(dir, "dist"),
+    names,
+    dependencies,
+    cdkVersion: supported[major].dependencies["@angular/cdk"],
+  });
   source = source
     .replace(
       "/* OVERLAY_IMPORT */",
