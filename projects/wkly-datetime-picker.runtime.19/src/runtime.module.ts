@@ -9,10 +9,14 @@ import { WKLY_CLOCK, WklyDateTimePickerModule } from "wkly-datetime-picker.19";
 import { WklyDateTimePickerOverlayModule } from "wkly-datetime-picker.19/cdk-overlay";
 import { RuntimeComponent } from "./runtime.component";
 
+import { DemoComponent } from "../../wkly-datetime-picker.showcase/src/demo.component";
+import { TestbedComponent } from "../../wkly-datetime-picker.runtime/src/testbed.component";
+import "../../wkly-datetime-picker.runtime/src/locales";
+
 declare const WKLY_E2E: boolean;
 
 @NgModule({
-  declarations: [RuntimeComponent],
+  declarations: [RuntimeComponent, DemoComponent, TestbedComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
@@ -34,6 +38,7 @@ declare const WKLY_E2E: boolean;
         ]
       : []),
   ],
-  bootstrap: [RuntimeComponent],
+  exports: [DemoComponent],
+  bootstrap: [TestbedComponent],
 })
 export class RuntimeModule {}

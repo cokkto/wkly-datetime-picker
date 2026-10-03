@@ -1,13 +1,13 @@
-const {
-  assets,
-  builds,
-  majors,
-  prepareLegacyAngular,
-} = require("./showcase-build.cjs");
+const supported = require("../supported-angular.json");
+const majors = Object.keys(supported);
 const fs = require("fs");
-const http = require("http");
+const { createShowcaseServer } = require("./showcase-server.cjs");
 const path = require("path");
-const output = path.resolve(__dirname, "../dist/showcase");
+const output = path.resolve(
+  __dirname,
+  "..",
+  process.env.WKLY_OUTPUT || "dist/showcase",
+);
 
 (async () => {
   const prebuilt = process.argv.includes("--prebuilt");
@@ -25,6 +25,11 @@ const output = path.resolve(__dirname, "../dist/showcase");
         throw new Error(`Missing showcase asset: ${file}`);
     }
   } else {
+    const {
+      assets,
+      builds,
+      prepareLegacyAngular,
+    } = require("./showcase-build.cjs");
     prepareLegacyAngular();
     assets();
     contexts = await Promise.all(
@@ -36,41 +41,12 @@ const output = path.resolve(__dirname, "../dist/showcase");
       }),
     );
   }
-  const server = http.createServer((req, res) => {
-    const pathname = decodeURIComponent((req.url || "/").split("?")[0]);
-    const requested = path.resolve(output, "." + pathname);
-    if (!requested.startsWith(output + path.sep) && requested !== output) {
-      res.writeHead(403);
-      res.end();
-      return;
-    }
-    let file = requested;
-    if (
-      pathname === "/" ||
-      (!fs.existsSync(file) && !pathname.startsWith("/runtime/"))
-    )
-      file = path.join(output, "index.html");
-    if (fs.existsSync(file) && fs.statSync(file).isDirectory())
-      file = path.join(file, "index.html");
-    if (!fs.existsSync(file)) {
-      res.writeHead(404);
-      res.end();
-      return;
-    }
-    const type = file.endsWith(".js")
-      ? "application/javascript"
-      : file.endsWith(".css")
-        ? "text/css"
-        : file.endsWith(".json")
-          ? "application/json"
-          : "text/html";
-    res.setHeader("Content-Type", type);
-    res.setHeader("Cache-Control", "no-store");
-    res.end(fs.readFileSync(file));
-  });
-  server.listen(4200, "127.0.0.1", () =>
+  const domain = process.env.WKLY_DOMAIN || "wkly.localhost";
+  const port = Number(process.env.PORT || 4200);
+  const server = createShowcaseServer({ output, majors, domain });
+  server.listen(port, "127.0.0.1", () =>
     console.log(
-      `WKLY evergreen showcase: http://127.0.0.1:4200 (calendar runtimes: ${majors.join(", ")})`,
+      `WKLY showcase: http://${domain}:${port} (testbeds: ${majors.map((major) => `v${major}.${domain}`).join(", ")})`,
     ),
   );
   process.on("SIGINT", async () => {

@@ -81,3 +81,31 @@ The existing bridge matrix also completed: **502 passed, one WebKit reset assert
 The initial complete browser run had 636 cases: **574 passed, 47 failed, 15 skipped**. Its failures included two instances of the subsequently corrected ARIA test fixture. The finalized 204-case interaction/visual run replaces those initial test results, adds the boundary and screenshot suites, and retains all 61 reproducible visual failures. Screenshot capture setup was then finalized and all 18 ordinary comparisons passed again. Taken together, the final suites cover **708 distinct cases**: 630 passes, 61 confirmed visual failures, one intermittent reset failure, one environment timeout, and 15 touch-only skips. Isolated diagnostic reruns are not counted as extra coverage or used to hide the original observations.
 
 New-suite reproduction: `npm run showcase:test:e2e -- --grep-invert "Angular [0-9]+ showcase" --retries=0`. Full-suite command: `npm run showcase:test:e2e -- --retries=0`. The latter discovers all 708 cases in seven active browser spec files. Local run JSON and exceptional traces are retained under `.test-build/milestone-02-evidence/`; transient logs are under `.test-build/logs/`.
+
+
+## Standalone testbed migration (2026-10-03)
+
+The entries above preserve the historical iframe run. Active tests now open `/cases/empty/<example-id>` directly on versioned hosts; there is no iframe or showcase stylesheet in their document. Project names are `angular-<major>-<browser>`.
+
+The final Angular 22 geometry run across Chromium, Firefox, WebKit, Edge, Chromium DPR 1.5 and mobile Chromium reports **72 passed, 42 failed**, with retries disabled. Each profile has the same seven failures:
+
+- M02-LAYOUT-01: day containment at width 360, CSS zoom 1/1.25/1.5 (18 failures).
+- M02-LAYOUT-02: complete-week count at CSS zoom 0.8/1.5 (12 failures).
+- M02-LAYOUT-03: month-label overlap at widths 360/768 (12 failures).
+
+These are still component failures on the minimal fixture. No production picker changes, skipped geometry assertions, or expected-failure annotations were added. Screenshot baselines now crop the component itself, and intentionally retain its observed defects; geometry assertions remain the correctness gate.
+
+```sh
+npm run showcase:test:e2e -- --project=angular-22-chromium --grep "week geometry viewport 360 CSS zoom 1$" --retries=0
+npm run showcase:test:e2e -- --project=angular-22-firefox --grep "four complete weeks" --retries=0
+npm run showcase:test:e2e -- --project=angular-22-webkit --grep "month boundary annotations" --retries=0
+```
+
+The migrated interaction and screenshot suites passed on Angular 11 and 22 across all six profiles: **150 passed, 30 touch-only skips**. The disabled-day test now chooses a day fully within the scroll viewport instead of an overscan button with a nonzero box outside the clip. Browser console errors remain assertion failures. Explicit empty favicons prevent unrelated Edge favicon 404s.
+
+The local validation server used port 4300 and an isolated `WKLY_OUTPUT` directory because an existing development watcher was using `dist/showcase`. Normal commands still default to port 4200 and `dist/showcase`. Linux CI runs functional and geometry checks on Chromium, Firefox and WebKit; the Windows-specific screenshot baselines are checked locally, rather than compared against Linux font rendering.
+
+
+The controlled-layout sweep exercised all 72 Angular-version/browser-profile combinations (Angular 11-22, six profiles), with retries disabled and eight workers: **1,516 passed, 66 duplicate evergreen-host checks skipped, 2 failures**. One failure was a test error: the mobile catalogue test clicked a sidebar link without opening the menu. That test now follows the visible navigation flow and passed on all six profiles. The other was an Angular 18/WebKit timeout waiting for the native-dialog trigger to become stable; **five isolated reruns passed**. It is recorded as an intermittent observation, not a confirmed component defect or an erased failure. The normal configuration uses two workers.
+
+Direct embedding also exposed fixture timing in Angular 18-19: synchronous viewport events updated parent diagnostics during a view check. The shared runtime now emits its local Angular output asynchronously. The final sweep and the post-fix interaction/screenshot rerun above include that correction. All compiled apps, lint, test TypeScript checking, and Node host-routing tests passed. Build/compiler isolation and the production picker implementations were preserved.

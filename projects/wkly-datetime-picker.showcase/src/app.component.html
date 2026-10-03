@@ -11,12 +11,13 @@
   >
     ☰</button
   ><label class="version"
-    ><span class="version-label">Angular runtime</span>
+    ><span class="version-label">Angular testbeds</span>
     <select
-      [value]="versions.selected"
+      [value]="''"
       (change)="selectVersion($event)"
       aria-label="Angular runtime version"
     >
+      <option value="" disabled>Choose a testbed</option>
       <option *ngFor="let major of versions.available" [value]="major">
         {{ major }}
       </option>
@@ -46,6 +47,10 @@
       >
     </nav>
     <div class="sidebar-note">
+      <strong>Controlled test pages</strong>
+      <a *ngFor="let major of versions.available" [href]="versions.url(major)"
+        >Angular {{ major }} test cases</a
+      >
       <span class="tiny-grid">▦</span><strong>Built around weeks.</strong>
       <p>Calendar-neutral at the core.<br />Human-friendly at the surface.</p>
       <span class="utc-label">UTC IN · UTC OUT</span>

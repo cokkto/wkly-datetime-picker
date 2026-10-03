@@ -17,6 +17,7 @@
       <label
         >Selection mode<select
           [(ngModel)]="mode"
+          [ngModelOptions]="{ standalone: true }"
           (ngModelChange)="modeChanged()"
         >
           <option>datetime</option>
@@ -28,7 +29,11 @@
         </select></label
       >
       <label
-        >Locale<select [(ngModel)]="locale" (ngModelChange)="localeChanged()">
+        >Locale<select
+          [(ngModel)]="locale"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="localeChanged()"
+        >
           <option>en-GB</option>
           <option>en-US</option>
           <option>fi-FI</option>
@@ -39,6 +44,7 @@
       <label
         >Viewport preset<select
           [(ngModel)]="presetName"
+          [ngModelOptions]="{ standalone: true }"
           (ngModelChange)="presetChanged()"
         >
           <option>full-month</option>
@@ -47,7 +53,10 @@
         </select></label
       >
       <label
-        >Hour cycle<select [(ngModel)]="hourCycle">
+        >Hour cycle<select
+          [(ngModel)]="hourCycle"
+          [ngModelOptions]="{ standalone: true }"
+        >
           <option>locale</option>
           <option>h12</option>
           <option>h24</option>
@@ -55,7 +64,10 @@
         </select></label
       >
       <label
-        >Week starts<select [(ngModel)]="weekOffset">
+        >Week starts<select
+          [(ngModel)]="weekOffset"
+          [ngModelOptions]="{ standalone: true }"
+        >
           <option [ngValue]="null">Locale default</option>
           <option [ngValue]="4">Monday</option>
           <option [ngValue]="3">Sunday</option>
@@ -64,7 +76,10 @@
         </select></label
       >
       <label
-        >Minute step<select [(ngModel)]="minuteStep">
+        >Minute step<select
+          [(ngModel)]="minuteStep"
+          [ngModelOptions]="{ standalone: true }"
+        >
           <option [ngValue]="1">1</option>
           <option [ngValue]="5">5</option>
           <option [ngValue]="15">15</option>
@@ -72,53 +87,72 @@
         </select></label
       >
       <label class="check"
-        ><input type="checkbox" [(ngModel)]="seconds" /> Show seconds</label
+        ><input
+          type="checkbox"
+          [(ngModel)]="seconds"
+          [ngModelOptions]="{ standalone: true }"
+        />
+        Show seconds</label
       ><label class="check"
-        ><input type="checkbox" [(ngModel)]="showWeekNumbers" /> Show week
-        numbers</label
+        ><input
+          type="checkbox"
+          [(ngModel)]="showWeekNumbers"
+          [ngModelOptions]="{ standalone: true }"
+        />
+        Show week numbers</label
       ><label class="check"
-        ><input type="checkbox" [(ngModel)]="required" /> Required</label
+        ><input
+          type="checkbox"
+          [(ngModel)]="required"
+          [ngModelOptions]="{ standalone: true }"
+        />
+        Required</label
       ><label class="check"
         ><input
           type="checkbox"
           [(ngModel)]="disabled"
+          [ngModelOptions]="{ standalone: true }"
           (ngModelChange)="changeDisabled()"
         />
         Disabled</label
       ><label class="check"
-        ><input type="checkbox" [(ngModel)]="across" /> Allow disabled-range
-        crossing</label
+        ><input
+          type="checkbox"
+          [(ngModel)]="across"
+          [ngModelOptions]="{ standalone: true }"
+        />
+        Allow disabled-range crossing</label
       >
       <label
         >Minimum UTC value<input
           [(ngModel)]="min"
+          [ngModelOptions]="{ standalone: true }"
           placeholder="No minimum" /></label
       ><label
-        >Maximum UTC value<input [(ngModel)]="max" placeholder="No maximum"
+        >Maximum UTC value<input
+          [(ngModel)]="max"
+          [ngModelOptions]="{ standalone: true }"
+          placeholder="No maximum"
       /></label>
       <label
         >Programmatic UTC value<input
           [(ngModel)]="programmaticValue"
+          [ngModelOptions]="{ standalone: true }"
           placeholder="ISO string, JSON tuple, or null" /></label
       ><button type="button" (click)="applyValue()">Apply value</button>
     </div>
   </details>
   <div class="picker-stage">
-    <iframe
-      #runtimeFrame
-      class="calendar-runtime"
-      [src]="runtimeUrl"
-      [style.height.px]="runtimeHeight"
-      [title]="'Angular ' + versions.selected + ' calendar: ' + config.title"
-      [attr.data-runtime-version]="versions.selected"
-    ></iframe>
-    <p *ngIf="runtimeError" class="error-text" data-testid="runtime-error">
-      {{ runtimeError }}
-    </p>
+    <wkly-runtime
+      #runtime
+      [config]="runtimeConfig"
+      (runtimeEvent)="receive($event)"
+    ></wkly-runtime>
   </div>
   <div *ngIf="config.id.indexOf('virtual') === 0" class="jump-actions">
-    <button (click)="jump('2099-12-16T00:00:00.000Z')">Jump to 2099</button
-    ><button (click)="jump('1969-12-16T00:00:00.000Z')">
+    <button type="button" (click)="jump('2099-12-16T00:00:00.000Z')">
+      Jump to 2099</button
+    ><button type="button" (click)="jump('1969-12-16T00:00:00.000Z')">
       Jump before 1970
     </button>
   </div>

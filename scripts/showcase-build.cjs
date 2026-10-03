@@ -4,8 +4,8 @@ const { execFileSync } = require("child_process");
 const { createRequire } = require("module");
 const supported = require("../supported-angular.json");
 const root = path.resolve(__dirname, "..");
+const output = path.resolve(root, process.env.WKLY_OUTPUT || "dist/showcase");
 const hostRoot = path.join(root, "projects/wkly-datetime-picker.showcase");
-const hostRequire = createRequire(path.join(hostRoot, "package.json"));
 
 function prepareLegacyAngular() {
   if (!supported["11"]) return;
@@ -27,11 +27,12 @@ function prepareLegacyAngular() {
   );
 }
 
-function angularPlugin(ts, configPath, compilerCli) {
+function angularPlugin(ts, configPath, compilerCli, major = 22) {
   return {
     name: "angular-ts",
     setup(build) {
       let emitted = new Map();
+      const resources = new Set();
       build.onStart(() => {
         emitted = new Map();
         const config = ts.readConfigFile(configPath, ts.sys.readFile);
@@ -56,6 +57,14 @@ function angularPlugin(ts, configPath, compilerCli) {
           let source = originalRead(file);
           if (!source || file.includes("node_modules") || !file.endsWith(".ts"))
             return source;
+          // Angular 11-13 predate the standalone metadata flag used by shared fixtures.
+          if (major < 14) source = source.replace(/standalone: false,?/g, "");
+          for (const match of source.matchAll(
+            /(?:templateUrl:\s*|styleUrls:\s*\[)([^\n]+)/g,
+          )) {
+            for (const ref of match[1].matchAll(/['"]([^'"]+)['"]/g))
+              resources.add(path.resolve(path.dirname(file), ref[1]));
+          }
           source = source.replace(
             /templateUrl:\s*(['"])([^'"]+)\1/g,
             (_, quote, ref) =>
@@ -131,6 +140,7 @@ function angularPlugin(ts, configPath, compilerCli) {
           resolveDir: path.dirname(args.path),
           watchFiles: [
             args.path,
+            ...resources,
             ...[".html", ".css"]
               .map((ext) => args.path.replace(/\.ts$/, ext))
               .filter((file) => fs.existsSync(file)),
@@ -141,7 +151,7 @@ function angularPlugin(ts, configPath, compilerCli) {
   };
 }
 
-function runtimeDependenciesPlugin(runtimeRoot) {
+function runtimeDependenciesPlugin(runtimeRoot, routerRoot = runtimeRoot) {
   return {
     name: "runtime-dependencies",
     setup(build) {
@@ -153,7 +163,8 @@ function runtimeDependenciesPlugin(runtimeRoot) {
         (args) => {
           if (args.pluginData?.runtimeResolved) return;
           return build.resolve(args.path, {
-            resolveDir: runtimeRoot,
+            resolveDir:
+              args.path === "@angular/router" ? routerRoot : runtimeRoot,
             kind: args.kind,
             pluginData: { runtimeResolved: true },
           });
@@ -164,43 +175,7 @@ function runtimeDependenciesPlugin(runtimeRoot) {
 }
 
 const majors = Object.keys(supported).sort((a, b) => Number(a) - Number(b));
-const angularOption = process.argv.find((arg) => arg.startsWith("--angular="));
-const angularIndex = process.argv.indexOf("--angular");
-const initialAngular = angularOption
-  ? angularOption.slice("--angular=".length)
-  : angularIndex >= 0
-    ? process.argv[angularIndex + 1]
-    : majors[majors.length - 1];
-if (!majors.includes(initialAngular))
-  throw new Error(
-    `Unsupported Angular ${initialAngular}; choose ${majors.join(", ")}`,
-  );
-const hostEsbuild = hostRequire("esbuild");
-const builds = [
-  {
-    esbuild: hostEsbuild,
-    options: {
-      absWorkingDir: root,
-      entryPoints: ["projects/wkly-datetime-picker.showcase/src/main.ts"],
-      outdir: "dist/showcase",
-      bundle: true,
-      format: "iife",
-      sourcemap: true,
-      target: "es2022",
-      tsconfig: "projects/wkly-datetime-picker.showcase/tsconfig.host.json",
-      plugins: [
-        angularPlugin(
-          hostRequire("typescript"),
-          path.join(hostRoot, "tsconfig.host.json"),
-        ),
-      ],
-      define: {
-        WKLY_RUNTIME_VERSIONS: JSON.stringify(majors),
-        WKLY_INITIAL_ANGULAR: JSON.stringify(initialAngular),
-      },
-    },
-  },
-];
+const builds = [];
 for (const major of majors) {
   const info = supported[major];
   const runtimeRoot = path.join(
@@ -213,7 +188,7 @@ for (const major of majors) {
     options: {
       absWorkingDir: root,
       entryPoints: [info.runtimeEntry],
-      outdir: `dist/showcase/runtime/${major}`,
+      outdir: path.join(output, "runtime", major),
       bundle: true,
       format: "iife",
       sourcemap: true,
@@ -233,25 +208,65 @@ for (const major of majors) {
                 ),
               )("@angular/compiler-cli")
             : undefined,
+          Number(major),
         ),
       ],
-      define: { WKLY_E2E: process.env.WKLY_E2E === "1" ? "true" : "false" },
+      define: {
+        WKLY_E2E: process.env.WKLY_E2E === "1" ? "true" : "false",
+        WKLY_ANGULAR: JSON.stringify(major),
+      },
     },
   });
 }
 
+// The catalogue renders the latest runtime directly, using that runtime's compiler.
+const latest = majors[majors.length - 1];
+const latestBuild = builds[builds.length - 1];
+const latestRoot = path.join(
+  root,
+  `projects/wkly-datetime-picker.runtime.${latest}`,
+);
+const latestRequire = createRequire(path.join(latestRoot, "package.json"));
+const hostConfig = path.join(hostRoot, "tsconfig.host.json");
+builds.unshift({
+  esbuild: latestBuild.esbuild,
+  options: {
+    ...latestBuild.options,
+    entryPoints: ["projects/wkly-datetime-picker.showcase/src/main.ts"],
+    outdir: output,
+    tsconfig: hostConfig,
+    plugins: [
+      runtimeDependenciesPlugin(latestRoot, hostRoot),
+      angularPlugin(
+        latestRequire("typescript"),
+        hostConfig,
+        createRequire(
+          path.join(
+            root,
+            `projects/wkly-datetime-picker.${latest}/package.json`,
+          ),
+        )("@angular/compiler-cli"),
+      ),
+    ],
+    define: {
+      ...latestBuild.options.define,
+      WKLY_RUNTIME_VERSIONS: JSON.stringify(majors),
+    },
+  },
+});
+
 function assets() {
-  fs.mkdirSync(path.join(root, "dist/showcase"), { recursive: true });
+  fs.mkdirSync(output, { recursive: true });
   fs.copyFileSync(
     path.join(hostRoot, "src/index.html"),
-    path.join(root, "dist/showcase/index.html"),
+    path.join(output, "index.html"),
   );
   for (const major of majors) {
-    const output = path.join(root, "dist/showcase/runtime", major);
-    fs.mkdirSync(output, { recursive: true });
+    const runtimeOutput = path.join(output, "runtime", major);
+    fs.mkdirSync(runtimeOutput, { recursive: true });
     fs.copyFileSync(
       path.join(root, supported[major].runtimeHtml),
-      path.join(output, "index.html"),
+      path.join(runtimeOutput, "index.html"),
     );
   }
 }

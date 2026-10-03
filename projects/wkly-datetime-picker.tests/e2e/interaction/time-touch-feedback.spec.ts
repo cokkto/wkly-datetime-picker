@@ -7,12 +7,10 @@ for (const [name, direction] of [
   test(`time field updates during a ${name} touch drag`, async ({
     page,
   }, info) => {
-    test.skip(info.project.name !== "mobile");
-    await page.goto("/single");
+    test.skip(info.project.metadata.browser !== "mobile");
+    await page.goto("/cases/empty/datetime");
     const panel = page.getByTestId("datetime");
-    const minute = panel
-      .frameLocator("iframe")
-      .getByRole("textbox", { name: "Minute", exact: true });
+    const minute = panel.getByRole("textbox", { name: "Minute", exact: true });
     const before = Number(await minute.inputValue());
     const shown = (steps: number) =>
       String((before + direction * steps + 60) % 60).padStart(2, "0");

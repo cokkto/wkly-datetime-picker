@@ -14,7 +14,7 @@
     "e2e/helpers/**/*.ts",
     "e2e/interaction/**/*.ts",
     "e2e/visual/**/*.ts",
-    "e2e/runtime-bridge.spec.ts"
+    "e2e/testbeds.spec.ts"
   ],
   "exclude": []
 }

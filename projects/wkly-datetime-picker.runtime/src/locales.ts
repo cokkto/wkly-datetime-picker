@@ -1,0 +1,11 @@
+import { registerLocaleData } from "@angular/common";
+import enGB from "@angular/common/locales/en-GB";
+import en from "@angular/common/locales/en";
+import ar from "@angular/common/locales/ar";
+import he from "@angular/common/locales/he";
+import fi from "@angular/common/locales/fi";
+registerLocaleData(enGB);
+registerLocaleData(en, "en-US");
+registerLocaleData(ar);
+registerLocaleData(he, "he-IL");
+registerLocaleData(fi, "fi-FI");

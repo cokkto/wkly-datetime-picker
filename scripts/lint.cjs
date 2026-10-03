@@ -179,6 +179,14 @@ async function main() {
         checked++;
       }
     }
+    for (const file of filesIn(
+      path.join(root, "projects/wkly-datetime-picker.runtime"),
+    )) {
+      if (file.endsWith(".component.html")) {
+        errors += lintTemplate(file, compiler);
+        checked++;
+      }
+    }
     process.stdout.write(
       `Angular ${major}: linted ${projects.join(" and ")}\n`,
     );
@@ -194,6 +202,7 @@ async function main() {
       "wkly-datetime-picker.runtime",
     ]) {
       for (const file of filesIn(path.join(root, "projects", name))) {
+        if (file.endsWith(".component.html")) continue;
         errors += lintScript(file, oldest);
         checked++;
       }

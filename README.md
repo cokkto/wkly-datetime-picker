@@ -8,7 +8,7 @@ npm run lint
 npm run showcase:start
 ```
 
-Open **http://127.0.0.1:4200**. The private showcase keeps all examples, controls, and translations in one app. Its Angular version menu selects an isolated Angular 11–22 calendar iframe; 22 is selected by default. Use `npm run showcase -- --angular=14` (or another registered major) to choose the initial runtime. The development compiler watches source and templates; refresh after an edit.
+Open **http://wkly.localhost:4200** (also available at `http://127.0.0.1:4200`). The evergreen showcase renders the latest Angular picker directly. Its catalogue links to independently compiled Angular 11–22 testbeds at `http://v11.wkly.localhost:4200`, …, `http://v22.wkly.localhost:4200`. Every testbed uses `/cases/<layout>/<example>` routes, with no iframes. The Node server selects an app by hostname and provides SPA fallback within that app. Source and templates are watched; refresh after an edit. See [showcase and testbed usage](projects/wkly-datetime-picker.showcase/README.md).
 
 ## Packages
 
@@ -26,10 +26,10 @@ for local commands, adding Angular majors, and GitHub CLI diagnostics.
 | `wkly-datetime-picker.18` | Angular 18 component, forms, native dialog, and optional CDK presentation |
 | `wkly-datetime-picker.19`–`.22` | Angular 19–22 integrations with the same public picker API |
 | `wkly-datetime-picker.showcase` | Private evergreen Angular app, shared examples and translations, Playwright tests |
-| `wkly-datetime-picker.runtime.11` | Small Angular 11 iframe app that renders `wkly-datetime-picker.11` |
-| `wkly-datetime-picker.runtime.12`–`.17` | Isolated iframe apps for Angular 12–17 |
-| `wkly-datetime-picker.runtime.18` | Small Angular 18 iframe app that renders `wkly-datetime-picker.18` |
-| `wkly-datetime-picker.runtime.19`–`.22` | Isolated iframe apps for Angular 19–22 |
+| `wkly-datetime-picker.runtime.11` | Small Angular 11 testbed app that renders `wkly-datetime-picker.11` |
+| `wkly-datetime-picker.runtime.12`–`.17` | Isolated testbed apps for Angular 12–17 |
+| `wkly-datetime-picker.runtime.18` | Small Angular 18 testbed app that renders `wkly-datetime-picker.18` |
+| `wkly-datetime-picker.runtime.19`–`.22` | Isolated testbed apps for Angular 19–22 |
 
 Angular 11–22 use the TypeScript versions pinned in `supported-angular.json` for their respective toolchains. Compatibility CI uses each package's pinned Node version. pnpm keeps version-specific Angular dependencies in workspace importers. `npm run build` builds shared packages and the newest Angular package; build a specific package with its pinned Node version through the compatibility commands in [compatibility CI](docs/COMPATIBILITY-CI.md). Library artifacts are written to `dist/<package>`; the showcase is written to `dist/showcase`. See [the Angular 11 stage plan](docs/ANGULAR-11-STAGE.md) for package boundaries and migration notes.
 

@@ -1,56 +1,51 @@
-# WKLY visual test project
+# Evergreen showcase and versioned testbeds
 
-This private Angular 22 application owns the routed UI, examples, controls, and translations. It sends serializable configuration to calendar runtimes in iframes. Each runtime boots its own Angular major and imports the matching `wkly-datetime-picker.N` package. Library source and templates rebuild while the development server runs; refresh after an edit to view changes. Material and the Hebrew adapter are private runtime dependencies.
+The default host serves the latest Angular showcase. It preserves the single/range, localization, calendar, validation, virtual scrolling, presentation, and styling catalogue, with live controls and diagnostics. Pickers render directly in the page. Version links navigate to separate apps; the catalogue does not embed them.
 
 ```sh
-corepack pnpm install
-npm run showcase:start       # http://127.0.0.1:4200; real UTC clock
-npm run showcase -- --angular=22  # choose initial runtime (11–22)
-npm run showcase:build       # dist/showcase; host and all runtimes
+npm run showcase:start
+npm run showcase:build
+node scripts/serve.cjs --prebuilt
 ```
 
-Static hosts must fall back to index.html for Angular routes. The development/test server does this automatically. Fonts, assets, and locale data are local.
+Use Node 24.15+ for the combined build. Existing per-version TypeScript compilers, dependency resolution, Angular compiler handling, Angular 11 ngcc preparation, and esbuild watching are retained. The default app uses the latest runtime compiler too. Each app is compiled independently into `dist/showcase` or `dist/showcase/runtime/N`.
 
-The Angular runtime menu reads `supported-angular.json` and selects the highest supported major by default. Angular 11–22 are registered. To add a major, add its `wkly-datetime-picker.N` package, a small `projects/wkly-datetime-picker.runtime.N` app with its own dependency versions, and an entry in `supported-angular.json` with the required Node version and pinned compatibility dependencies. CI creates its compatibility matrix from those entries and tests isolated packed consumers; see [compatibility CI](../../docs/COMPATIBILITY-CI.md). The build script bundles each runtime separately; the main showcase and its configs remain shared. The pnpm workspace shares its package store and keeps Angular toolchains in versioned importers.
+The generic Node HTTP server serves `wkly.localhost:4200` (and localhost/127.0.0.1 aliases) as the showcase, and `v11.wkly.localhost:4200` through `v22.wkly.localhost:4200` as testbeds. It falls back to the selected app's index for extensionless navigation, returns 404 for missing assets and unknown hosts, and prevents cross-app paths. `--prebuilt` does not load Angular or build tools. `WKLY_OUTPUT` changes the build/serve directory (use the same value for both commands), allowing isolated concurrent servers. `PORT` changes the port; `WKLY_DOMAIN` changes the local host suffix (custom domains require local DNS). Standard `.localhost` names must resolve to loopback in the browser/environment.
 
-The host sends `wkly:configure` with mode, locale, value, bounds, translation catalog, styling, and other plain data; `wkly:jump` requests a distant scroll. Runtimes answer with `wkly:ready`, value and validation changes, open/close and viewport events, form state, height, or `wkly:error`. Both sides check same-origin messages and the matching iframe/window source. No Angular instance or callback crosses the boundary. Shared protocol types and guards are in `../wkly-datetime-picker.runtime/src/runtime-protocol.ts`.
+## Controlled pages
 
-| Route | Content |
+Each version exposes `/` as a case index and `/cases/<layout>/<example-id>` as a single-example page. Reloading a deep link preserves the case. IDs and feature configurations come from `src/pages.ts`.
+
+| Layout | Purpose |
 | --- | --- |
-| / | Feature index, package versions, live picker |
-| /single | Datetime/date/time, seconds, 12/24 hours |
-| /ranges | All range modes and stacked endpoints |
-| /presentations | Inline, native dialog, raw CDK, Material-hosted CDK |
-| /localization | Hebrew calendar/RTL, Arabic digits/RTL, US Sunday-first/AM-PM |
-| /calendars | Shared Gregorian/Hebrew epoch identity, pre-1970 and leap month |
-| /validation | Required, bounds, disabled values/crossing, impossible drafts |
-| /virtualization | All presets, distant jumps, week diagnostics |
-| /styling | Default/custom colors and size multipliers |
+| `empty` | Minimal document; default for component behavior and pixel comparisons |
+| `contained` | Fixed maximum-width card with padding and a border |
+| `form` | Actual form with neighboring native inputs and a submit button |
+| `booking` | Small realistic page with header, responsive columns, summary and footer |
 
-Every panel has expandable configuration, committed UTC output, validation codes, emission count, effective locale/calendar/offset/hour cycle, and host Reset/Clear controls.
+For example, `/cases/empty/date-range`, `/cases/form/dialog`, `/cases/contained/overlay`, and `/cases/booking/material` work on every version. Native dialog and CDK overlay pickers attach to the actual top-level document. CDK coverage uses WKLY's existing anchored CDK dialog presentation, supported across all versions; it does not require the newer `@angular/cdk/dialog` package.
+
+Controls, diagnostics and layouts are shared source. Testbeds include their own bounded shell CSS and picker theme rules, never the showcase stylesheet. Tests deliberately do not attempt to support infinitely many consumer resets or layouts.
 
 ## Playwright
 
 ```sh
 npm run showcase:browsers
-npm run showcase:test:e2e
-npm run showcase:test:e2e -- --project=chromium --headed
-npm run showcase:test:e2e -- --project=chromium --debug
-npx playwright show-report
-npx playwright show-trace test-results/<failure>/trace.zip
+npm run showcase:test:e2e -- --project="*-chromium"
+npm run showcase:test:e2e -- --project=angular-22-firefox
+npm run showcase:test:e2e -- testbeds.spec.ts
 ```
 
-Playwright starts/stops port 4200 automatically and injects `2099-12-16T13:00:00.000Z`. Browser timezone is UTC and motion is reduced. Close normal development servers before running tests. Production development uses the real clock.
+The default matrix combines all supported Angular versions with Chromium, Firefox, WebKit, installed Edge, Chromium at DPR 1.5, and mobile Chromium. `WKLY_ANGULAR=11,22` restricts the versions. Set environment variables using your shell's syntax (PowerShell: `$env:WKLY_ANGULAR='11,22'`). Set `PORT=4300` if the default port is occupied. Each project changes only its baseURL and device settings; all versions run the same cases.
 
-The iframe bridge suite runs in Chromium, Firefox, WebKit, and touch-enabled mobile Chromium. Failures retain trace, screenshot, and video. The previous direct-DOM specs and screenshot baselines remain as migration references; they predate the iframe boundary and are excluded by `playwright.config.ts` until ported.
+Playwright builds with `WKLY_E2E=1`, fixing the clock at `2099-12-16T13:00:00.000Z`, UTC timezone and reduced motion. CI uses prebuilt assets, so its build must also set `WKLY_E2E=1`. Normal showcase builds use the real clock. Reuse a deliberately prepared test server with `WKLY_E2E_REUSE_SERVER=1`.
+
+Screenshot assertions capture only the picker. Angular versions share browser-specific baselines; update using just one version to avoid concurrent writes:
 
 ```sh
-npm run showcase:test:e2e:update -- --project=chromium
-npm run showcase:test:e2e -- --project=chromium
+npm run showcase:test:e2e:update -- --project=angular-22-chromium --grep "rendered weeks"
 ```
 
-Baseline updates are explicit. Existing PNGs under e2e/baselines/chromium describe the former direct-rendered app and should be regenerated after screenshot specs are ported.
+Baselines are Windows-specific; review updates on the same platform. Geometry assertions run independently of screenshots. Trace, video and screenshots are retained on failure. `node --test scripts/showcase-server.test.cjs` checks host routing, fallback and isolation without Angular.
 
-Use Node 24.15+ for showcase builds and browser tests. The isolated library compatibility jobs use the Node versions declared in `supported-angular.json`.
-
-`npm test` exhaustively round-trips the Hebrew adapter over its Gregorian 1900–2100 interval. `npm run pack:check` checks that this application, its tests, and showcase-only dependencies are absent from publishable packages.
+To add an Angular major, register it in `supported-angular.json`, add its versioned runtime/package/toolchain, and update the evergreen module import and host tsconfig to the newest runtime. Library compatibility and packaging scripts remain separate from this browser setup.

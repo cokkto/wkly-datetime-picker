@@ -1,0 +1,108 @@
+/* These finite fixtures style their own shell, never picker internals. */
+html,
+body {
+  margin: 0;
+  min-width: 0;
+  font-family: Arial, sans-serif;
+}
+.testbed-content {
+  min-width: 0;
+}
+.layout-empty .panel-heading {
+  display: none;
+}
+.layout-empty .configuration {
+  margin: 0;
+}
+.layout-contained {
+  padding: 24px;
+  background: #eef1f4;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+.layout-contained .testbed-content {
+  max-width: 720px;
+  margin: auto;
+  padding: 24px;
+  background: white;
+  border: 1px solid #d4dbe3;
+  border-radius: 12px;
+}
+.layout-form {
+  padding: 16px;
+}
+.sample-form {
+  max-width: 640px;
+  margin: auto;
+}
+.sample-form > label {
+  display: block;
+  margin: 16px 0;
+}
+.sample-form > label > input,
+.sample-form > label > select {
+  padding: 8px;
+  font: inherit;
+}
+.layout-booking {
+  background: #f5f3ed;
+  min-height: 100vh;
+  color: #263c34;
+}
+.booking-header,
+.booking-footer {
+  padding: 24px;
+  background: #263c34;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+}
+.layout-booking .testbed-content {
+  max-width: 1100px;
+  margin: auto;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr);
+  gap: 24px;
+}
+.booking-intro {
+  grid-column: 1 / -1;
+}
+.booking-summary {
+  padding: 24px;
+  background: white;
+  align-self: start;
+}
+.testbed-catalogue {
+  padding: 24px;
+}
+.testbed-layout .config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+.testbed-layout .config-grid label {
+  display: flex;
+  flex-direction: column;
+}
+.testbed-layout .diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.testbed-layout .host-actions {
+  margin-top: 12px;
+}
+@media (max-width: 640px) {
+  .layout-booking .testbed-content {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+  }
+  .layout-contained {
+    padding: 8px;
+  }
+  .layout-contained .testbed-content {
+    padding: 8px;
+  }
+}

@@ -106,7 +106,11 @@ jobs:
             playwright-report/
 
   showcase:
-    name: Versioned showcase / Chromium
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    name: Versioned testbeds / ${{ matrix.browser }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -118,16 +122,17 @@ jobs:
       - run: corepack pnpm install --frozen-lockfile
       - run: npm run lint
       - run: npm run lint:test
+      - run: node --test scripts/showcase-server.test.cjs
       - run: npm run build
-      - run: node scripts/playwright.cjs install --with-deps chromium
+      - run: node scripts/playwright.cjs install --with-deps ${{ matrix.browser }}
       - run: npm run showcase:build
         env:
           WKLY_E2E: '1'
-      - run: npm run showcase:test:e2e -- --project=chromium
+      - run: npm run showcase:test:e2e -- --project="*-${{ matrix.browser }}" --grep-invert="rendered weeks"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: showcase-browser
+          name: showcase-browser-${{ matrix.browser }}
           if-no-files-found: ignore
           path: |
             test-results/

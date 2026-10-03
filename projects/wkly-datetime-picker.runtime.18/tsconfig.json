@@ -1,5 +1,93 @@
 {
   "extends": "../../tsconfig.json",
   "files": ["src/main.ts"],
-  "include": []
+  "include": [],
+  "compilerOptions": {
+    "paths": {
+      "wkly-datetime-picker.core": [
+        "projects/wkly-datetime-picker.core/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.adapters": [
+        "projects/wkly-datetime-picker.adapters/src/public-api.ts"
+      ],
+      "wkly-datetime-picker": [
+        "projects/wkly-datetime-picker/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.11": [
+        "projects/wkly-datetime-picker.11/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.11/cdk-overlay": [
+        "projects/wkly-datetime-picker.11/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.12": [
+        "projects/wkly-datetime-picker.12/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.12/cdk-overlay": [
+        "projects/wkly-datetime-picker.12/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.13": [
+        "projects/wkly-datetime-picker.13/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.13/cdk-overlay": [
+        "projects/wkly-datetime-picker.13/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.14": [
+        "projects/wkly-datetime-picker.14/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.14/cdk-overlay": [
+        "projects/wkly-datetime-picker.14/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.15": [
+        "projects/wkly-datetime-picker.15/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.15/cdk-overlay": [
+        "projects/wkly-datetime-picker.15/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.16": [
+        "projects/wkly-datetime-picker.16/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.16/cdk-overlay": [
+        "projects/wkly-datetime-picker.16/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.17": [
+        "projects/wkly-datetime-picker.17/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.17/cdk-overlay": [
+        "projects/wkly-datetime-picker.17/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.18": [
+        "projects/wkly-datetime-picker.18/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.18/cdk-overlay": [
+        "projects/wkly-datetime-picker.18/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.19": [
+        "projects/wkly-datetime-picker.19/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.19/cdk-overlay": [
+        "projects/wkly-datetime-picker.19/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.20": [
+        "projects/wkly-datetime-picker.20/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.20/cdk-overlay": [
+        "projects/wkly-datetime-picker.20/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.21": [
+        "projects/wkly-datetime-picker.21/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.21/cdk-overlay": [
+        "projects/wkly-datetime-picker.21/cdk-overlay/public-api.ts"
+      ],
+      "wkly-datetime-picker.22": [
+        "projects/wkly-datetime-picker.22/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.22/cdk-overlay": [
+        "projects/wkly-datetime-picker.22/cdk-overlay/public-api.ts"
+      ],
+      "@angular/*": [
+        "projects/wkly-datetime-picker.runtime.18/node_modules/@angular/*"
+      ]
+    }
+  }
 }
