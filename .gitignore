@@ -11,6 +11,7 @@
 /.test-build/
 /.compat/
 /test-results/
-/playwright-report/
+/playwright-report*/
 *.tgz
 node_modules
+
