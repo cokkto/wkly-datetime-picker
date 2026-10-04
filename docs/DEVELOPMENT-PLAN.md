@@ -6,18 +6,6 @@ This is the current work tracker for WKLY. Update a milestone when its implement
 
 The workspace has three shared packages and numbered Angular integration build targets for 11–22. `supported-angular.json` drives isolated compatibility builds and packed-consumer tests. The showcase has an evergreen host and independently compiled versioned testbeds. The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. No workflow yet maps the internal build artifacts to that public name, publishes packages, or updates release versions automatically. No confirmed product regressions are currently open.
 
-## Milestone 5 — Test exact month-label boundary placement
-
-- [ ] Create deterministic fixtures with explicit dates and week offsets for each case below. Assert the actual day position in the seven-day week so an incorrect fixture cannot silently test another boundary.
-- [ ] Cover a month starting on the first day of a week: its label at the top-left corner in LTR.
-- [ ] Cover a month starting on the last (seventh) day of a week: its label at the top-right corner in LTR.
-- [ ] Cover a month starting on the second day of a week: two month labels sharing the top-left area, with the intended staggered tracks and readable text.
-- [ ] Cover a month ending on the first day of a week: its ending label at the bottom-left edge in LTR.
-- [ ] Cover a month ending on the sixth day of a week: its ending label at the bottom-right edge in LTR.
-- [ ] Add screenshot comparisons and independent geometry assertions for exact label text, anchoring, staggering, clipping, and overlap with day cells. Exercise Gregorian, Hebrew, and Hijri month boundaries, including mirrored RTL placement, mobile/tablet/desktop widths, and fractional scales across the configured browser profiles.
-
-**Done when:** all five boundary cases have verified fixtures, reviewed screenshots, and geometry checks that detect misplaced, clipped, or overlapping month labels in LTR and RTL.
-
 ## Milestone 6 — Prepare publication
 
 - [ ] Confirm permission to publish under the `@wkly` npm scope. `@wkly/datetime-picker` had no public registry entry on 2026-10-03; absence of a public entry does not establish scope ownership.
