@@ -10,6 +10,10 @@ The workspace has three shared packages and numbered Angular integration build t
 
 - [ ] Establish and review the four missing Firefox month-boundary screenshot baselines. Geometry now passes across Angular 11–22 using the documented whole-CSS-pixel visibility rule; see [test behavior and verification](../projects/wkly-datetime-picker.tests/README.md#visibility-and-firefox-scroll-rounding) and [remaining screenshot coverage](REGRESSIONS.md#firefox-month-boundary-screenshot-baselines).
 
+## Firefox teardown investigation
+
+- [ ] Reproduce the reported Angular 16 Firefox `Browser.removeBrowserContext` session-store error in the original launch environment. Headless focused repetitions and the Angular 16/22 contract suites pass; this remains a reported browser teardown issue, with no confirmed picker regression. See [investigation evidence](REGRESSIONS.md#reported-firefox-context-teardown-failure).
+
 ## Milestone 5 — In X Days
 In Manual Input mode, replace the End label with a two-state toggle:
 [ End ] | [ In X days ]

@@ -933,12 +933,11 @@ export class WklyDateTimePickerComponent
       this.firstSupportedDay,
       Math.min(this.lastSupportedDay, day),
     );
+    // position renders synchronously; publish the tab stop before that render.
+    if (options.focus) this.focused = day;
     this.position(day, false, options);
     if (options.select) this.select(day);
-    if (options.focus) {
-      this.focused = day;
-      this.focusDay();
-    }
+    if (options.focus) this.focusDay();
   }
   scrollToAbsoluteWeek(week: number, options: WklyJumpOptions = {}): void {
     // A boundary week can start before the adapter's first supported day.

@@ -1,6 +1,28 @@
 import { test, expect } from "../fixtures";
 import { visibleDays } from "../helpers/picker";
 
+for (const presentation of ["inline", "dialog", "overlay"])
+  test(`${presentation}: focused jump updates the tab stop before deferred focus`, async ({
+    page,
+  }) => {
+    await page.goto(`/contracts?presentation=${presentation}`);
+    const tabStops = await page
+      .getByRole("button", { name: "Jump value past", exact: true })
+      .evaluate((button: HTMLButtonElement) => {
+        // Inspect the public call's result before timers or another render can repair it.
+        button.click();
+        return Array.from(
+          document.querySelectorAll("button.day[tabindex='0']"),
+          (day) => day.getAttribute("data-day"),
+        );
+      });
+    expect(tabStops).toEqual(["-16"]);
+    await expect(page.locator("button.day[data-day='-16']")).toBeFocused();
+    await expect(page.getByTestId("contract-value")).toHaveText("null");
+    await expect(page.getByTestId("contract-emissions")).toHaveText("0");
+    if (presentation !== "inline") await page.keyboard.press("Escape");
+  });
+
 for (const presentation of ["dialog", "overlay"])
   test(`${presentation}: immediate close cancels deferred jump focus`, async ({
     page,

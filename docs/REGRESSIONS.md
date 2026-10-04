@@ -21,6 +21,30 @@ Reproduce with screenshots enabled and baseline writes disabled:
 npm run showcase:test:e2e -- --project=angular-22-firefox visual/month-boundaries.spec.ts --retries=0 --update-snapshots=none
 ```
 
+## Reported Firefox context teardown failure
+
+On 2026-10-04, `angular-16-firefox` was reported to fail in `interaction/angular-contracts.spec.ts:5`, `overlay: immediate close cancels deferred jump focus`, with:
+
+```text
+Error: browserContext.close: Protocol error (Browser.removeBrowserContext): can't access property "_maybeDontRestoreTabs", this._windows[aWindow.__SSi] is undefined
+```
+
+The failing operation is browser-context teardown. The installed Firefox 155 / Playwright 1.63.0 sources show that `Browser.removeBrowserContext` destroys the context, closes its page tabs, and can invoke `SessionStore.maybeDontRestoreTabs` when closing a window's last tab. That method accesses window state without checking whether it exists. This identifies the browser-side error path but does not establish what made that window state unavailable in the reported run.
+
+The investigation has not reproduced the failure: 20 headless repetitions of the reported test passed with retries disabled; all 70 contracts across Angular 16 and 22 Firefox passed; and a standalone headless probe created and immediately closed 100 contexts with blank pages on one Firefox process without errors. No picker, test assertion, retry policy, or browser preference has been changed. The original command, launch mode (headless, headed, UI, or VS Code), and browser version remain needed to match the failing environment.
+
+Headed checks in this execution environment stalled at the second `Jump value past` button's click, waiting for the element to be visible, enabled and stable. Two cases with two workers and one case with one worker reached the 30-second test timeout; both runs were then stopped. None reported the original session-store error. These headed click timeouts are a separate observation with an unconfirmed cause, so they do not validate or reproduce the reported teardown failure.
+
+Focused reproduction command from the repository root:
+
+```sh
+npm run showcase:test:e2e -- interaction/angular-contracts.spec.ts --project=angular-16-firefox --grep "overlay: immediate close cancels deferred jump focus" --retries=0 --repeat-each=20
+```
+
+Add `--headed` to compare a visible browser run. For a subsequent failure, enable `DEBUG=pw:browser,pw:protocol` in the launching shell and retain the Firefox stderr/protocol output alongside the Playwright report; page traces alone may not explain browser-chrome teardown. Treat this as an unresolved reported harness issue until reproduction confirms its trigger.
+
 ## Verification rule
 
 Record confirmed product failures with reproduction evidence and focused commands from the repository root; see the [developer guide](README.DEV.md). Run focused checks with `--retries=0` while investigating. Screenshot baselines record appearance and can include a defect; geometry assertions are the correctness gate. Check other Angular majors and browser profiles after a fix. Remove resolved entries and update the [development plan](DEVELOPMENT-PLAN.md).
+
+The focused-jump `attr.tabindex` NG0100 regression was resolved on 2026-10-04. It reproduced in 3 of 10 Angular 21 WebKit runs before the fix; all 344 browser checks after the fix passed with retries disabled. The [test README](../projects/wkly-datetime-picker.tests/README.md#focused-jumps-and-deferred-focus) retains the cause, synchronous reproduction evidence, and focused commands.

@@ -20,6 +20,21 @@ The browser server defaults to its own deterministic `WKLY_E2E=1` build and fixe
 
 `contracts/example-calendars.ts` checks Hebrew/Hijri conversion, boundaries, errors, leap months/years, and UTC wire values; the Hijri interval also matches an independent `Intl` oracle. `e2e/interaction/example-calendars.spec.ts` checks navigation, localized manual dates and times, range editing, boundary validation, and three-way paired synchronization under a non-UTC browser timezone. `e2e/visual/example-calendars.spec.ts` checks selected Hebrew/Hijri dates, localized month/year labels and mirrored RTL geometry at mobile/tablet/desktop widths, with browser-specific screenshots.
 
+## Focused jumps and deferred focus
+
+`e2e/interaction/angular-contracts.spec.ts` checks that a public focused jump synchronously moves the calendar's sole `tabindex="0"` to its target before deferred DOM focus runs. Each inline, dialog, and overlay check dispatches the host's jump action and reads tab stops in the same browser task, so a later timer or render cannot conceal stale attributes. The immediate-close cases also verify that deferred focus does not run on a destroyed picker and that reopening remains usable without value emissions.
+
+On 2026-10-04, Angular 21 WebKit reproduced NG0100 in `dialog: immediate close cancels deferred jump focus` in 3 of 10 runs with retries disabled. The trace placed the error after the second `Jump value past` action reopened the dialog; Angular reported `attr.tabindex` changing from `0` to `-1`. `scrollToEpochDay` rendered through `position` before assigning `focused`. The three synchronous checks all found epoch day -20 as the tab stop after jumping to -16, and the dialog and overlay checks also caught NG0100.
+
+Every Angular integration now assigns the requested focus day before that synchronous render. DOM focus remains deferred with the destruction guard intact. After the fix, all 50 repeated Angular 21 WebKit focused cases, 180 focused cases across Angular 11–22 Chromium/Firefox/WebKit, and 114 full Angular 21 contracts across those browsers passed with retries disabled. Full lint and source contracts in UTC and America/New_York also passed.
+
+Focused checks from the repository root:
+
+```sh
+npm run showcase:test:e2e -- interaction/angular-contracts.spec.ts --project=angular-21-webkit --grep "dialog: immediate close cancels deferred jump focus" --retries=0 --repeat-each=10
+npm run showcase:test:e2e -- interaction/angular-contracts.spec.ts --project="*-chromium" --project="*-firefox" --project="*-webkit" --grep "focused jump updates the tab stop|immediate close cancels deferred jump focus" --retries=0
+```
+
 ## Visibility and Firefox scroll rounding
 
 `e2e/helpers/picker.ts` compares day-button top and bottom edges relative to the scroll viewport, rounding each difference to the nearest whole CSS pixel. Firefox can apply a fractional scroll offset even when the picker requests an integer. Whole-pixel comparison accommodates this browser quantization while still excluding substantially clipped buttons. Round the differences rather than the absolute coordinates so classification does not depend on the picker's position on the page. Do not add browser-specific offsets or tune constants against screenshots.
