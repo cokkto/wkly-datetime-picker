@@ -1,6 +1,13 @@
 # Open regressions
 
-No confirmed regressions are currently open.
+## Click on Month button inconsistent
+- Click on month button on top of calendar navigates to manual mode
+- Clicking on month button on top of calendar in manual mode doesn't navigate to calendar view
+
+### Expected:
+Make Month non-interactive in both views
+
+// No confirmed regressions are currently open.
 
 ## Verification rule
 
