@@ -6,6 +6,10 @@ This is the current work tracker for WKLY. Update a milestone when its implement
 
 The workspace has three shared packages and numbered Angular integration build targets for 11–22. `supported-angular.json` drives isolated compatibility builds and packed-consumer tests. The showcase has an evergreen host and independently compiled versioned testbeds. The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. No workflow yet maps the internal build artifacts to that public name, publishes packages, or updates release versions automatically. No confirmed product regressions are currently open.
 
+## Firefox screenshot coverage
+
+- [ ] Establish and review the four missing Firefox month-boundary screenshot baselines. Geometry now passes across Angular 11–22 using the documented whole-CSS-pixel visibility rule; see [test behavior and verification](../projects/wkly-datetime-picker.tests/README.md#visibility-and-firefox-scroll-rounding) and [remaining screenshot coverage](REGRESSIONS.md#firefox-month-boundary-screenshot-baselines).
+
 ## Milestone 5 — In X Days
 In Manual Input mode, replace the End label with a two-state toggle:
 [ End ] | [ In X days ]

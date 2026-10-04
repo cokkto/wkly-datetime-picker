@@ -19,3 +19,19 @@ The browser server defaults to its own deterministic `WKLY_E2E=1` build and fixe
 `e2e/interaction/angular-contracts.spec.ts` uses the versioned `/contracts` fixture to exercise public jump methods on inline, native-dialog, and CDK-overlay pickers, Gregorian, Hebrew, and Hijri adapter boundaries, scoped configuration/localization providers, runtime input changes, and accessible range endpoint edits. `contracts/localization.ts` checks exact regional/script/language fallback against source and installed shared packages.
 
 `contracts/example-calendars.ts` checks Hebrew/Hijri conversion, boundaries, errors, leap months/years, and UTC wire values; the Hijri interval also matches an independent `Intl` oracle. `e2e/interaction/example-calendars.spec.ts` checks navigation, localized manual dates and times, range editing, boundary validation, and three-way paired synchronization under a non-UTC browser timezone. `e2e/visual/example-calendars.spec.ts` checks selected Hebrew/Hijri dates, localized month/year labels and mirrored RTL geometry at mobile/tablet/desktop widths, with browser-specific screenshots.
+
+## Visibility and Firefox scroll rounding
+
+`e2e/helpers/picker.ts` compares day-button top and bottom edges relative to the scroll viewport, rounding each difference to the nearest whole CSS pixel. Firefox can apply a fractional scroll offset even when the picker requests an integer. Whole-pixel comparison accommodates this browser quantization while still excluding substantially clipped buttons. Round the differences rather than the absolute coordinates so classification does not depend on the picker's position on the page. Do not add browser-specific offsets or tune constants against screenshots.
+
+On 2026-10-04, Playwright 1.63.0 / Firefox 155 applied `scrollTop = 49000.265625` after the picker requested `49000`. In the Finnish month-boundary fixture, the 49px first row began at `121.81666564941406`, above the viewport top of `122.08332824707031`; exact comparisons excluded all seven buttons. The same rounding reproduced in a standalone HTML scroller without Angular or picker styles, through both Juggler and standard WebDriver BiDi, at emulated DPR 1, 1.5 and 2. Chromium and WebKit applied `49000` exactly. The rounding rule resolves the test's overly precise containment expectation without changing the picker.
+
+The month-boundary test retains raw geometry attachments on containment failures and checks annotation element bounds before screenshots. Those bounds describe CSS boxes; a text `Range` uses font metrics and can extend beyond them, so it is a different contract.
+
+Focused geometry validation (screenshots excluded explicitly):
+
+```sh
+npm run showcase:test:e2e -- visual/month-boundaries.spec.ts --project="*-firefox" --project=angular-22-chromium --project=angular-22-webkit --retries=0 --ignore-snapshots
+```
+
+All 56 cases passed after the change, including the original 48 Firefox failures across Angular 11–22. Run without `--ignore-snapshots` to verify appearance too; the currently missing Firefox month-boundary baselines are tracked separately in [REGRESSIONS.md](../../docs/REGRESSIONS.md).

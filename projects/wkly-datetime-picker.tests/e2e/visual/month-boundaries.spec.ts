@@ -38,7 +38,7 @@ const cases = [
 for (const fixture of cases) {
   test.describe(`month boundaries ${fixture.name}`, () => {
     for (const width of [SCREEN_SIZE.MOBILE, SCREEN_SIZE.TABLET]) {
-      test(`${width} default zoom`, async ({ page }) => {
+      test(`${width} default zoom`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
         const { panel, picker, scroller } = await openPicker(
           page,
@@ -75,7 +75,36 @@ for (const fixture of cases) {
           { length: fixture.weeks * 7 },
           (_, index) => firstDay + index,
         );
-        await expect.poll(() => visibleDays(scroller)).toEqual(expectedDays);
+        try {
+          await expect.poll(() => visibleDays(scroller)).toEqual(expectedDays);
+        } catch (error) {
+          // Preserve actual scroll and layout coordinates when containment fails.
+          // An excluded week alone cannot distinguish navigation from clipping.
+          const geometry = await scroller.evaluate((element: HTMLElement) => ({
+            devicePixelRatio: window.devicePixelRatio,
+            scrollTop: element.scrollTop,
+            viewport: element.getBoundingClientRect().toJSON(),
+            weeks: Array.from(
+              element.querySelectorAll<HTMLElement>(".week-row"),
+              (row) => ({
+                height: getComputedStyle(row).height,
+                bounds: row.getBoundingClientRect().toJSON(),
+                days: Array.from(
+                  row.querySelectorAll<HTMLElement>("button.day"),
+                  (day) => ({
+                    day: Number(day.dataset.day),
+                    bounds: day.getBoundingClientRect().toJSON(),
+                  }),
+                ),
+              }),
+            ),
+          }));
+          await info.attach("month-boundary-geometry", {
+            body: JSON.stringify({ expectedDays, ...geometry }, null, 2),
+            contentType: "application/json",
+          });
+          throw error;
+        }
 
         const cell = (day: number) =>
           picker.locator(`button.day[data-day='${day}']`).locator("..");
@@ -107,14 +136,8 @@ for (const fixture of cases) {
           await expect(label).toHaveText(fixture.labels[index]);
           await expect(label).toBeVisible();
         }
-        await page.mouse.move(width - 1, 999);
-        await expect(picker).toHaveScreenshot(
-          `month-boundaries-${fixture.locale}-${width}.png`,
-          { animations: "disabled" },
-        );
-
-        // The scroll viewport is the calendar's actual clipping boundary;
-        // Measure the text range, as in the week-boundary staggering checks.
+        // These assertions check annotation element boxes against the scroll
+        // viewport. Text ranges can extend beyond the CSS box with font metrics.
         const bounds = (await scroller.boundingBox())!;
         for (const [index, label] of labels.entries()) {
           const box = (await label.boundingBox())!;
@@ -132,6 +155,12 @@ for (const fixture of cases) {
             .soft(box.y + box.height, `${context}: bottom`)
             .toBeLessThanOrEqual(bounds.y + bounds.height + 0.5);
         }
+        // Run geometry checks even when an appearance baseline is missing.
+        await page.mouse.move(width - 1, 999);
+        await expect(picker).toHaveScreenshot(
+          `month-boundaries-${fixture.locale}-${width}.png`,
+          { animations: "disabled" },
+        );
       });
     }
   });
