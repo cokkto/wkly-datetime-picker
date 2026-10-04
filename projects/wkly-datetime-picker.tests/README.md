@@ -20,6 +20,21 @@ The browser server defaults to its own deterministic `WKLY_E2E=1` build and fixe
 
 `contracts/example-calendars.ts` checks Hebrew/Hijri conversion, boundaries, errors, leap months/years, and UTC wire values; the Hijri interval also matches an independent `Intl` oracle. `e2e/interaction/example-calendars.spec.ts` checks navigation, localized manual dates and times, range editing, boundary validation, and three-way paired synchronization under a non-UTC browser timezone. `e2e/visual/example-calendars.spec.ts` checks selected Hebrew/Hijri dates, localized month/year labels and mirrored RTL geometry at mobile/tablet/desktop widths, with browser-specific screenshots.
 
+## Chromium local testbed transport
+
+The Chromium fixture in `e2e/fixtures.ts` relays local testbed GET/HEAD requests through Playwright's Node HTTP client to `127.0.0.1`. It preserves the original Host header so the real showcase server selects the correct compiled Angular major, and fulfills the browser request with that server's response without changing its URL or origin. Redirects remain visible to the browser. Response bodies are disposed after fulfillment to avoid accumulating large bundles. Other hosts and methods retain browser networking; Firefox and WebKit use their normal transport. Console and Angular error assertions remain enabled.
+
+The 2026-10-04 full report recorded 9,328 passed, 246 skipped, and two failures with two workers and no retries. `angular-14-chromium-hidpi` failed a date-range document request with `net::ERR_NO_BUFFER_SPACE` before receiving an HTTP response. `angular-11-mobile` received its HTML and CSS but failed `/main.js` with the same network error, leaving no picker to render. The underlying Windows resource condition is not established. Original traces and report evidence were preserved in ignored `.test-build/navigation-evidence/`.
+
+Sixty focused reruns did not reproduce the intermittent error. The new `e2e/interaction/testbed-transport.spec.ts` provides deterministic fault injection by disabling browser networking: both reported profiles failed navigation before the relay and passed afterward. It verifies that documents and bundles still load from the real server with the correct Angular major and browser URL. After the fix, 60 focused repetitions and the complete affected profiles (263 passed, 5 skipped) passed with six workers, retries disabled, and screenshot baseline writes disabled. The same settings passed smoke checks across all 72 Angular/browser profiles (126 passed, 90 intentional skips), including reloads and evergreen-to-versioned navigation. These are 449 passing browser checks; the entire long-running suite was not rerun. Full lint, source contracts in UTC and America/New_York, server host-isolation checks, and repository formatting also passed.
+
+Focused checks from the repository root:
+
+```sh
+npm run showcase:test:e2e -- interaction/testbed-transport.spec.ts --retries=0 --workers=6
+npm run showcase:test:e2e -- interaction/value-contracts.spec.ts visual/snapshots.spec.ts --project=angular-14-chromium-hidpi --project=angular-11-mobile --grep "rendered weeks 360 zoom 1$| date-range: UTC values, inclusive bounds and exact rejection codes$" --retries=0 --repeat-each=10 --workers=6 --update-snapshots=none
+```
+
 ## Focused jumps and deferred focus
 
 `e2e/interaction/angular-contracts.spec.ts` checks that a public focused jump synchronously moves the calendar's sole `tabindex="0"` to its target before deferred DOM focus runs. Each inline, dialog, and overlay check dispatches the host's jump action and reads tab stops in the same browser task, so a later timer or render cannot conceal stale attributes. The immediate-close cases also verify that deferred focus does not run on a destroyed picker and that reopening remains usable without value emissions.
