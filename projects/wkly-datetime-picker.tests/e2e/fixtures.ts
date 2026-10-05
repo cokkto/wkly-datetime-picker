@@ -38,7 +38,7 @@ export const emissions = (snapshot: HostSnapshot) =>
 type Entry = { page: Page; bootId: string; errors: string[] };
 type Domain = { acquire(suite: string): Promise<Entry> };
 export const test = base.extend<
-  { suite: string; spec: FixtureSpec; host: PickerFixture },
+  { suite: string; spec: FixtureSpec; suitePage: Entry; host: PickerFixture },
   { domain: Domain }
 >({
   suite: ["values", { option: true }],
@@ -108,9 +108,16 @@ export const test = base.extend<
     },
     { scope: "worker" },
   ],
-  host: async ({ domain, suite, spec }, use, info) => {
+  // Cold browser/Angular startup must not consume the scenario's action budget.
+  suitePage: [
+    async ({ domain, suite }, use) => {
+      await use(await domain.acquire(suite));
+    },
+    { timeout: 60000 },
+  ],
+  host: async ({ suitePage, suite, spec }, use, info) => {
     const started = performance.now();
-    const { page, bootId, errors } = await domain.acquire(suite);
+    const { page, bootId, errors } = suitePage;
     expect(errors).toEqual([]);
     const before = await page.evaluate(() => window.wklyTestHost.identity());
     expect(before.bootId).toBe(bootId);

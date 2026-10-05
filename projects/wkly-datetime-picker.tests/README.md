@@ -27,7 +27,7 @@ The server can be reused and serves every built registered Angular version, incl
 
 ## Browser architecture
 
-Every version/browser/domain has one worker-owned context in America/New_York and named reusable suite pages. Angular boots once per page; each scenario mounts a new picker/form through the public host bridge, exercises behavior and destroys its fixture. Viewport/zoom pages stay within their domain. Six worker slots bound local concurrency; `CI=true` limits this to two on hosted runners.
+Every version/browser/domain has one worker-owned context in America/New_York and named reusable suite pages. Angular boots once per page, with a separate 60-second suite-page bootstrap budget; each scenario then mounts a new picker/form through the public host bridge, exercises behavior and destroys its fixture within the normal test budget. Viewport/zoom pages stay within their domain. Six worker slots bound local concurrency; `CI=true` limits this to two on hosted runners.
 
 The [registry](../../scripts/test-domains.cjs), [fixtures](e2e/fixtures.ts) and [runner](../../scripts/test-domains-run.cjs) audit fixture teardown, boot IDs and context/page counts. A complete unfiltered run rejects skips, retries or restarted pages. Filtered debug runs retain fixture lifecycle assertions but do not claim a full matrix audit.
 

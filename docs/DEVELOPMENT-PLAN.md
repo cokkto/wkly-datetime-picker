@@ -8,8 +8,6 @@ The workspace has three shared packages and Angular integration build targets fo
 
 The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. Mapping internal artifacts to that name, publishing and automatic version updates remain future work. The [calendar title interaction](REGRESSIONS.md#calendar-title-interaction) remains an open UI issue.
 
-Picker domain fixtures now use the showcase's `vN.wkly.localhost` hostname structure on port 4318. Host reuse serves all built registered versions and checks selected virtual hosts over loopback before starting workers. This fixes the repeated setup timeouts caused by reusing a server started with a narrower Angular selection; reproduction and validation are recorded in the [regression log](REGRESSIONS.md#resolved--picker-host-reuse-timeouts).
-
 ## Next milestone
 
 Implement the InXDays view described below.
