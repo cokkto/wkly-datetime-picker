@@ -2,6 +2,8 @@
 
 `supported-angular.json` is the source of truth for supported Angular majors, their numbered packages, runtime entries, and pinned Node, Angular, TypeScript, and CDK toolchains. It currently registers 11–22. The workflow is [`.github/workflows/compatibility.yml`](../.github/workflows/compatibility.yml); the planner and runner are [`scripts/compatibility.cjs`](../scripts/compatibility.cjs). This workflow tests artifacts and does not publish or change versions.
 
+Angular 22 pins `@angular/build` directly at the same version as `@angular-devkit/build-angular`. Keep these pins aligned: the direct dependency avoids npm's nested build/Vite/SSL peer placement failure during fresh strict installs, including packed consumers.
+
 ## Public package and version lines
 
 The release target is one npm package name, `@wkly/datetime-picker`. Its major version selects the Angular integration: an Angular 19 consumer installs `@wkly/datetime-picker@19.x.x` and imports from `@wkly/datetime-picker`. The optional CDK entry point is `@wkly/datetime-picker/cdk-overlay`. Consumers pin the major because an unqualified npm install can select a different Angular line.
