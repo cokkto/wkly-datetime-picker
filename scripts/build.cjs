@@ -7,7 +7,18 @@ const { createRequire } = require("module");
 const { buildSync } = require("esbuild");
 const root = path.resolve(__dirname, "..");
 process.chdir(root);
-const tsc = require.resolve("typescript/bin/tsc");
+let tsc;
+try {
+  tsc = require.resolve("wkly-shared-typescript/bin/tsc");
+} catch {
+  tsc = require.resolve("typescript/bin/tsc");
+}
+const sharedNames = Object.fromEntries(
+  ["wkly-datetime-picker.core", "wkly-datetime-picker.adapters"].map((name) => [
+    name,
+    JSON.parse(fs.readFileSync(`projects/${name}/package.json`)).name,
+  ]),
+);
 const supported = require("../supported-angular.json");
 const selectedAngular =
   process.env.WKLY_ANGULAR ||
@@ -34,7 +45,7 @@ for (const name of [
       format: "esm",
       platform: "neutral",
       target: "es2018",
-      external: ["wkly-datetime-picker.core", "wkly-datetime-picker.adapters"],
+      external: Object.values(sharedNames),
     });
     buildSync({
       entryPoints: [project + "/src/public-api.ts"],
@@ -43,19 +54,21 @@ for (const name of [
       format: "cjs",
       platform: "node",
       target: "node16",
-      external: ["wkly-datetime-picker.core", "wkly-datetime-picker.adapters"],
+      external: Object.values(sharedNames),
     });
     const paths = {
-      "wkly-datetime-picker.core": [
+      [sharedNames["wkly-datetime-picker.core"]]: [
         "dist/wkly-datetime-picker.core/public-api.d.ts",
       ],
     };
     if (name === "wkly-datetime-picker")
-      paths["wkly-datetime-picker.adapters"] = [
+      paths[sharedNames["wkly-datetime-picker.adapters"]] = [
         "dist/wkly-datetime-picker.adapters/public-api.d.ts",
       ];
     const config = {
-      extends: "../../tsconfig.json",
+      extends: fs.existsSync("tsconfig.shared.json")
+        ? "../../tsconfig.shared.json"
+        : "../../tsconfig.json",
       compilerOptions: {
         declaration: true,
         emitDeclarationOnly: true,
@@ -126,7 +139,8 @@ for (const name of [
     out + "/package.json",
     JSON.stringify(builtManifest, null, 2),
   );
-  const link = path.join(root, "node_modules", name);
+  const link = path.join(root, "node_modules", builtManifest.name);
+  fs.mkdirSync(path.dirname(link), { recursive: true });
   if (!fs.existsSync(link))
     fs.symlinkSync(path.join(root, out), link, "junction");
 }

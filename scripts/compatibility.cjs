@@ -140,7 +140,10 @@ function prepare(major) {
   write(path.join(dir, "package.json"), {
     name: "wkly-compatibility",
     private: true,
-    dependencies: supported[major].dependencies,
+    dependencies: {
+      ...supported[major].dependencies,
+      "wkly-shared-typescript": "npm:typescript@4.1.6",
+    },
   });
   fs.writeFileSync(
     path.join(dir, ".npmrc"),
@@ -179,6 +182,15 @@ function test(major) {
   process.env.WKLY_ANGULAR = major;
   timedRun("Toolchain install", "npm", ["install"], dir);
   timedRun("Source contracts", process.execPath, ["scripts/test.cjs"], dir);
+  const {
+    preparePublicSources,
+    packageDirs,
+    picker,
+    tarballFilename,
+    normalizeTarball,
+  } = require("./public-packages.cjs");
+  preparePublicSources(dir, major);
+  const directories = packageDirs(major);
   timedRun("Library builds", process.execPath, ["scripts/build.cjs"], dir);
   timedRun("Package checks", process.execPath, ["scripts/pack.cjs"], dir);
   // Keep the consumer beside the toolchain so Node cannot resolve its CDK install.
@@ -189,18 +201,18 @@ function test(major) {
   fs.mkdirSync(consumer, { recursive: true });
   const dependencies = { ...supported[major].dependencies };
   delete dependencies["@angular/cdk"];
-  const names = [
-    "wkly-datetime-picker.core",
-    "wkly-datetime-picker.adapters",
-    "wkly-datetime-picker",
-    supported[major].package,
-  ];
+  const names = Object.keys(directories);
   for (const name of names) {
-    const packageDir = path.join(dir, "dist", name);
+    const packageDir = path.join(dir, "dist", directories[name]);
     const packed = JSON.parse(
       timedRun(`Pack ${name}`, "npm", ["pack", "--json"], packageDir, true),
     )[0];
-    dependencies[name] = `file:../${major}/dist/${name}/${packed.filename}`;
+    const filename = tarballFilename(packed);
+    if (!fs.existsSync(path.join(packageDir, filename)))
+      throw new Error(`Missing packed tarball: ${filename}`);
+    normalizeTarball(path.join(packageDir, filename));
+    dependencies[name] =
+      `file:../${major}/dist/${directories[name]}/${filename}`;
   }
   write(path.join(consumer, "package.json"), {
     name: "wkly-consumer",
@@ -215,6 +227,7 @@ function test(major) {
       dist: path.join(dir, "dist"),
       names,
       dependencies,
+      packageDirs: directories,
     }),
   );
   fs.copyFileSync(
@@ -233,7 +246,7 @@ function test(major) {
       ),
       "utf8",
     )
-    .replaceAll("__PACKAGE__", supported[major].package);
+    .replaceAll("__PACKAGE__", picker);
   const entries = [];
   function secondaryEntries(folder, prefix = "") {
     for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
@@ -241,7 +254,7 @@ function test(major) {
       const child = path.join(folder, entry.name);
       const subpath = prefix + "/" + entry.name;
       if (fs.existsSync(path.join(child, "ng-package.json")))
-        entries.push(supported[major].package + subpath);
+        entries.push(picker + subpath);
       secondaryEntries(child, subpath);
     }
   }
@@ -322,12 +335,7 @@ function test(major) {
     ),
     path.join(consumer, "ssr.cjs"),
   );
-  timedRun(
-    "SSR",
-    process.execPath,
-    ["ssr.cjs", supported[major].package],
-    consumer,
-  );
+  timedRun("SSR", process.execPath, ["ssr.cjs", picker], consumer);
   dependencies["@angular/cdk"] = supported[major].dependencies["@angular/cdk"];
   write(path.join(consumer, "package.json"), {
     name: "wkly-consumer",
@@ -341,13 +349,14 @@ function test(major) {
       dist: path.join(dir, "dist"),
       names,
       dependencies,
+      packageDirs: directories,
       cdkVersion: supported[major].dependencies["@angular/cdk"],
     }),
   );
   source = source
     .replace(
       "/* OVERLAY_IMPORT */",
-      `import { WklyDateTimePickerOverlayModule } from "${supported[major].package}/cdk-overlay";`,
+      `import { WklyDateTimePickerOverlayModule } from "${picker}/cdk-overlay";`,
     )
     .replace("/* OVERLAY_MODULE */", ", WklyDateTimePickerOverlayModule")
     .replace(
@@ -363,6 +372,7 @@ function test(major) {
   fs.writeFileSync(main, source);
   buildConsumer("CDK consumer AOT");
   timings.complete();
+  require("./release.cjs").evidence(major, dir, consumer);
 }
 
 function matrix() {

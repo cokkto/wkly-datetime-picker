@@ -5,9 +5,9 @@ import { platformBrowserDynamic } from "@angular/platform-browser-dynamic";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import { WklyDateTimePickerModule } from "__PACKAGE__";
 /* OVERLAY_IMPORT */
-import { WklyGregorianCalendarAdapter } from "wkly-datetime-picker.adapters";
-import { absoluteWeekOf } from "wkly-datetime-picker.core";
-import { ENGLISH } from "wkly-datetime-picker";
+import { WklyGregorianCalendarAdapter } from "@wkly/adapters";
+import { absoluteWeekOf } from "@wkly/core";
+import { ENGLISH } from "@wkly/presentation";
 
 @Component({
   /* COMPONENT_OPTIONS */

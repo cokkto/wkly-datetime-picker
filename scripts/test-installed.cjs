@@ -4,15 +4,21 @@ const path = require("path");
 const { execFileSync, spawnSync } = require("child_process");
 const esbuild = require("esbuild");
 const { verifyPackedConsumer } = require("./verify-packed-consumer.cjs");
+const {
+  shared,
+  packageDirs,
+  publicName,
+  copySharedWorkspace,
+  tarballFilename,
+  normalizeTarball,
+} = require("./public-packages.cjs");
 const root = path.resolve(__dirname, "..");
 // A new consumer prevents npm from reusing an older tarball with the same version.
 fs.mkdirSync(path.join(root, ".test-build"), { recursive: true });
 const consumer = fs.mkdtempSync(path.join(root, ".test-build/installed-"));
-const packages = [
-  "wkly-datetime-picker.core",
-  "wkly-datetime-picker.adapters",
-  "wkly-datetime-picker",
-];
+const workspace = fs.mkdtempSync(path.join(root, ".test-build/public-shared-"));
+copySharedWorkspace(root, workspace);
+const packages = Object.keys(shared);
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 function run(args, cwd = root) {
   return execFileSync(npm, args, {
@@ -23,13 +29,22 @@ function run(args, cwd = root) {
 }
 const tarballs = packages.map((name) => {
   execFileSync(process.execPath, ["scripts/build.cjs", name], {
-    cwd: root,
+    cwd: workspace,
     stdio: "inherit",
   });
   const result = JSON.parse(
-    run(["pack", "--json"], path.join(root, "dist", name)),
+    run(["pack", "--json"], path.join(workspace, "dist", name)),
   );
-  return path.join(root, "dist", name, result[0].filename);
+  const tarball = path.join(
+    workspace,
+    "dist",
+    name,
+    tarballFilename(result[0]),
+  );
+  if (!fs.existsSync(tarball))
+    throw new Error(`Missing packed tarball: ${tarball}`);
+  normalizeTarball(tarball);
+  return tarball;
 });
 fs.writeFileSync(
   path.join(consumer, "package.json"),
@@ -48,8 +63,9 @@ run(
 );
 verifyPackedConsumer({
   consumer,
-  dist: path.join(root, "dist"),
-  names: packages,
+  dist: path.join(workspace, "dist"),
+  names: packages.map(publicName),
+  packageDirs: packageDirs(),
   dependencies: JSON.parse(
     fs.readFileSync(path.join(consumer, "package.json"), "utf8"),
   ).dependencies,
@@ -89,7 +105,7 @@ const suite = path.join(root, "projects/wkly-datetime-picker.tests/contracts");
             build.onResolve(
               { filter: /^wkly-datetime-picker(?:\.(?:core|adapters))?$/ },
               (args) => {
-                const resolved = require.resolve(args.path, {
+                const resolved = require.resolve(publicName(args.path), {
                   paths: [consumer],
                 });
                 if (

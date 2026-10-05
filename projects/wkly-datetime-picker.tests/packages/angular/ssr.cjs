@@ -7,11 +7,7 @@ Module._load = function (name) {
     throw new Error("Framework dependency in shared package: " + name);
   return original.apply(this, arguments);
 };
-for (const name of [
-  "wkly-datetime-picker.core",
-  "wkly-datetime-picker.adapters",
-  "wkly-datetime-picker",
-])
+for (const name of ["@wkly/core", "@wkly/adapters", "@wkly/presentation"])
   assert(Object.keys(require(name)).length);
 Module._load = original;
 const load = async (name) => {

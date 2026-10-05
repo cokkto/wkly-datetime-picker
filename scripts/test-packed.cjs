@@ -6,6 +6,7 @@ const { majors } = require("./test-host-selection.cjs");
 const { browsers } = require("./test-browsers.cjs");
 const { resultsFile } = require("./test-reporters.cjs");
 const supported = require("../supported-angular.json");
+const { packageDirs, picker } = require("./public-packages.cjs");
 const { verifyPackedConsumer } = require("./verify-packed-consumer.cjs");
 const root = path.resolve(__dirname, "..");
 const fixtures = path.join(
@@ -76,26 +77,22 @@ for (const { major, node, consumer } of jobs) {
     verifyPackedConsumer({
       consumer,
       dist: path.join(root, `.compat/${major}/dist`),
-      names: [
-        "wkly-datetime-picker.core",
-        "wkly-datetime-picker.adapters",
-        "wkly-datetime-picker",
-        info.package,
-      ],
+      names: Object.keys(packageDirs(major)),
+      packageDirs: packageDirs(major),
       dependencies: read(path.join(consumer, "package.json")).dependencies,
       cdkVersion: info.dependencies["@angular/cdk"],
     }),
   );
   const source = fs
     .readFileSync(path.join(fixtures, "main.ts"), "utf8")
-    .replaceAll("__PACKAGE__", info.package)
+    .replaceAll("__PACKAGE__", picker)
     .replace(
       "/* COMPONENT_OPTIONS */",
       Number(major) >= 14 ? "standalone: false," : "",
     )
     .replace(
       "/* OVERLAY_IMPORT */",
-      `import { WklyDateTimePickerOverlayModule } from "${info.package}/cdk-overlay";`,
+      `import { WklyDateTimePickerOverlayModule } from "${picker}/cdk-overlay";`,
     )
     .replace("/* OVERLAY_MODULE */", ", WklyDateTimePickerOverlayModule")
     .replace(
@@ -121,7 +118,7 @@ for (const { major, node, consumer } of jobs) {
     path.join(consumer, "ssr.cjs"),
   );
   timings.measure(`Angular ${major}: SSR`, () =>
-    execFileSync(node, ["ssr.cjs", info.package], {
+    execFileSync(node, ["ssr.cjs", picker], {
       cwd: consumer,
       stdio: "inherit",
       env,

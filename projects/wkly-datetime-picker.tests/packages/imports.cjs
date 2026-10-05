@@ -4,11 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const Module = require("node:module");
-const packages = [
-  "wkly-datetime-picker.core",
-  "wkly-datetime-picker.adapters",
-  "wkly-datetime-picker",
-];
+const packages = ["@wkly/core", "@wkly/adapters", "@wkly/presentation"];
 const original = Module._load;
 Module._load = function (name) {
   if (name.startsWith("@angular/") || name === "rxjs")

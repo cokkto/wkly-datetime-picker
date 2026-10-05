@@ -58,11 +58,16 @@ function verifyPackedConsumer({
   names,
   dependencies,
   cdkVersion = null,
+  packageDirs = {},
 }) {
   const lock = read(path.join(consumer, "package-lock.json"));
   const expectedEntries = new Set(names.map((name) => `node_modules/${name}`));
   for (const entry of Object.keys(lock.packages)) {
-    if (/(?:^|\/)node_modules\/wkly-datetime-picker(?:\.|$)/.test(entry))
+    if (
+      /(?:^|\/)node_modules\/(?:wkly-datetime-picker(?:\.|$)|@wkly\/)/.test(
+        entry,
+      )
+    )
       assert.ok(
         expectedEntries.has(entry),
         `Unexpected WKLY install: ${entry}`,
@@ -73,7 +78,7 @@ function verifyPackedConsumer({
     assert.ok(spec?.startsWith("file:"), `Not a local tarball: ${name}`);
     assert.equal(lock.packages[""].dependencies[name], spec);
     const tarball = path.resolve(consumer, spec.slice(5));
-    const distDir = path.resolve(dist, name);
+    const distDir = path.resolve(dist, packageDirs[name] || name);
     assert.equal(path.dirname(tarball), distDir, `Wrong tarball path: ${name}`);
     const packed = read(path.join(distDir, "package.json"));
     const installedDir = path.join(consumer, "node_modules", name);
@@ -141,7 +146,7 @@ function verifyPackedConsumer({
         installedDir,
         requireSecondaryTypes,
       );
-    } else if (/\.\d+$/.test(name)) {
+    } else if (/\.\d+$/.test(name) || name === "@wkly/datetime-picker") {
       assert.ok(packed.exports?.["./cdk-overlay"]);
     }
   }

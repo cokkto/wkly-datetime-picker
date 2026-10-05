@@ -1,0 +1,75 @@
+name: Publish npm packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      compatibility_run:
+        description: Successful compatibility run ID for this main commit
+        required: true
+        type: string
+      publish:
+        description: Publish the reviewed tarballs (false prepares artifacts only)
+        default: false
+        type: boolean
+      bootstrap:
+        description: Use the temporary npm token for initial package creation
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+concurrency:
+  group: npm-publication
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      COMPATIBILITY_RUN: ${{ inputs.compatibility_run }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24.15.0"
+          package-manager-cache: false
+      - name: Require the complete gate for this main commit
+        shell: bash
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          [[ "$COMPATIBILITY_RUN" =~ ^[0-9]+$ ]]
+          gh api "repos/$GH_REPO/actions/runs/$COMPATIBILITY_RUN" > run.json
+          node -e 'const r=require("./run.json"); const a=require("node:assert/strict"); a.equal(r.conclusion,"success"); a.equal(r.status,"completed"); a.equal(r.head_sha,process.env.GITHUB_SHA); a.equal(r.head_branch,"main"); a.equal(r.path,".github/workflows/compatibility.yml"); a.equal(r.repository.full_name,process.env.GH_REPO);'
+      - name: Download the qualified tarballs
+        run: gh run download "$COMPATIBILITY_RUN" --pattern 'compatibility-*' --dir .test-build/release-input
+      - name: Prepare the review manifest
+        run: node scripts/release.cjs collect .test-build/release-input .test-build/release "$GITHUB_SHA"
+      - name: Publish using trusted publishing
+        if: inputs.publish && !inputs.bootstrap
+        run: node scripts/release.cjs publish .test-build/release
+        env:
+          WKLY_QUALIFIED_COMMIT: ${{ github.sha }}
+      - name: Bootstrap the initial public packages
+        if: inputs.publish && inputs.bootstrap
+        shell: bash
+        run: |
+          test -n "$NODE_AUTH_TOKEN"
+          printf '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n' > "$NPM_CONFIG_USERCONFIG"
+          node scripts/release.cjs publish .test-build/release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ${{ runner.temp }}/wkly-bootstrap.npmrc
+          WKLY_QUALIFIED_COMMIT: ${{ github.sha }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: reviewed-npm-release
+          include-hidden-files: true
+          if-no-files-found: error
+          path: .test-build/release/

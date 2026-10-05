@@ -83,7 +83,7 @@ Clear `WKLY_TEST_ANGULAR` and `WKLY_TEST_BROWSERS` to test the complete default 
 
 ## Package release model
 
-The public picker name is `@wkly/datetime-picker`, with `N.S.A` versions for Angular 11–22. The numbered `projects/wkly-datetime-picker.N/` directories are build targets. A change confined to one Angular integration advances only its `A` component and produces one picker artifact; a change to core, adapters, or shared presentation advances `S` for every major and produces `N.(S+1).0` picker artifacts for the full matrix. The current compatibility pipeline builds and tests the internal packages but does not yet calculate or publish these releases. See [compatibility and versioning](COMPATIBILITY-CI.md) and the [development plan](DEVELOPMENT-PLAN.md).
+The public picker name is `@wkly/datetime-picker`, with `N.S.A` versions for Angular 11–22. The numbered `projects/wkly-datetime-picker.N/` directories are build targets. A change confined to one Angular integration advances only its `A` component and produces one picker artifact; a change to core, adapters, or shared presentation advances `S` for every major and produces `N.(S+1).0` picker artifacts for the full matrix. The compatibility pipeline builds and tests public npm artifacts from isolated copies of the internal projects. The [publication workflow](PUBLICATION.md) publishes reviewed, qualified tarballs; automatic revision calculation remains future work. See [compatibility and versioning](COMPATIBILITY-CI.md) and the [development plan](DEVELOPMENT-PLAN.md).
 
 ## Working on a change
 
