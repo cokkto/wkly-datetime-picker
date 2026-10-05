@@ -110,7 +110,7 @@ test("publication waits for matching version metadata after npm accepts a tarbal
       return responses.shift();
     },
     async (milliseconds) => {
-      assert.equal(milliseconds, 5000);
+      assert.equal(milliseconds, 10000);
       pauses++;
     },
   );
@@ -133,7 +133,7 @@ test("publication visibility waits remain bounded and reject conflicts and regis
         pauses++;
       },
     ),
-    /not visible after five minutes/,
+    /not visible after ten minutes/,
   );
   assert.equal(reads, 61);
   assert.equal(pauses, 60);

@@ -283,10 +283,10 @@ async function waitForPublished(
   for (let attempt = 0; attempt < 61; attempt++) {
     const document = await readMetadata(pkg.name);
     if (checkExisting(pkg, document)) return document;
-    if (attempt < 60) await pause(5000);
+    if (attempt < 60) await pause(10000);
   }
   throw new Error(
-    `Published version is not visible after five minutes: ${pkg.name}@${pkg.version}; preserve the release manifest and retry after registry visibility recovers`,
+    `Published version is not visible after ten minutes: ${pkg.name}@${pkg.version}; preserve the release manifest and retry after registry visibility recovers`,
   );
 }
 
