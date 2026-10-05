@@ -298,6 +298,107 @@ function npm(args, cwd = root) {
   });
 }
 
+async function verifyTrustedPublisher(
+  name,
+  {
+    request = fetch,
+    identityUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL,
+    identityToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN,
+  } = {},
+) {
+  assert.ok(
+    identityUrl && identityToken,
+    "Require GitHub Actions OIDC credentials",
+  );
+  const checked = async (label, url, options = {}) => {
+    const response = await request(url, {
+      ...options,
+      headers: { accept: "application/json", ...options.headers },
+      redirect: "error",
+      signal: AbortSignal.timeout(30000),
+    });
+    assert.ok(
+      response.ok,
+      `${label} failed for ${name} (HTTP ${response.status})`,
+    );
+    return response;
+  };
+  const escaped = encodeURIComponent(name);
+  const packageUrl = registry + escaped;
+  const document = await (await checked("Package metadata", packageUrl)).json();
+  const version = document["dist-tags"]?.latest;
+  assert.ok(
+    typeof version === "string" && document.versions?.[version],
+    `Require an existing latest version for ${name}`,
+  );
+  const identityRequest = new URL(identityUrl);
+  assert.equal(identityRequest.protocol, "https:");
+  identityRequest.searchParams.set("audience", "npm:registry.npmjs.org");
+  const identity = await (
+    await checked("GitHub identity", identityRequest, {
+      headers: { authorization: `Bearer ${identityToken}` },
+    })
+  ).json();
+  assert.ok(
+    typeof identity.value === "string" && identity.value.length,
+    "Missing GitHub OIDC token",
+  );
+  const exchange = await (
+    await checked(
+      "OIDC exchange",
+      `${registry}-/npm/v1/oidc/token/exchange/package/${escaped}`,
+      {
+        method: "POST",
+        headers: { authorization: `Bearer ${identity.value}` },
+      },
+    )
+  ).json();
+  assert.ok(
+    typeof exchange.token === "string" && exchange.token.length,
+    "Missing npm OIDC exchange token",
+  );
+  // npm dist-tag add can return success without authorization when a tag is
+  // already correct. Write that same value directly to test the actual grant.
+  await checked(
+    "Tag authorization",
+    `${registry}-/package/${escaped}/dist-tags/latest`,
+    {
+      method: "PUT",
+      headers: {
+        authorization: `Bearer ${exchange.token}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(version),
+    },
+  );
+  const after = await (await checked("Package metadata", packageUrl)).json();
+  assert.equal(
+    after["dist-tags"]?.latest,
+    version,
+    `Latest changed for ${name}`,
+  );
+  return { name, tag: "latest", version };
+}
+
+async function verifyTrusted(destination) {
+  const plan = read(path.join(destination, "manifest.json"));
+  validateGraph(plan.packages);
+  assert.equal(plan.registry, registry);
+  assert.equal(process.env.WKLY_QUALIFIED_COMMIT, plan.sourceCommit);
+  const packages = [];
+  for (const name of new Set(plan.packages.map((pkg) => pkg.name))) {
+    packages.push(await verifyTrustedPublisher(name));
+    console.log(
+      `PASS trusted publisher: ${name} (OIDC exchange and tag authorization)`,
+    );
+  }
+  write(path.join(destination, "trusted-publishing.json"), {
+    sourceCommit: plan.sourceCommit,
+    verified: true,
+    packages,
+  });
+}
+
 async function publish(
   destination,
   {
@@ -469,6 +570,7 @@ module.exports = {
   checkExisting,
   waitForPublished,
   publish,
+  verifyTrustedPublisher,
   integrity,
 };
 if (require.main === module) {
@@ -482,9 +584,11 @@ if (require.main === module) {
     )
       collect(path.resolve(input), path.resolve(destination), commit);
     else if (command === "publish" && input) await publish(path.resolve(input));
+    else if (command === "verify-trusted" && input)
+      await verifyTrusted(path.resolve(input));
     else
       throw new Error(
-        "Usage: release.cjs collect <artifacts> <output> <source-commit> | publish <output>",
+        "Usage: release.cjs collect <artifacts> <output> <source-commit> | publish <output> | verify-trusted <output>",
       );
   })().catch((error) => {
     console.error(error.message);

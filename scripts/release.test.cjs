@@ -9,6 +9,7 @@ const {
   checkExisting,
   waitForPublished,
   publish,
+  verifyTrustedPublisher,
   integrity,
 } = require("./release.cjs");
 const {
@@ -94,6 +95,92 @@ test("publication skips identical existing versions and rejects conflicting vers
         versions: { "11.0.0": { dist: { integrity: "sha512-other" } } },
       }),
     /Published version differs/,
+  );
+});
+
+function trustedPublisherMock({
+  exchangeStatus = 201,
+  writeStatus = 201,
+} = {}) {
+  const calls = [];
+  const result = (status, body) => ({
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+  });
+  return {
+    calls,
+    options: {
+      identityUrl: "https://github.example.test/token?api-version=2",
+      identityToken: "fake-github-request-token",
+      request: async (url, options) => {
+        calls.push({ url: String(url), options });
+        const target = new URL(url);
+        if (target.host === "github.example.test") {
+          assert.equal(
+            target.searchParams.get("audience"),
+            "npm:registry.npmjs.org",
+          );
+          assert.equal(
+            options.headers.authorization,
+            "Bearer fake-github-request-token",
+          );
+          return result(200, { value: "fake-identity-token" });
+        }
+        if (options.method === "POST") {
+          assert.ok(target.pathname.includes("/oidc/token/exchange/package/"));
+          assert.equal(
+            options.headers.authorization,
+            "Bearer fake-identity-token",
+          );
+          return result(exchangeStatus, { token: "fake-npm-token" });
+        }
+        if (options.method === "PUT") {
+          assert.ok(target.pathname.endsWith("/dist-tags/latest"));
+          assert.equal(options.headers.authorization, "Bearer fake-npm-token");
+          assert.equal(options.body, JSON.stringify("0.1.0"));
+          return result(writeStatus, {});
+        }
+        return result(200, {
+          "dist-tags": { latest: "0.1.0" },
+          versions: { "0.1.0": {} },
+        });
+      },
+    },
+  };
+}
+
+test("trusted publishing verifies an authenticated write even when latest is already correct", async () => {
+  const mock = trustedPublisherMock();
+  assert.deepEqual(await verifyTrustedPublisher("@wkly/core", mock.options), {
+    name: "@wkly/core",
+    tag: "latest",
+    version: "0.1.0",
+  });
+  assert.equal(
+    mock.calls.filter((call) => call.options.method === "PUT").length,
+    1,
+  );
+  assert.equal(mock.calls.length, 5);
+});
+
+test("public tags cannot hide a rejected trusted publisher exchange", async () => {
+  const mock = trustedPublisherMock({ exchangeStatus: 401 });
+  await assert.rejects(
+    verifyTrustedPublisher("@wkly/core", mock.options),
+    /OIDC exchange failed.*401/,
+  );
+  assert.equal(
+    mock.calls.filter((call) => call.options.method === "PUT").length,
+    0,
+  );
+});
+
+test("trusted publishing fails when the exchanged token cannot manage tags", async () => {
+  const mock = trustedPublisherMock({ writeStatus: 403 });
+  await assert.rejects(
+    verifyTrustedPublisher("@wkly/core", mock.options),
+    /Tag authorization failed.*403/,
   );
 });
 
