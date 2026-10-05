@@ -1,6 +1,6 @@
 # Open regressions
 
-No open regressions are currently recorded.
+Publication qualification is being rechecked after the initial PR #7 matrix exposed two consumer failures on Linux: older npm pack JSON reported `@wkly/core-0.1.0.tgz` while the created file was `wkly-core-0.1.0.tgz`, and the Angular consumer fixture still imported internal shared package names. The initial run [37320266068](https://github.com/cokkto/wkly-datetime-picker/actions/runs/37320266068) failed at base installation on Angular 11 and at base AOT on Angular 22. Local workspace resolution masked the stale fixture imports. Those CI artifacts also contained identical shared tar payloads with two gzip variants (Node 16 versus newer runtimes). Public imports, normalized tarball paths and normalized gzip wrappers are now under fresh full-matrix qualification.
 
 ## Recording and verifying issues
 

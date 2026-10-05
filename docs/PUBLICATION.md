@@ -2,7 +2,7 @@
 
 The `wkly` npm organization belongs to `cokkto`. Releases originate from `main`. The public graph contains `@wkly/core`, `@wkly/adapters`, and `@wkly/presentation` at their shared source-manifest versions, followed by `@wkly/datetime-picker@N.S.A` for Angular 11–22. Initial versions are `0.1.0` for shared packages and `11.0.0` through `22.0.0` for picker lines.
 
-Local imports retain their internal names. Compatibility builds rename manifests, module imports, TypeScript aliases and ng-packagr allowlists only in isolated copies. ng-packagr generates the public entry points, Angular metadata and source maps. Shared declarations always use TypeScript 4.1.6; outgoing shared dependencies use exact versions. Every Angular line must qualify identical shared tarball bytes.
+Local imports retain their internal names. Compatibility builds rename manifests, module imports, TypeScript aliases and ng-packagr allowlists only in isolated copies. ng-packagr generates the public entry points, Angular metadata and source maps. Shared declarations always use TypeScript 4.1.6; outgoing shared dependencies use exact versions. Every Angular line must qualify identical shared tarball bytes. Packing normalizes scoped filenames and gzip wrapping with Huffman-only compression, avoiding older npm filename bugs and Node 16/newer zlib compression differences while retaining npm's tar payload.
 
 ## Qualify, review and publish
 

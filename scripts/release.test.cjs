@@ -3,14 +3,61 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const { gzipSync, gunzipSync } = require("node:zlib");
 const { collect, checkExisting, integrity } = require("./release.cjs");
 const {
   shared,
   picker,
   packageDirs,
   rewriteImports,
+  tarballFilename,
+  normalizeTarball,
 } = require("./public-packages.cjs");
 const supported = require("../supported-angular.json");
+
+test("tarball normalization preserves the npm tar payload and removes compression variants", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "wkly-gzip-"));
+  try {
+    const payload = Buffer.from("qualified npm tar payload".repeat(1000));
+    const first = path.join(directory, "first.tgz");
+    const second = path.join(directory, "second.tgz");
+    fs.writeFileSync(first, gzipSync(payload, { level: 1 }));
+    fs.writeFileSync(second, gzipSync(payload, { level: 9 }));
+    normalizeTarball(first);
+    normalizeTarball(second);
+    assert.deepEqual(fs.readFileSync(first), fs.readFileSync(second));
+    assert.deepEqual(gunzipSync(fs.readFileSync(first)), payload);
+    assert.equal(fs.readFileSync(first)[9], 255);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("tarball paths normalize scoped names independently of old npm JSON filenames", () => {
+  assert.equal(
+    tarballFilename({
+      name: "@wkly/core",
+      version: "0.1.0",
+      filename: "@wkly/core-0.1.0.tgz",
+    }),
+    "wkly-core-0.1.0.tgz",
+  );
+  assert.equal(
+    tarballFilename({ name: picker, version: "11.0.0" }),
+    "wkly-datetime-picker-11.0.0.tgz",
+  );
+  const fixture = fs.readFileSync(
+    path.join(
+      __dirname,
+      "../projects/wkly-datetime-picker.tests/packages/angular/main.ts",
+    ),
+    "utf8",
+  );
+  assert.ok(
+    !/from\s*["']wkly-datetime-picker/.test(fixture),
+    "Public consumer fixture must not resolve internal workspace packages",
+  );
+});
 
 test("public imports preserve selectors and similar package names", () => {
   const source = `import {A} from 'wkly-datetime-picker';\nexport * from "wkly-datetime-picker.11/cdk-overlay";\nconst selector = 'wkly-datetime-picker';\nimport 'wkly-datetime-picker-other';\nconst c = import('wkly-datetime-picker.core');`;

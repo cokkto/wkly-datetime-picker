@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { gzipSync, gunzipSync, constants } = require("node:zlib");
 
 const shared = {
   "wkly-datetime-picker.core": "@wkly/core",
@@ -7,6 +8,10 @@ const shared = {
   "wkly-datetime-picker": "@wkly/presentation",
 };
 const picker = "@wkly/datetime-picker";
+// Older npm pack JSON can report an unsanitized scoped filename. Use the
+// registry's tarball naming convention and verify that the packed file exists.
+const tarballFilename = ({ name, version }) =>
+  name.replace(/^@/, "").replace("/", "-") + "-" + version + ".tgz";
 const publicName = (name) =>
   shared[name] || (/^wkly-datetime-picker\.\d+$/.test(name) ? picker : name);
 const packageDirs = (major) =>
@@ -31,6 +36,17 @@ function rewriteImports(source, names) {
       return match;
     },
   );
+}
+
+function normalizeTarball(file) {
+  // Node 16 and newer zlib builds compress identical tar bytes differently.
+  // Huffman-only compression keeps shared versions identical across them.
+  const compressed = gzipSync(gunzipSync(fs.readFileSync(file)), {
+    level: 6,
+    strategy: constants.Z_HUFFMAN_ONLY,
+  });
+  compressed[9] = 255; // Gzip OS marker: platform-independent archive.
+  fs.writeFileSync(file, compressed);
 }
 
 function preparePublicSources(workspace, major) {
@@ -150,6 +166,8 @@ function copySharedWorkspace(root, workspace) {
 
 module.exports = {
   shared,
+  tarballFilename,
+  normalizeTarball,
   picker,
   publicName,
   packageDirs,

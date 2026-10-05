@@ -9,6 +9,8 @@ const {
   packageDirs,
   publicName,
   copySharedWorkspace,
+  tarballFilename,
+  normalizeTarball,
 } = require("./public-packages.cjs");
 const root = path.resolve(__dirname, "..");
 // A new consumer prevents npm from reusing an older tarball with the same version.
@@ -33,7 +35,16 @@ const tarballs = packages.map((name) => {
   const result = JSON.parse(
     run(["pack", "--json"], path.join(workspace, "dist", name)),
   );
-  return path.join(workspace, "dist", name, result[0].filename);
+  const tarball = path.join(
+    workspace,
+    "dist",
+    name,
+    tarballFilename(result[0]),
+  );
+  if (!fs.existsSync(tarball))
+    throw new Error(`Missing packed tarball: ${tarball}`);
+  normalizeTarball(tarball);
+  return tarball;
 });
 fs.writeFileSync(
   path.join(consumer, "package.json"),

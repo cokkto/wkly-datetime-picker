@@ -186,6 +186,8 @@ function test(major) {
     preparePublicSources,
     packageDirs,
     picker,
+    tarballFilename,
+    normalizeTarball,
   } = require("./public-packages.cjs");
   preparePublicSources(dir, major);
   const directories = packageDirs(major);
@@ -205,8 +207,12 @@ function test(major) {
     const packed = JSON.parse(
       timedRun(`Pack ${name}`, "npm", ["pack", "--json"], packageDir, true),
     )[0];
+    const filename = tarballFilename(packed);
+    if (!fs.existsSync(path.join(packageDir, filename)))
+      throw new Error(`Missing packed tarball: ${filename}`);
+    normalizeTarball(path.join(packageDir, filename));
     dependencies[name] =
-      `file:../${major}/dist/${directories[name]}/${packed.filename}`;
+      `file:../${major}/dist/${directories[name]}/${filename}`;
   }
   write(path.join(consumer, "package.json"), {
     name: "wkly-consumer",
