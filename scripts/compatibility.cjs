@@ -398,9 +398,15 @@ function matrix() {
   }
   const include = rows();
   const changed = affected(files);
+  const releaseMajors = fs.existsSync(path.join(root, "release-state.json"))
+    ? require("./release-plan.cjs").packageMatrix(root)
+    : null;
+  const packageRows = releaseMajors
+    ? include.filter((row) => releaseMajors.includes(row.angular))
+    : include;
   // Every registered package must pass the browser and consumer contracts on
   // every CI run. Keep the affected set for release planning and diagnostics.
-  const output = `matrix=${JSON.stringify({ include })}\nhas-packages=${include.length > 0}\naffected=${JSON.stringify(changed.map((row) => row.angular))}\n`;
+  const output = `matrix=${JSON.stringify({ include })}\npackage-matrix=${JSON.stringify({ include: packageRows })}\nhas-packages=${include.length > 0}\naffected=${JSON.stringify(changed.map((row) => row.angular))}\n`;
   if (process.env.GITHUB_OUTPUT)
     fs.appendFileSync(process.env.GITHUB_OUTPUT, output);
   process.stdout.write(output);

@@ -1,0 +1,86 @@
+name: Prepare npm release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: npm-publication
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24.15.0"
+          package-manager-cache: false
+      - name: Require main
+        run: test "$GITHUB_REF" = refs/heads/main
+      - name: Inspect package changes
+        id: plan
+        run: node scripts/release-plan.cjs plan
+      - name: Require the previous completed release and apply versions
+        if: steps.plan.outputs.changed == 'true'
+        env:
+          PREVIOUS_RELEASE: ${{ steps.plan.outputs.previous }}
+        run: |
+          if [ -n "$PREVIOUS_RELEASE" ]; then
+            test "$(gh release view "$PREVIOUS_RELEASE" --json isDraft --jq .isDraft)" = false
+            gh release download "$PREVIOUS_RELEASE" --pattern published.json --dir .test-build/previous-release
+            node scripts/release-plan.cjs prepare .test-build/release-plan.json .test-build/previous-release/published.json
+          else
+            node scripts/release-plan.cjs prepare
+          fi
+      - uses: pnpm/action-setup@v6
+        if: steps.plan.outputs.changed == 'true'
+        with:
+          cache: true
+      - name: Format the version changes
+        if: steps.plan.outputs.changed == 'true'
+        run: |
+          pnpm --filter wkly-workspace install --frozen-lockfile
+          npm run format
+      - name: Prepare the review branch and qualify it
+        if: steps.plan.outputs.changed == 'true'
+        env:
+          RELEASE_BRANCH: ${{ steps.plan.outputs.branch }}
+          CREATE_RELEASE_PR: ${{ vars.WKLY_RELEASE_CREATE_PR || 'false' }}
+        run: |
+          if [ -z "$(git ls-remote --heads origin "refs/heads/$RELEASE_BRANCH")" ]; then
+            git switch -c "$RELEASE_BRANCH"
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add release-state.json projects/*/package.json
+            git commit -m 'Prepare affected WKLY package versions'
+            git push origin "$RELEASE_BRANCH"
+          fi
+          if [ "$CREATE_RELEASE_PR" = true ] && [ -z "$(gh pr list --head "$RELEASE_BRANCH" --base main --state open --json number --jq '.[0].number // empty')" ]; then
+            gh pr create --base main --head "$RELEASE_BRANCH" --title 'Prepare affected WKLY npm release' --body-file .test-build/release-summary.md
+          fi
+          cat .test-build/release-summary.md >> "$GITHUB_STEP_SUMMARY"
+          printf '\n[Review the release branch](https://github.com/%s/compare/main...%s?expand=1)\n' "$GH_REPO" "$RELEASE_BRANCH" >> "$GITHUB_STEP_SUMMARY"
+          gh workflow run compatibility.yml --ref "$RELEASE_BRANCH"
+      - name: Retain the release plan
+        if: always() && steps.plan.outputs.changed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-release-plan
+          include-hidden-files: true
+          path: |
+            .test-build/release-plan.json
+            .test-build/release-summary.md

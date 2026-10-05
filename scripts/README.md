@@ -7,6 +7,7 @@ Run scripts through the root [`package.json`](../package.json) when a matching n
 | `build.cjs`, `pack.cjs`, `verify-packed-consumer.cjs` | Build library artifacts, inspect tarballs, and verify consumer installation |
 | `compatibility.cjs`, `compatibility.test.cjs` | Plan and run isolated per-major compatibility checks |
 | `public-packages.cjs`, `release.cjs`, `release.test.cjs` | Prepare public-name source copies, collect qualified tarballs, verify OIDC/tag authorization, publish and verify registry installs; see [publication](../docs/PUBLICATION.md) |
+| `release-plan.cjs`, `release-record.cjs`, `release-plan.test.cjs` | Fingerprint release inputs, calculate/apply affected versions, require prior completion, retain immutable candidates and finalize verified GitHub releases |
 | `test-check.cjs`, `test-check.test.cjs`, `test-all.cjs` | Development, pre-push, PR and release gates; release compatibility alias |
 | `test-reporters.cjs`, `test-timings.cjs` | Native Playwright report destinations and package-stage timing evidence |
 | `test-domains-run.cjs`, `test-domains.cjs`, `test-host-*.cjs` | Build registry-selected hosts and run one reusable browser context per Angular version/domain |

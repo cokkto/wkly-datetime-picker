@@ -63,7 +63,8 @@ CommonJS/ESM import smoke checks: [imports.cjs](../projects/wkly-datetime-picker
 | Spec                                                            | Coverage                                                                         |
 | --------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | [compatibility.test.cjs](../scripts/compatibility.test.cjs)     | Registry validation, affected/transitive package planning and consumer integrity |
-| [release.test.cjs](../scripts/release.test.cjs)               | Qualified artifact integrity, publication preflight/order, registry processing and authenticated trusted-publisher checks |
+| [release.test.cjs](../scripts/release.test.cjs)               | Qualified artifact integrity, selected publication/recovery, monotonic tags, registry processing and authenticated trusted-publisher checks |
+| [release-plan.test.cjs](../scripts/release-plan.test.cjs)     | Shared/local revisions, input fingerprints, dependent shared versions, stale-plan rejection, previous receipts and immutable release records |
 | [lint.test.cjs](../scripts/lint.test.cjs)                       | Script and Angular template lint diagnostics                                     |
 | [showcase-server.test.cjs](../scripts/showcase-server.test.cjs) | Host routing, fallback and isolation                                             |
 | [test-check.test.cjs](../scripts/test-check.test.cjs)           | Development/push/PR/release selection and fresh/reused package qualification     |
