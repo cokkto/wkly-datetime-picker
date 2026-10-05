@@ -10,6 +10,7 @@ import {
   HostListener,
   Inject,
   Injectable,
+  Injector,
   OnDestroy,
   Optional,
   PLATFORM_ID,
@@ -60,6 +61,7 @@ export class WklyDateTimePickerDialogService {
     trigger: HTMLElement,
     onCancel: (reason: WklyCloseReason) => void,
     backdrop = true,
+    injector?: Injector,
   ): WklyPresentationRef {
     if (!isPlatformBrowser(this.platform))
       throw new Error("Picker presentations can only open in a browser");
@@ -76,6 +78,7 @@ export class WklyDateTimePickerDialogService {
     });
     const component = createComponent(WklyDateTimePickerComponent, {
       environmentInjector: this.environmentInjector,
+      elementInjector: injector,
     });
     component.instance.presentation = "transient";
     dialog.appendChild(component.location.nativeElement);
@@ -363,6 +366,7 @@ export class WklyDateTimePickerDialogDirective extends WklyTriggerBase {
   constructor(
     element: ElementRef<HTMLElement>,
     private service: WklyDateTimePickerDialogService,
+    private triggerInjector: Injector,
   ) {
     super(element);
   }
@@ -371,6 +375,7 @@ export class WklyDateTimePickerDialogDirective extends WklyTriggerBase {
       this.element.nativeElement,
       (reason) => this.close(reason),
       this[WklyPickerInputsPropertyKeys.CloseOnBackdrop](),
+      this.triggerInjector,
     );
   }
 }

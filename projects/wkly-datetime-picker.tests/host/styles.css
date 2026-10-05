@@ -1,0 +1,12 @@
+html,
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+test-fixture {
+  display: block;
+  padding: 2px;
+}
+wkly-datetime-picker {
+  display: block;
+}

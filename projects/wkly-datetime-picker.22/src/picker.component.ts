@@ -32,6 +32,8 @@ import {
   WklyWeekOffset,
 } from "wkly-datetime-picker.core";
 import {
+  calendarMonthBounds,
+  resolveWklyTranslation,
   createWeekRows,
   validateDrafts,
   WklyDraft as Draft,
@@ -53,7 +55,6 @@ import {
   WklyValidationError,
 } from "wkly-datetime-picker.adapters";
 import {
-  ENGLISH,
   WKLY_CLOCK,
   WKLY_CONFIG,
   WKLY_LOCALIZATION,
@@ -127,6 +128,7 @@ export class WklyDateTimePickerComponent
   private clipMonth = false;
   private browser = false;
   private observer?: ResizeObserver;
+  private destroyed = false;
   private scrollEndTimer?: ReturnType<typeof setTimeout>;
   private snapPending = false;
   private onChange: (value: WklyPickerValue) => void = () => {};
@@ -366,7 +368,8 @@ export class WklyDateTimePickerComponent
         const row = this.host.nativeElement.querySelector(
           ".week-row",
         ) as HTMLElement;
-        const height = row?.getBoundingClientRect().height;
+        // CSS heights and scrollTop use layout pixels; client rectangles include zoom.
+        const height = row ? parseFloat(getComputedStyle(row).height) : 0;
         if (height && height !== this.rowHeight) {
           this.rowHeight = height;
           this.scrollHeight = this.rowHeight * 2001;
@@ -378,19 +381,18 @@ export class WklyDateTimePickerComponent
     }
   }
   ngOnDestroy(): void {
+    this.destroyed = true;
     if (this.observer) this.observer.disconnect();
     if (this.scrollEndTimer) clearTimeout(this.scrollEndTimer);
     if (this.generator) this.generator.clearCache();
   }
   t(key: string): string {
-    return (
-      this.strings[key] ||
-      ((this[WklyPickerInputsPropertyKeys.Translations]() ||
-        this.defaultTranslations)[this.effectiveLocale.split("-")[0]] || {})[
-        key
-      ] ||
-      ENGLISH[key] ||
-      key
+    return resolveWklyTranslation(
+      key,
+      this.effectiveLocale,
+      this[WklyPickerInputsPropertyKeys.Translations]() ||
+        this.defaultTranslations,
+      this.strings,
     );
   }
   get isRange(): boolean {
@@ -795,8 +797,7 @@ export class WklyDateTimePickerComponent
     if (preset && viewportPreset.kind !== "weeks") {
       const d = this.adapter.epochDayToDate(day);
       this.initialMonth = d.year + "/" + d.monthCode;
-      const start = this.adapter.dateToEpochDay({ ...d, day: 1 }),
-        end = start + this.adapter.getDaysInMonth(d.year, d.monthCode) - 1;
+      const [start, end] = calendarMonthBounds(this.adapter, day);
       this.firstWeek = absoluteWeekOf(start, this.effectiveOffset);
       this.visibleCount =
         absoluteWeekOf(end, this.effectiveOffset) - this.firstWeek + 1;
@@ -825,11 +826,14 @@ export class WklyDateTimePickerComponent
     this.firstWeek = this.clampFirstWeek(this.firstWeek);
     this.baseWeek = this.firstWeek - 1000;
     this.renderRows();
+    // Apply the new runway before writing scrollTop or locating a focus target.
+    this.changeDetector.detectChanges();
     this.resetScroll();
   }
   private resetScroll(): void {
+    // Round week boundaries to avoid scrollTop truncation under CSS zoom.
     if (this.scroller)
-      this.scroller.nativeElement.scrollTop = 1000 * this.rowHeight;
+      this.scroller.nativeElement.scrollTop = Math.round(1000 * this.rowHeight);
   }
   scroll(event: Event): void {
     const element = event.target as HTMLElement;
@@ -842,16 +846,19 @@ export class WklyDateTimePickerComponent
     const requestedFirst = this.baseWeek + index;
     const first = this.clampFirstWeek(requestedFirst);
     if (requestedFirst !== first) {
-      element.scrollTop = (first - this.baseWeek) * this.rowHeight;
+      element.scrollTop = Math.round((first - this.baseWeek) * this.rowHeight);
     }
     if (first === this.firstWeek) return;
     this.clipMonth = false;
     this.firstWeek = first;
     this.anchorWeek = first + Math.floor(this.visibleCount / 2);
     if (index < 100 || index > 1900) {
+      // Preserve signed displacement from this week; modulo turns fractional
+      // rounding just below a boundary into almost a full row after rebasing.
+      const offset =
+        element.scrollTop - (first - this.baseWeek) * this.rowHeight;
       this.baseWeek = first - 1000;
-      element.scrollTop =
-        1000 * this.rowHeight + (element.scrollTop % this.rowHeight);
+      element.scrollTop = Math.round(1000 * this.rowHeight + offset);
     }
     this.renderRows();
   }
@@ -866,7 +873,9 @@ export class WklyDateTimePickerComponent
     this.snapPending = false;
     // Align the current virtual week without rebuilding or rebasing its rows.
     const element = this.scroller.nativeElement;
-    const target = (this.firstWeek - this.baseWeek) * this.rowHeight;
+    const target = Math.round(
+      (this.firstWeek - this.baseWeek) * this.rowHeight,
+    );
     if (element.scrollTop !== target) element.scrollTop = target;
   }
   private showFirstWeek(week: number): void {
@@ -914,6 +923,10 @@ export class WklyDateTimePickerComponent
       anchorAbsoluteWeek: this.anchorWeek,
     });
   }
+  // Retain day DOM nodes and keyboard focus when row metadata is regenerated.
+  trackCell(_i: number, cell: { epochDay: number }): number {
+    return cell.epochDay;
+  }
   trackRow(_i: number, row: Row): number {
     return row.week.absoluteWeek;
   }
@@ -924,15 +937,21 @@ export class WklyDateTimePickerComponent
       this.firstSupportedDay,
       Math.min(this.lastSupportedDay, day),
     );
+    // position renders synchronously; publish the tab stop before that render.
+    if (options.focus) this.focused = day;
     this.position(day, false, options);
     if (options.select) this.select(day);
-    if (options.focus) {
-      this.focused = day;
-      this.focusDay();
-    }
+    if (options.focus) this.focusDay();
   }
   scrollToAbsoluteWeek(week: number, options: WklyJumpOptions = {}): void {
-    this.scrollToEpochDay(firstEpochDayOf(week, this.effectiveOffset), options);
+    // A boundary week can start before the adapter's first supported day.
+    const first = firstEpochDayOf(week, this.effectiveOffset);
+    this.scrollToEpochDay(
+      week === this.firstSupportedWeek
+        ? Math.max(first, this.firstSupportedDay)
+        : first,
+      options,
+    );
   }
   scrollToCalendarDate(
     date: WklyCalendarDate,
@@ -946,6 +965,8 @@ export class WklyDateTimePickerComponent
   focusDay(): void {
     if (!this.browser) return;
     setTimeout(() => {
+      if (this.destroyed) return;
+      this.changeDetector.detectChanges();
       const day = this.host.nativeElement.querySelector(
         '[data-day="' + this.focused + '"]',
       ) as HTMLElement;

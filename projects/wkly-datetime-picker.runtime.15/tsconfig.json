@@ -1,5 +1,27 @@
 {
   "extends": "../../tsconfig.json",
   "files": ["src/main.ts"],
-  "include": []
+  "include": [],
+  "compilerOptions": {
+    "paths": {
+      "wkly-datetime-picker.core": [
+        "projects/wkly-datetime-picker.core/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.adapters": [
+        "projects/wkly-datetime-picker.adapters/src/public-api.ts"
+      ],
+      "wkly-datetime-picker": [
+        "projects/wkly-datetime-picker/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.15": [
+        "projects/wkly-datetime-picker.15/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.15/cdk-overlay": [
+        "projects/wkly-datetime-picker.15/cdk-overlay/public-api.ts"
+      ],
+      "@angular/*": [
+        "projects/wkly-datetime-picker.runtime.15/node_modules/@angular/*"
+      ]
+    }
+  }
 }

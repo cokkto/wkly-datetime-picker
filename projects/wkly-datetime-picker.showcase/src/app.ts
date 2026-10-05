@@ -2,28 +2,16 @@ import { NgModule } from "@angular/core";
 import { BrowserModule } from "@angular/platform-browser";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { RouterModule } from "@angular/router";
-import { registerLocaleData } from "@angular/common";
-import enGB from "@angular/common/locales/en-GB";
-import en from "@angular/common/locales/en";
-import ar from "@angular/common/locales/ar";
-import he from "@angular/common/locales/he";
-import fi from "@angular/common/locales/fi";
-import { DemoComponent } from "./demo.component";
+import { RuntimeModule } from "../../wkly-datetime-picker.runtime.22/src/runtime.module";
 import { PageComponent } from "./page.component";
 import { AppComponent } from "./app.component";
 import { PAGES } from "./pages";
 
-// Register every locale offered in the showcase before a runtime is created.
-registerLocaleData(enGB);
-registerLocaleData(en, "en-US");
-registerLocaleData(ar);
-registerLocaleData(he, "he-IL");
-registerLocaleData(fi, "fi-FI");
-
 @NgModule({
-  declarations: [AppComponent, PageComponent, DemoComponent],
+  declarations: [AppComponent, PageComponent],
   imports: [
     BrowserModule,
+    RuntimeModule,
     FormsModule,
     ReactiveFormsModule,
     RouterModule.forRoot(

@@ -7,12 +7,22 @@ import { MatInputModule } from "@angular/material/input";
 import { MatButtonModule } from "@angular/material/button";
 import { WKLY_CLOCK, WklyDateTimePickerModule } from "wkly-datetime-picker.15";
 import { WklyDateTimePickerOverlayModule } from "wkly-datetime-picker.15/cdk-overlay";
+import { AngularContractComponent } from "./angular-contract.component";
 import { RuntimeComponent } from "./runtime.component";
+
+import { DemoComponent } from "../../wkly-datetime-picker.showcase/src/demo.component";
+import { TestbedComponent } from "../../wkly-datetime-picker.runtime/src/testbed.component";
+import "../../wkly-datetime-picker.runtime/src/locales";
 
 declare const WKLY_E2E: boolean;
 
 @NgModule({
-  declarations: [RuntimeComponent],
+  declarations: [
+    RuntimeComponent,
+    DemoComponent,
+    TestbedComponent,
+    AngularContractComponent,
+  ],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
@@ -34,6 +44,7 @@ declare const WKLY_E2E: boolean;
         ]
       : []),
   ],
-  bootstrap: [RuntimeComponent],
+  exports: [DemoComponent],
+  bootstrap: [TestbedComponent],
 })
 export class RuntimeModule {}

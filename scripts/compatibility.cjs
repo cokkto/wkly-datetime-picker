@@ -73,6 +73,7 @@ function affected(files, metadata = supported) {
   );
   const changed = new Set();
   for (const file of files) {
+    if (file.startsWith("projects/wkly-datetime-picker.tests/")) return all;
     const owner = packages.find((name) => file.startsWith(`projects/${name}/`));
     if (!owner) return all; // Build, tests, metadata, unknown/deleted paths: conservative full run.
     changed.add(owner);
@@ -109,13 +110,14 @@ function prepare(major) {
   if (!rows().some((row) => row.angular === major))
     throw new Error(`Unsupported Angular ${major}`);
   const dir = path.join(root, ".compat", major);
+  if (!dir.startsWith(path.resolve(root, ".compat") + path.sep))
+    throw new Error("Escaped compatibility workspace");
   // Never delete a caller-provided path. Only this major's generated workspace.
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
   for (const name of [
     "projects",
     "scripts",
-    "tests",
     "docs",
     "tsconfig.json",
     "supported-angular.json",
@@ -168,13 +170,21 @@ function test(major) {
     process.versions.node.split(".")[0] !== supported[major].node.split(".")[0]
   )
     throw new Error(`Use Node ${supported[major].node} for Angular ${major}`);
+  const timings = require("./test-timings.cjs").createTimings(
+    path.join(dir, "timings.json"),
+    { angular: major },
+  );
+  const timedRun = (name, command, args, cwd, capture = false) =>
+    timings.measure(name, () => run(command, args, cwd, capture));
   process.env.WKLY_ANGULAR = major;
-  run("npm", ["install"], dir);
-  run(process.execPath, ["scripts/test.cjs"], dir);
-  run(process.execPath, ["scripts/build.cjs"], dir);
-  run(process.execPath, ["scripts/pack.cjs"], dir);
+  timedRun("Toolchain install", "npm", ["install"], dir);
+  timedRun("Source contracts", process.execPath, ["scripts/test.cjs"], dir);
+  timedRun("Library builds", process.execPath, ["scripts/build.cjs"], dir);
+  timedRun("Package checks", process.execPath, ["scripts/pack.cjs"], dir);
   // Keep the consumer beside the toolchain so Node cannot resolve its CDK install.
   const consumer = path.join(root, ".compat", `consumer-${major}`);
+  if (!consumer.startsWith(path.resolve(root, ".compat") + path.sep))
+    throw new Error("Escaped compatibility consumer");
   fs.rmSync(consumer, { recursive: true, force: true });
   fs.mkdirSync(consumer, { recursive: true });
   const dependencies = { ...supported[major].dependencies };
@@ -188,7 +198,7 @@ function test(major) {
   for (const name of names) {
     const packageDir = path.join(dir, "dist", name);
     const packed = JSON.parse(
-      run("npm", ["pack", "--json"], packageDir, true),
+      timedRun(`Pack ${name}`, "npm", ["pack", "--json"], packageDir, true),
     )[0];
     dependencies[name] = `file:../${major}/dist/${name}/${packed.filename}`;
   }
@@ -198,13 +208,15 @@ function test(major) {
     dependencies,
   });
   fs.copyFileSync(path.join(dir, ".npmrc"), path.join(consumer, ".npmrc"));
-  run("npm", ["install"], consumer);
-  verifyPackedConsumer({
-    consumer,
-    dist: path.join(dir, "dist"),
-    names,
-    dependencies,
-  });
+  timedRun("Base consumer install", "npm", ["install"], consumer);
+  timings.measure("Base consumer integrity", () =>
+    verifyPackedConsumer({
+      consumer,
+      dist: path.join(dir, "dist"),
+      names,
+      dependencies,
+    }),
+  );
   fs.copyFileSync(
     path.join(consumer, "package-lock.json"),
     path.join(consumer, "package-lock.base.json"),
@@ -214,7 +226,13 @@ function test(major) {
     path.join(consumer, "package.base.json"),
   );
   let source = fs
-    .readFileSync(path.join(root, "tests/compatibility/main.ts"), "utf8")
+    .readFileSync(
+      path.join(
+        root,
+        "projects/wkly-datetime-picker.tests/packages/angular/main.ts",
+      ),
+      "utf8",
+    )
     .replaceAll("__PACKAGE__", supported[major].package);
   const entries = [];
   function secondaryEntries(folder, prefix = "") {
@@ -281,11 +299,12 @@ function test(major) {
       },
     },
   });
-  function buildConsumer() {
+  function buildConsumer(name) {
     const cli = read(
       path.join(consumer, "node_modules/@angular/cli/package.json"),
     );
-    run(
+    timedRun(
+      name,
       process.execPath,
       [
         path.join(consumer, "node_modules/@angular/cli", cli.bin.ng),
@@ -295,26 +314,36 @@ function test(major) {
       consumer,
     );
   }
-  buildConsumer();
+  buildConsumer("Base consumer AOT");
   fs.copyFileSync(
-    path.join(root, "tests/compatibility/ssr.cjs"),
+    path.join(
+      root,
+      "projects/wkly-datetime-picker.tests/packages/angular/ssr.cjs",
+    ),
     path.join(consumer, "ssr.cjs"),
   );
-  run(process.execPath, ["ssr.cjs", supported[major].package], consumer);
+  timedRun(
+    "SSR",
+    process.execPath,
+    ["ssr.cjs", supported[major].package],
+    consumer,
+  );
   dependencies["@angular/cdk"] = supported[major].dependencies["@angular/cdk"];
   write(path.join(consumer, "package.json"), {
     name: "wkly-consumer",
     private: true,
     dependencies,
   });
-  run("npm", ["install"], consumer);
-  verifyPackedConsumer({
-    consumer,
-    dist: path.join(dir, "dist"),
-    names,
-    dependencies,
-    cdkVersion: supported[major].dependencies["@angular/cdk"],
-  });
+  timedRun("CDK consumer install", "npm", ["install"], consumer);
+  timings.measure("CDK consumer integrity", () =>
+    verifyPackedConsumer({
+      consumer,
+      dist: path.join(dir, "dist"),
+      names,
+      dependencies,
+      cdkVersion: supported[major].dependencies["@angular/cdk"],
+    }),
+  );
   source = source
     .replace(
       "/* OVERLAY_IMPORT */",
@@ -332,7 +361,8 @@ function test(major) {
     )
     .join("");
   fs.writeFileSync(main, source);
-  buildConsumer();
+  buildConsumer("CDK consumer AOT");
+  timings.complete();
 }
 
 function matrix() {

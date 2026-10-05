@@ -1,0 +1,64 @@
+<div *ngIf="paired">
+  <demo-panel
+    *ngFor="let config of calendarDemos"
+    [config]="config"
+  ></demo-panel>
+</div>
+<section *ngIf="catalogue" class="testbed-catalogue">
+  <h1>Angular {{ version }} testbed</h1>
+  <p>Each case runs alone. Choose a controlled surrounding layout.</p>
+  <section *ngFor="let layout of layouts">
+    <h2>{{ layout }}</h2>
+    <ul>
+      <li *ngFor="let demo of demos">
+        <a [href]="'/cases/' + layout + '/' + demo.id">{{ demo.title }}</a>
+      </li>
+    </ul>
+  </section>
+</section>
+<wkly-angular-contract *ngIf="contracts"></wkly-angular-contract>
+<p *ngIf="!catalogue && !demo && !contracts && !paired" role="alert">
+  Unknown test case or layout. <a href="/">Browse test cases</a>
+</p>
+<div
+  *ngIf="demo"
+  [class]="'testbed-layout layout-' + layout"
+  [attr.data-layout]="layout"
+  [attr.data-angular-version]="version"
+>
+  <header *ngIf="layout === 'booking'" class="booking-header">
+    <strong>North House</strong><span>Plan your stay</span>
+  </header>
+  <main class="testbed-content">
+    <section *ngIf="layout === 'booking'" class="booking-intro">
+      <h1>A few days away</h1>
+      <p>Choose your dates for a quiet stay by the lake.</p>
+    </section>
+    <form
+      *ngIf="layout === 'form'"
+      class="sample-form"
+      (submit)="$event.preventDefault()"
+    >
+      <h1>Schedule a visit</h1>
+      <label>Your name <input name="name" autocomplete="off" /></label>
+      <label
+        >Visit type
+        <select name="type">
+          <option>Consultation</option>
+          <option>Follow-up</option>
+        </select></label
+      >
+      <demo-panel [config]="demo"></demo-panel>
+      <button type="submit">Save visit</button>
+    </form>
+    <demo-panel *ngIf="layout !== 'form'" [config]="demo"></demo-panel>
+    <aside *ngIf="layout === 'booking'" class="booking-summary">
+      <h2>Your stay</h2>
+      <p>Two guests · breakfast included</p>
+      <button type="button">Continue booking</button>
+    </aside>
+  </main>
+  <footer *ngIf="layout === 'booking'" class="booking-footer">
+    North House · Guest services
+  </footer>
+</div>

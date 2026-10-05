@@ -1,11 +1,8 @@
 import {
   ChangeDetectorRef,
   Component,
-  DoCheck,
-  ElementRef,
   EventEmitter,
   Input,
-  NgZone,
   OnDestroy,
   OnInit,
   Output,
@@ -13,7 +10,6 @@ import {
 } from "@angular/core";
 import { FormControl } from "@angular/forms";
 import { getLocaleFirstDayOfWeek } from "@angular/common";
-import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { Subscription } from "rxjs";
 import {
   WklyPickerValue,
@@ -21,13 +17,15 @@ import {
   WklyViewportPreset,
   WklyValidationError,
 } from "wkly-datetime-picker.adapters";
-import { decodeIso, resolveWeekOffset } from "wkly-datetime-picker.adapters";
 import {
-  isExpectedRuntimeMessage,
+  decodeIso,
+  encodeIso,
+  resolveWeekOffset,
+} from "wkly-datetime-picker.adapters";
+import {
   RuntimeConfig,
   RuntimeMessage,
 } from "../../wkly-datetime-picker.runtime/src/runtime-protocol";
-import { RuntimeVersionService } from "./runtime-version.service";
 import { PairedSelectionService } from "./paired-selection.service";
 import { TRANSLATIONS } from "./translations";
 export interface DemoConfig {
@@ -52,34 +50,15 @@ export interface DemoConfig {
   standalone: false,
   templateUrl: "demo.component.html",
 })
-export class DemoComponent implements OnInit, DoCheck, OnDestroy {
+export class DemoComponent implements OnInit, OnDestroy {
   @Input() config!: DemoConfig;
   @Output() selection = new EventEmitter<WklyPickerValue>();
-  @ViewChild("runtimeFrame") runtimeFrame?: ElementRef<HTMLIFrameElement>;
-  runtimeUrl!: SafeResourceUrl;
-  runtimeHeight = 520;
-  runtimeError = "";
+  @ViewChild("runtime") runtime?: { jump(value: string): void };
+  private currentConfig!: RuntimeConfig;
   formStatus = "VALID";
   formTouched = false;
-  private ready = false;
   private lastSent = "";
-  private versionSubscription?: Subscription;
   private pairSubscription?: Subscription;
-  private readonly messageListener = (event: MessageEvent) => {
-    // Several demos can coexist; accept only this panel's iframe messages.
-    if (
-      !isExpectedRuntimeMessage(
-        event,
-        this.runtimeFrame?.nativeElement.contentWindow,
-        window.location.origin,
-      )
-    )
-      return;
-    this.zone.run(() => {
-      this.receive(event.data);
-      this.changes.detectChanges();
-    });
-  };
   mode: WklySelectionMode = "datetime";
   locale = "en-GB";
   preset: WklyViewportPreset = { kind: "full-month" };
@@ -99,7 +78,7 @@ export class DemoComponent implements OnInit, DoCheck, OnDestroy {
   across = false;
   min: string | null = null;
   max: string | null = null;
-  form = new FormControl<WklyPickerValue>(null);
+  form = new FormControl(null as WklyPickerValue);
   initial: WklyPickerValue = null;
   programmaticValue = "";
   get diagnostics(): string {
@@ -117,51 +96,31 @@ export class DemoComponent implements OnInit, DoCheck, OnDestroy {
       : null;
   }
   constructor(
-    public versions: RuntimeVersionService,
     private pairs: PairedSelectionService,
-    private sanitizer: DomSanitizer,
-    private zone: NgZone,
     private changes: ChangeDetectorRef,
   ) {}
   ngOnInit(): void {
     this.reset();
-    this.setRuntimeUrl();
-    this.versionSubscription = this.versions.changed.subscribe(() => {
-      this.setRuntimeUrl();
-      this.changes.detectChanges();
-    });
     if (
       this.config.id === "gregorian-pair" ||
-      this.config.id === "hebrew-pair"
+      this.config.id === "hebrew-pair" ||
+      this.config.id === "hijri-pair"
     ) {
       this.pairSubscription = this.pairs.changed.subscribe((value) =>
         this.setExternal(value),
       );
     }
-    window.addEventListener("message", this.messageListener);
   }
   ngOnDestroy(): void {
-    this.versionSubscription?.unsubscribe();
     this.pairSubscription?.unsubscribe();
-    window.removeEventListener("message", this.messageListener);
-  }
-  ngDoCheck(): void {
-    this.sendConfig();
-  }
-  private setRuntimeUrl(): void {
-    this.ready = false;
-    this.lastSent = "";
-    this.runtimeError = "";
-    this.runtimeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-      `/runtime/${this.versions.selected}/index.html`,
-    );
   }
   private configuration(): RuntimeConfig {
     return {
       mode: this.mode,
       value: this.value,
       locale: this.locale,
-      calendar: this.config.calendar === "hebrew" ? "hebrew" : "gregorian",
+      calendar: (this.config.calendar ||
+        "gregorian") as RuntimeConfig["calendar"],
       presentation: (this.config.presentation ||
         "inline") as RuntimeConfig["presentation"],
       weekOffset: this.weekOffset,
@@ -183,27 +142,19 @@ export class DemoComponent implements OnInit, DoCheck, OnDestroy {
       dark: this.config.theme === "dark",
     };
   }
-  private sendConfig(): void {
-    if (!this.ready || !this.runtimeFrame?.nativeElement.contentWindow) return;
+  get runtimeConfig(): RuntimeConfig {
     const payload = this.configuration();
     const serialized = JSON.stringify(payload);
-    if (serialized === this.lastSent) return;
-    this.lastSent = serialized;
-    this.runtimeFrame.nativeElement.contentWindow.postMessage(
-      { type: "wkly:configure", payload },
-      window.location.origin,
-    );
+    if (serialized !== this.lastSent) {
+      this.lastSent = serialized;
+      this.currentConfig = payload;
+    }
+    return this.currentConfig;
   }
-  private receive(message: RuntimeMessage): void {
+  receive(message: RuntimeMessage): void {
     switch (message.type) {
-      case "wkly:ready":
-        this.ready = true;
-        this.lastSent = "";
-        this.sendConfig();
-        break;
       case "wkly:valueChange":
         this.commit(message.payload as WklyPickerValue);
-        this.lastSent = JSON.stringify(this.configuration());
         break;
       case "wkly:validationChange":
         this.errors = (message.payload || []) as WklyValidationError[];
@@ -225,22 +176,10 @@ export class DemoComponent implements OnInit, DoCheck, OnDestroy {
         this.formTouched = state.touched;
         break;
       }
-      case "wkly:height":
-        this.runtimeHeight = Math.max(
-          480,
-          Math.min(1000, Number(message.payload) || 520),
-        );
-        break;
-      case "wkly:error":
-        this.runtimeError = String(message.payload);
-        break;
     }
   }
   jump(value: string): void {
-    this.runtimeFrame?.nativeElement.contentWindow?.postMessage(
-      { type: "wkly:jump", payload: value },
-      window.location.origin,
-    );
+    this.runtime?.jump(value);
   }
   reset(): void {
     this.mode = this.config.mode || "datetime";
@@ -278,6 +217,9 @@ export class DemoComponent implements OnInit, DoCheck, OnDestroy {
     this.value = value;
     this.emitted++;
     this.selection.emit(value);
+    // Companions receive a programmatic value, so synchronization emits no extra user edits.
+    if (this.config.id.endsWith("-pair") && typeof value === "string")
+      this.pairs.select(encodeIso(decodeIso(value), "date"));
   }
   clear(): void {
     this.value = null;
@@ -291,7 +233,7 @@ export class DemoComponent implements OnInit, DoCheck, OnDestroy {
     }
   }
   localeChanged(): void {
-    // ngDoCheck sends the updated serializable configuration to the runtime.
+    // The next change detection pass updates the picker configuration.
   }
   presetChanged(): void {
     this.preset =

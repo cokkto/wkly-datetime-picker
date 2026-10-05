@@ -14,6 +14,19 @@ import {
 } from "wkly-datetime-picker.adapters";
 /** Rendered buffer weeks on each side of the visible calendar. */
 export const DEFAULT_OVERSCAN_WEEKS = 3;
+/** Full month coordinates may extend beyond an adapter's supported interval. */
+export function calendarMonthBounds(
+  adapter: WklyCalendarAdapter,
+  epochDay: number,
+): readonly [number, number] {
+  const date = adapter.epochDayToDate(epochDay);
+  // Convert only the supported anchor; day 1 can be outside the adapter's range.
+  const first = epochDay - date.day + 1;
+  return Object.freeze([
+    first,
+    first + adapter.getDaysInMonth(date.year, date.monthCode) - 1,
+  ]) as readonly [number, number];
+}
 export type WklyCloseReason =
   | "submit"
   | "auto-submit"
@@ -162,6 +175,24 @@ export function coerceBoolean(value: unknown): boolean {
     value !== false &&
     value !== "false"
   );
+}
+/** Regional entries override broader entries per key; catalog keys ignore case. */
+export function resolveWklyTranslation(
+  key: string,
+  locale: string,
+  catalog: WklyTranslations,
+  overrides: WklyStrings = {},
+): string {
+  if (overrides[key]) return overrides[key];
+  const entries = Object.keys(catalog);
+  let candidate = locale.toLowerCase();
+  while (candidate) {
+    const match = entries.find((entry) => entry.toLowerCase() === candidate);
+    if (match && catalog[match][key]) return catalog[match][key];
+    const separator = candidate.lastIndexOf("-");
+    candidate = separator < 0 ? "" : candidate.slice(0, separator);
+  }
+  return ENGLISH[key] || key;
 }
 export const INPUT_NAMES = [
   WklyPickerInputsPropertyKeys.Mode,

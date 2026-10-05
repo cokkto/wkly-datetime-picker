@@ -10,15 +10,25 @@ test("current packages validate and global changes select all", () => {
   assert.ok(rows().length);
   assert.deepEqual(
     rows().map((row) => row.angular),
-    ["11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"],
+    Object.keys(require("../supported-angular.json")).sort(
+      (a, b) => Number(a) - Number(b),
+    ),
   );
   assert.deepEqual(affected(["scripts/build.cjs"]), rows());
   assert.deepEqual(affected(["supported-angular.json"]), rows());
+  assert.deepEqual(
+    affected(["projects/wkly-datetime-picker.tests/contracts/values.spec.ts"]),
+    rows(),
+  );
   assert.deepEqual(
     affected(["projects/wkly-datetime-picker.core/src/public-api.ts"]),
     rows(),
   );
   assert.deepEqual(affected([]), []);
+  assert.deepEqual(
+    affected(["projects/wkly-datetime-picker.tests/e2e/lane.spec.ts"]),
+    rows(),
+  );
 });
 test("future packages and transitive shared dependencies need no script changes", () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wkly-matrix-"));

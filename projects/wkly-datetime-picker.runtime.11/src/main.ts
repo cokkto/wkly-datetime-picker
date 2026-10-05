@@ -7,12 +7,4 @@ import "./styles.css";
 
 platformBrowserDynamic()
   .bootstrapModule(RuntimeModule)
-  .then(() =>
-    window.parent.postMessage({ type: "wkly:ready" }, window.location.origin),
-  )
-  .catch((error) =>
-    window.parent.postMessage(
-      { type: "wkly:error", payload: String(error) },
-      window.location.origin,
-    ),
-  );
+  .catch((error) => console.error(error));

@@ -19,6 +19,18 @@
       ],
       "wkly-datetime-picker": [
         "projects/wkly-datetime-picker/src/public-api.ts"
+      ],
+      "@angular/*": [
+        "projects/wkly-datetime-picker.runtime.22/node_modules/@angular/*"
+      ],
+      "wkly-datetime-picker.22": [
+        "projects/wkly-datetime-picker.22/src/public-api.ts"
+      ],
+      "wkly-datetime-picker.22/cdk-overlay": [
+        "projects/wkly-datetime-picker.22/cdk-overlay/public-api.ts"
+      ],
+      "@angular/router": [
+        "projects/wkly-datetime-picker.showcase/node_modules/@angular/router"
       ]
     },
     "types": []

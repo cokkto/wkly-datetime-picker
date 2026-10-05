@@ -1,13 +1,10 @@
 import { Component } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
-import {
-  WklyPickerValue,
-  decodeIso,
-  encodeIso,
-} from "wkly-datetime-picker.adapters";
+import { decodeIso } from "wkly-datetime-picker.adapters";
 import { DemoConfig } from "./demo.component";
 import { ShowcaseHebrewCalendarAdapter } from "./hebrew-adapter";
 import { PairedSelectionService } from "./paired-selection.service";
+import { ShowcaseHijriCalendarAdapter } from "./hijri-adapter";
 import { PAGES } from "./pages";
 
 @Component({
@@ -34,7 +31,7 @@ export class PageComponent {
     ranges: "Two endpoints. One clear selection.",
     presentations: "Inline, dialog, overlay, and Material.",
     localization: "Regional formats and right-to-left layouts.",
-    calendars: "Gregorian and Hebrew, connected by a day.",
+    calendars: "Gregorian, Hebrew, and Hijri, connected by a day.",
     validation: "Clear constraints. No silent corrections.",
     virtualization: "Explore decades with a bounded viewport.",
     styling: "Make it feel like part of your product.",
@@ -52,7 +49,15 @@ export class PageComponent {
   ].map((iso) => {
     const day = decodeIso(iso).epochDay,
       a = new ShowcaseHebrewCalendarAdapter("en-US");
-    return { iso, day, label: a.formatDate(a.epochDayToDate(day)) };
+    const h = new ShowcaseHijriCalendarAdapter("en-US");
+    return {
+      iso,
+      day,
+      label:
+        a.formatDate(a.epochDayToDate(day)) +
+        " · " +
+        h.formatDate(h.epochDayToDate(day)),
+    };
   });
   constructor(
     route: ActivatedRoute,
@@ -60,14 +65,6 @@ export class PageComponent {
   ) {
     this.routeName = route.snapshot.data.page || "";
     this.page = PAGES[this.routeName] || null;
-  }
-  sync(value: WklyPickerValue): void {
-    // Paired calendars exchange the same UTC day, independent of display calendar.
-    if (this.routeName === "calendars" && typeof value === "string") {
-      const date = decodeIso(value);
-      const wire = encodeIso(date, "date");
-      this.pairsService.select(wire);
-    }
   }
   choosePair(value: string): void {
     this.pairsService.select(value);

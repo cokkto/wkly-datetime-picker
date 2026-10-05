@@ -73,10 +73,10 @@ button:focus-visible {
 .week-head,
 .week-row {
   display: grid;
-  grid-template-columns: 28px repeat(7, minmax(var(--wkly-size-unit), 1fr));
+  grid-template-columns: 28px repeat(7, minmax(0, 1fr));
 }
 .week-head {
-  font-size: 11px;
+  font-size: 0.85em;
   color: var(--wkly-muted-color);
   height: 34px;
   align-items: center;
@@ -89,7 +89,7 @@ button:focus-visible {
   align-items: end;
 }
 .no-label {
-  grid-template-columns: repeat(7, minmax(var(--wkly-size-unit), 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 .week-scroll {
   overflow-y: auto;
@@ -126,43 +126,56 @@ button:focus-visible {
 }
 .day {
   width: 100%;
+  min-width: 0;
   height: var(--wkly-size-unit);
   padding: 0;
   border-radius: 8px;
 }
 .annotation {
   position: absolute;
-  bottom: calc(var(--wkly-size-unit) * 0.85);
+  bottom: 0.25em;
   white-space: nowrap;
-  font-size: 0.85em;
+  font-size: 1.25em;
   font-weight: 650;
+  line-height: 1;
   pointer-events: none;
   z-index: 1;
   color: var(--wkly-muted-color);
+  color: color-mix(in srgb, var(--wkly-muted-color) 50%, transparent);
+  text-shadow:
+    0 0 2px --wkly-background-color,
+    0 0 4px --wkly-background-color;
+}
+.odd-month .annotation {
+  text-shadow:
+    0 0 2px --wkly-background-color-alternate,
+    0 0 4px --wkly-background-color-alternate;
+}
+.annotation:empty {
+  display: none;
 }
 .annotation--0 {
   inset-inline-start: 10%;
+  bottom: 1.75em;
 }
 .annotation--1 {
   inset-inline-start: -5%;
-  bottom: calc(var(--wkly-size-unit) * 0.65);
 }
 .annotation--2 {
   inset-inline-start: -20%;
 }
 .annotation--3 {
-  inset-inline-start: -35%;
-  bottom: calc(var(--wkly-size-unit) * 0.65);
+  inset-inline-start: -50%;
+  inset-inline-end: -50%;
 }
 .annotation--4 {
-  inset-inline-start: -50%;
+  inset-inline-end: -20%;
 }
 .annotation--5 {
-  inset-inline-start: -75%;
-  bottom: calc(var(--wkly-size-unit) * 0.65);
+  inset-inline-end: -5%;
 }
 .annotation--6 {
-  inset-inline-start: -90%;
+  inset-inline-end: 10%;
 }
 .range {
   background: var(--wkly-range-color);
@@ -195,7 +208,7 @@ button:focus-visible {
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid var(--wkly-border-color);
-  font-size: 11px;
+  font-size: 0.85em;
   color: var(--wkly-muted-color);
 }
 fieldset {
@@ -233,7 +246,7 @@ legend {
   padding-top: 1.25em;
 }
 .period button {
-  font-size: 12px;
+  font-size: 0.85em;
 }
 .period [aria-pressed="true"] {
   background: var(--wkly-range-color);
@@ -242,10 +255,10 @@ legend {
 }
 .validation {
   color: var(--wkly-error-color);
-  font-size: 12px;
+  font-size: 0.85em;
 }
 .validation p {
-  margin: 8px 12px;
+  margin: 0.5em 0.85em;
 }
 footer {
   padding: 12px;

@@ -413,13 +413,7 @@ input {
 .picker-stage {
   padding: 18px 14px;
 }
-.calendar-runtime {
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  border: 0;
-  background: transparent;
-}
+
 .diagnostics {
   padding: 17px 24px;
   background: #f4f7f1;
@@ -778,4 +772,10 @@ dialog::backdrop {
 .dark-theme select:focus-visible,
 .dark-theme summary:focus-visible {
   outline-color: #65b8ec;
+}
+
+.sidebar-note > a {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
 }

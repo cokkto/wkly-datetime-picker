@@ -1,4 +1,4 @@
-/** Plain data crossing the iframe boundary between the host and each Angular runtime. */
+/** Shared picker configuration and local Angular output events. */
 import { WklyWeekOffset } from "wkly-datetime-picker.core";
 import {
   WklyHourCycle,
@@ -14,7 +14,7 @@ export interface RuntimeConfig {
   mode: WklySelectionMode;
   value: WireValue;
   locale: string;
-  calendar: "gregorian" | "hebrew";
+  calendar: "gregorian" | "hebrew" | "hijri";
   presentation: "inline" | "dialog" | "overlay" | "material";
   weekOffset: WklyWeekOffset | null;
   weekLabelMode: "locale" | "hidden";
@@ -38,43 +38,4 @@ export interface RuntimeConfig {
 export interface RuntimeMessage {
   type: string;
   payload?: unknown;
-}
-
-export function isRuntimeMessage(value: unknown): value is RuntimeMessage {
-  return (
-    !!value &&
-    typeof value === "object" &&
-    typeof (value as RuntimeMessage).type === "string"
-  );
-}
-
-/** Accept messages only from the expected window on the current origin. */
-export function isExpectedRuntimeMessage(
-  event: MessageEvent,
-  source: Window | null | undefined,
-  origin: string,
-): event is MessageEvent & { data: RuntimeMessage } {
-  return (
-    !!source &&
-    event.source === source &&
-    event.origin === origin &&
-    isRuntimeMessage(event.data)
-  );
-}
-
-/** Validate the fields used immediately by both runtime versions. */
-export function isRuntimeConfig(value: unknown): value is RuntimeConfig {
-  if (!value || typeof value !== "object") return false;
-  const config = value as RuntimeConfig;
-  return (
-    typeof config.locale === "string" &&
-    [
-      "datetime",
-      "date",
-      "time",
-      "datetime-range",
-      "date-range",
-      "time-range",
-    ].includes(config.mode)
-  );
 }

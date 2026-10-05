@@ -29,6 +29,7 @@ export class WklyDateTimePickerOverlayService {
     trigger: HTMLElement,
     onCancel: (reason: WklyCloseReason) => void,
     backdrop = true,
+    injector?: Injector,
   ): WklyPresentationRef {
     const overlay = this.overlay.create({
       width: "390px",
@@ -61,7 +62,11 @@ export class WklyDateTimePickerOverlayService {
         ]),
     });
     const component = overlay.attach(
-      new ComponentPortal(WklyDateTimePickerComponent, null, this.injector),
+      new ComponentPortal(
+        WklyDateTimePickerComponent,
+        null,
+        injector || this.injector,
+      ),
     );
     component.instance.presentation = "transient";
     overlay.overlayElement.setAttribute("role", "dialog");
@@ -111,6 +116,7 @@ export class WklyDateTimePickerOverlayDirective extends WklyTriggerBase {
   constructor(
     element: ElementRef<HTMLElement>,
     private service: WklyDateTimePickerOverlayService,
+    private triggerInjector: Injector,
   ) {
     super(element);
   }
@@ -119,6 +125,7 @@ export class WklyDateTimePickerOverlayDirective extends WklyTriggerBase {
       this.element.nativeElement,
       (reason) => this.close(reason),
       this[WklyPickerInputsPropertyKeys.CloseOnBackdrop](),
+      this.triggerInjector,
     );
   }
 }

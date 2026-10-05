@@ -87,8 +87,11 @@ export function createWeekRows(options: WklyWeekRowsOptions): WklyWeekRow[] {
           annotation:
             date &&
             !hidden &&
-            (date.day === 1 ||
-              (week.absoluteWeek === firstVisibleWeek && index === 0))
+            ((week.absoluteWeek !== firstVisibleWeek && date.day === 1) ||
+              (week.absoluteWeek === firstVisibleWeek && index === 0) ||
+              (week.absoluteWeek === firstVisibleWeek &&
+                index === 6 &&
+                date.day < 7))
               ? adapter.formatMonth(date) + " " + adapter.formatYear(date)
               : "",
         };

@@ -1,144 +1,66 @@
 # Package compatibility CI
 
-`supported-angular.json` registers the Angular packages that actually exist: 11–22.
-Registering planned majors would incorrectly claim support. The workflow is
-`.github/workflows/compatibility.yml`.
+`supported-angular.json` is the source of truth for supported Angular majors, their numbered packages, runtime entries, and pinned Node, Angular, TypeScript, and CDK toolchains. It currently registers 11–22. The workflow is [`.github/workflows/compatibility.yml`](../.github/workflows/compatibility.yml); the planner and runner are [`scripts/compatibility.cjs`](../scripts/compatibility.cjs). This workflow tests artifacts and does not publish or change versions.
 
-## What runs
+Angular 22 pins `@angular/build` directly at the same version as `@angular-devkit/build-angular`. Keep these pins aligned: the direct dependency avoids npm's nested build/Vite/SSL peer placement failure during fresh strict installs, including packed consumers.
 
-Every push and pull request runs metadata/planner tests and the shared behavior suite.
-The planner reads project package manifests and follows dependencies, peer dependencies
-and development dependencies transitively. It reports affected majors for diagnostics
-and later release planning. PRs compare the merge base to the PR head; pushes compare
-`before` to the pushed SHA. Every push, PR, manual dispatch and weekly schedule tests
-all registered majors. This catches dependency drift even without source changes.
+## Public package and version lines
 
-Each registered major gets a fresh `.compat/<major>` workspace with its own pinned
-toolchain, installed using npm's strict peer checks. The shared unit suite runs in
-each toolchain as well as in the independent shared job. The existing pnpm developer
-workspace and its lockfile are not used or modified. Shared packages build first,
-then the selected Angular package runs its own ng-packagr configuration. Package
-boundaries and npm pack contents are checked. Actual tarballs are installed into a
-fresh consumer beside the toolchain, including local shared packages instead of
-registry copies. Its first install omits the optional CDK, AOT compiles the inline
-picker and native dialog, and checks server rendering. CDK is then installed at the
-matching major, and a second AOT build compiles the overlay entry point and trigger.
-Both installs verify that the lockfile points to the exact local tarballs by SHA-512,
-that installed versions and dependencies match the packed manifests, and that all
-declared JavaScript and declaration entry paths exist. The base manifest and lockfile
-are saved before CDK is added.
+The release target is one npm package name, `@wkly/datetime-picker`. Its major version selects the Angular integration: an Angular 19 consumer installs `@wkly/datetime-picker@19.x.x` and imports from `@wkly/datetime-picker`. The optional CDK entry point is `@wkly/datetime-picker/cdk-overlay`. Consumers pin the major because an unqualified npm install can select a different Angular line.
 
-The consumer AOT compiles public package imports and discovered secondary ng-packagr
-entry points. Browser contracts check Gregorian adapter rendering, native-dialog and
-CDK-overlay opening, date selection, reactive form updates in both directions and
-disabled state. A desktop
-and mobile visual contract checks bounds, visibility and overlap, and attaches picker
-screenshots for each major. It is a layout check rather than a pixel baseline. A
-server-rendering contract checks shared imports without Angular and rendering without
-reading the clock. Playwright uses Node 24 independently of the library toolchain.
-The shared core/adapter unit contract source is reused for every major.
-The showcase's UI/iframe bridge suite runs in a separate Chromium job within this
-workflow. It iterates over every major in `supported-angular.json` and is also
-available locally through `npm run showcase:test:e2e`.
-Before bundling, the showcase build runs Angular 11's ngcc over the hoisted workspace
-dependencies so its View Engine modules have Ivy metadata for the esbuild runtime.
-That job also runs `npm run lint` and `npm run lint:test` before the build. Lint
-uses each version's installed TypeScript and Angular template parser, including
-Angular 11's older template grammar.
+Versions use `N.S.A`: `N` is the Angular major, `S` is a shared revision common to every supported Angular line, and `A` is a revision local to one Angular line. A fix confined to Angular 19 advances `19.2.21` to `19.2.22` and produces only the Angular 19 picker artifact. A change to core, adapters, or shared presentation advances the common revision from `2` to `3` and produces `N.3.0` picker artifacts for every supported Angular major, resetting `A` to zero. Other shared-package artifacts change when their own source changes.
 
-Use **Compatibility result** as the required branch check. It fails if planning,
-shared tests, the showcase job, or any registered compatibility job fails.
+This is the release contract, not the behavior of the current CI. The workspace still builds internal `wkly-datetime-picker.N` packages; their manifests currently range from `11.0.0` to `22.0.0`, and the three shared manifests each use `0.1.0`. The planner enforces that an internal package's first version component matches its Angular suffix. Renaming the outgoing picker tarballs to `@wkly/datetime-picker`, calculating `S` and `A`, and publishing selected artifacts are [development-plan work](DEVELOPMENT-PLAN.md).
 
-The first clean consumer run exposed missing picker/dialog exports in Angular 11's
-flattened package bundle. Its public barrel now explicitly re-exports those symbols
-so declarations and executable exports agree; the public API is unchanged.
+## Pipeline
 
-## Adding another Angular major
+Pushes to `main`, pull requests targeting `main` and manual dispatch run the complete gate. The planner validates metadata and selects every registered major; its affected-package output is diagnostic, not a reason to omit compatibility coverage. Newer runs on the same ref cancel obsolete runs.
 
-1. Add `projects/wkly-datetime-picker.N` with version `N.SharedRevision.AngularRevision`,
-   its appropriate Angular peer ranges, and ng-packagr/TypeScript configs. Keep business
-   logic in shared packages. Export the same picker/module API used by the harness.
-2. Add an `N` entry to `supported-angular.json`: `package`, `node`, and exact versions
-   in `dependencies` for its Angular/CLI/ng-packagr/TypeScript/RxJS toolchain. Include
-   any additional dependencies needed by its secondary entry points and SSR.
-   Start from the existing entry, then choose compatible versions; do not simply
-   replace every version number with N. `builder` optionally overrides the consumer
-   builder, which must support the Angular CLI browser builder option contract.
-3. Add `projects/wkly-datetime-picker.runtime.N` and its `runtimeEntry`, `runtimeHtml`,
-   and `toolchain` metadata for the showcase iframe. Add both projects to
-   `pnpm-workspace.yaml` with local compiler dependencies on the library project.
-4. Run `npm run ci:test` and `npm run ci:matrix`, then push. No workflow copy, matrix
-   edit, or committed per-major lockfile is necessary. Unregistered numbered packages
-   fail validation instead of silently escaping CI.
+| Job                       | Runner                          | Checks                                                                                                                              |
+| ------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `plan`                    | Linux, Node 24                  | Validate registry/packages and produce the full Angular matrix                                                                      |
+| `shared`                  | Linux, Node 24                  | Tooling/server contracts, all source/template lint, test types, source contracts and freshly installed shared-package contracts     |
+| `picker` × Angular major  | Windows, Node 24                | Build only that major's picker host; run every supported domain on Chromium/Firefox/WebKit with fixture/context/page reuse auditing |
+| `angular` × Angular major | Linux, pinned Node then Node 24 | Fresh isolated libraries, tarballs and base/CDK installs, public-import AOT and SSR, then packed startup on all three browsers      |
+| `showcase` × browser      | Linux, Node 24                  | Build all versioned testbeds and evergreen showcase; run that engine's version and catalogue journeys                               |
+| `result`                  | Linux                           | Require every job and matrix to succeed, including failures, cancellations or unexpected skips                                      |
 
-Removing support means removing the metadata entry and its numbered project together;
-remove the corresponding showcase runtime too if present. Historical tags remain.
-Future majors may require changes to the shared harness if Angular removes APIs;
-metadata cannot manufacture a compatible Angular implementation.
+Picker jobs pin `windows-2025-vs2026` and use two browser workers (`CI=true`); local picker runs keep six. Screenshots include all four month-boundary cases per engine. Firefox on Actions uses `baselines/win32-server2025/firefox`, since Windows Server text rasterization differs from local Windows; other engines and local Firefox keep `baselines/win32/<engine>`. Both variants remain shared across Angular versions and use the same strict comparison settings. Update server references only from reviewed screenshots captured on the pinned runner. Touch input runs Chromium only; desktop domains run all three engines. Package and showcase jobs use Linux and have no screenshot baseline dependency. The [test coverage index](TEST-DOMAINS.md) links the exact specs.
+
+Heavy jobs have `timeout-minutes: 25` individually; plan/result have five minutes. The workflow uses separate jobs rather than the sequential local release command. Matrix fail-fast is disabled so failures in one version do not hide results from others. The pnpm store is cached by lockfile; workspace installs are frozen, and each package job regenerates and installs fresh compatibility artifacts.
+
+The aggregate check is named **Compatibility result**. Configure it as the required branch-protection check for `main` in GitHub repository settings. The workflow runs on ordinary `pull_request` events with read-only contents permission and does not require publication secrets.
+
+The numbered source package's `package.json` declares matching Angular peer ranges. The base entry point does not require CDK; the source project's `cdk-overlay` entry point does. The consumer check verifies local tarball integrity and entry files. CI artifacts include toolchain/consumer lockfiles, tarballs, per-major package timings, picker reuse/build summaries and native Playwright HTML/JSON/JUnit plus failure attachments. Browser failures also receive native GitHub annotations. Artifact names include their Angular version or browser; each uploads even when tests fail. The pnpm developer lockfile is separate from generated compatibility workspaces.
 
 ## Local commands
 
+Run planning with a modern Node version:
+
 ```sh
-# Node 22+ for generation and planner tests
-npm run ci:test
+npm run test:tooling
 npm run ci:matrix
-node scripts/compatibility.cjs prepare 11
-
-# Switch to the Node version declared for 11, then:
-npm run test:angular -- 11
+node scripts/compatibility.cjs prepare 22
 ```
 
-`prepare` replaces only `.compat/11`. `test:angular` installs, builds, packs, AOT
-compiles and runs SSR; it replaces the generated `.compat/consumer-11` on each run.
-Browser tests use a separate modern Node installation:
+Switch to the Node version declared for the chosen major in `supported-angular.json`, then run:
 
 ```sh
-npm install --prefix .compat/browser --no-audit --no-fund @playwright/test@1.58.2
-node .compat/browser/node_modules/@playwright/test/cli.js install chromium
-NODE_PATH="$PWD/.compat/browser/node_modules" ANGULAR_MAJOR=11 \
-  node .compat/browser/node_modules/@playwright/test/cli.js test --config tests/compatibility/playwright.config.cjs
+npm run test:packages:angular:version -- 22
 ```
 
-On PowerShell set `$env:NODE_PATH` and `$env:ANGULAR_MAJOR` before the last command.
-See the workflow for the equivalent Linux runner steps.
-For another major, substitute its number and use the Node version in `supported-angular.json` for `test:angular`.
+`prepare` replaces the chosen generated toolchain directory. `test:packages:angular:version` installs, builds, packs, AOT compiles and checks SSR for the selected major; it replaces that major's generated consumer. Switch back to modern Node for Playwright; `npm run test:packages:angular:reuse` rechecks those installed artifacts with AOT, SSR and browser journeys. Set `WKLY_TEST_ANGULAR` to that major and provide its pinned Node executable as described in the [test README](../projects/wkly-datetime-picker.tests/README.md#package-checks).
 
-## Dependency policy and run diagnostics
-
-Direct compatibility dependencies are pinned in the manifest. Transitive dependencies
-resolve on a fresh run, deliberately avoiding twelve large committed lockfiles.
-Both generated install lockfiles, the consumer's base-stage lockfile, packed tarballs,
-and failure traces are uploaded as
-`compatibility-N` artifacts. This gives a record of the actual dependency resolution;
-it does not promise identical transitive dependencies between separate fresh runs.
-To reproduce an install failure, download its locks, put each beside the corresponding
-generated package.json, and use `npm ci` with the same Node/npm versions from the logs.
-
-Angular 11 and 12 retain this repository's Node 16 build baseline and shared package
-engine requirement; these are tested project combinations outside their original
-official Node support ranges. Angular 12 uses a View Engine library build so its
-packed bundle embeds templates for the server rendering check. Consult
-[Angular's toolchain table](https://angular.dev/reference/versions) when choosing
-toolchains for new majors.
+The showcase's local browser suite can be restricted to one version:
 
 ```sh
-gh run list --branch YOUR_BRANCH --workflow compatibility.yml
-gh run watch RUN_ID --exit-status
-gh run view RUN_ID --log-failed
-gh run download RUN_ID --name compatibility-11
-# After the workflow is present on the default branch:
-gh workflow run compatibility.yml --ref YOUR_BRANCH
+npm run test:showcase -- --project=angular-22-chromium-showcase
 ```
 
-## Versioning and release scope
+See [developer guide](README.DEV.md) for the common loop and [test project README](../projects/wkly-datetime-picker.tests/README.md) for suite layout.
 
-This implements testing, not publishing or version increments. It follows the
-`Angular.SharedRevision.AngularRevision` decision: the first version component must
-match the package suffix. Shared revisions and Angular-specific revisions retain
-their project meanings, not ordinary SemVer compatibility promises. Exact dependency
-pins are appropriate when consuming a particular shared generation.
+## Adding a major
 
-Development stays on `main` with short-lived review branches. No Angular-specific
-maintenance branches are introduced. Publishing, synchronized shared revisions, tags
-and release recovery remain separate release automation work; this workflow never
-publishes, tags or changes package versions.
+Add `projects/wkly-datetime-picker.N/` and `projects/wkly-datetime-picker.runtime.N/`, register both in `pnpm-workspace.yaml`, then add the exact toolchain and runtime paths to `supported-angular.json`. Keep common behavior in shared packages and use the public API exercised by the compatibility consumer. Update the evergreen showcase's newest runtime import. Run `npm run test:tooling` and `npm run ci:matrix` before the package and browser checks. An unregistered numbered package fails planner validation.
+
+For the complete local gate use `npm run test:release` (also `test:all`): it rebuilds every registered pinned compatibility toolchain and fresh consumer, including base-without-CDK, AOT, SSR and all three engines. `test:release -- --reuse-packed` is a weaker repeat check of existing artifacts. Stage/total timings are saved in `.test-build/checks/release/summary.json`. `test:pr` runs the full local behavior matrix without Angular package qualification; CI adds that qualification in parallel jobs. See the [developer guide](README.DEV.md#checks) for faster development/push commands.

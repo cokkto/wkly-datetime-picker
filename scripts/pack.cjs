@@ -1,3 +1,4 @@
+// Inspect already-built dist artifacts; build before running this check.
 const { execFileSync } = require("child_process");
 const fs = require("fs");
 const supported = require("../supported-angular.json");

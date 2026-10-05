@@ -106,6 +106,14 @@ export const PAGES: Record<
         calendar: "hebrew",
       },
       {
+        id: "hijri",
+        title: "الهجري · Hijri",
+        description:
+          "Tabular civil Hijri calendar with Arabic digits and right-to-left layout.",
+        locale: "ar-EG",
+        calendar: "hijri",
+      },
+      {
         id: "arabic",
         title: "العربية · Arabic",
         description:
@@ -122,9 +130,9 @@ export const PAGES: Record<
     ],
   },
   calendars: {
-    title: "Two calendars. One day.",
+    title: "Three calendars. One day.",
     description:
-      "Both representations share the same epoch day. Select either calendar to update its companion.",
+      "All three representations share the same epoch day. Select any calendar to update its companions.",
     demos: [
       {
         id: "gregorian-pair",
@@ -132,6 +140,16 @@ export const PAGES: Record<
         description:
           "Public values always use the Gregorian UTC ISO wire format.",
         mode: "date",
+        value: "2024-03-25T00:00:00.000Z",
+      },
+      {
+        id: "hijri-pair",
+        title: "Hijri (civil)",
+        description:
+          "A source-only islamic-civil adapter sharing the same Gregorian UTC day.",
+        mode: "date",
+        calendar: "hijri",
+        locale: "ar-EG",
         value: "2024-03-25T00:00:00.000Z",
       },
       {

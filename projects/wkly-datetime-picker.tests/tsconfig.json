@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["node"]
+  },
+  "include": [
+    "e2e/**/*.ts",
+    "playwright.config.ts",
+    "host/protocol.ts",
+    "contracts/**/*.ts"
+  ],
+  "exclude": []
+}
