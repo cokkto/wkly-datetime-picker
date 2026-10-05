@@ -6,21 +6,11 @@ This is the current work tracker for WKLY. Keep it limited to work that remains.
 
 The workspace has three shared packages and Angular integration build targets for 11–22. The current test project covers source/installed contracts, picker domains, packed AOT/SSR/browser consumers and versioned showcase journeys. The [test coverage index](TEST-DOMAINS.md) links their assertions; the [developer guide](README.DEV.md#checks) describes development, push, PR and release checks. [Compatibility CI](COMPATIBILITY-CI.md#pipeline) runs these checks in separate matrix jobs on pushes to main, pull requests to main and manual dispatch.
 
-The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. Isolated compatibility builds map internal projects to that name and qualify the scoped shared dependency graph. First publication and automatic version updates remain outstanding; see the [publication procedure](PUBLICATION.md).
+The public picker uses one name, `@wkly/datetime-picker`, with Angular-specific major version lines. Isolated compatibility builds map internal projects to that name and qualify the scoped shared dependency graph. Automatic version updates remain outstanding; see the [publication procedure](PUBLICATION.md).
 
 ## Next milestone
 
-Prepare the package artifacts and release procedure for publication.
-
-## Milestone 7 — Prepare publication
-
-- [x] Confirm permission to publish under `@wkly`: `cokkto` created the npm organization and confirmed the bootstrap token has scope publishing access on 2026-10-05.
-- [x] Map each internal `wkly-datetime-picker.N` build to an outgoing `@wkly/datetime-picker@N.S.A` artifact with the matching Angular peer range and CDK entry point. Align shared-package dependencies and versions with the artifacts to publish.
-- [x] Define repeatable release steps for changed shared packages followed by the affected picker lines; include registry-name checks, tags, partial-failure recovery, and artifact verification. Keep normal development on `main`.
-- [ ] Build from a clean install, pass the full compatibility and packed-consumer matrix, and inspect the exact tarballs and manifests.
-- [ ] Publish only after reviewing those artifacts and the procedure, then verify fresh installation against the registry artifacts.
-
-**Done when:** the published package graph matches tested artifacts and every support claim has a passing consumer check.
+Automate affected-package release planning and the documented `N.S.A` version updates.
 
 ## Milestone 8 — Release automation
 

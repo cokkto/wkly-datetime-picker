@@ -272,6 +272,24 @@ function checkExisting(pkg, document) {
   return true;
 }
 
+async function waitForPublished(
+  pkg,
+  readMetadata = metadata,
+  pause = (milliseconds) =>
+    new Promise((resolve) => setTimeout(resolve, milliseconds)),
+) {
+  // npm can accept a tarball before public version metadata becomes visible.
+  // Retry only missing versions; integrity conflicts and registry errors stop.
+  for (let attempt = 0; attempt < 61; attempt++) {
+    const document = await readMetadata(pkg.name);
+    if (checkExisting(pkg, document)) return document;
+    if (attempt < 60) await pause(10000);
+  }
+  throw new Error(
+    `Published version is not visible after ten minutes: ${pkg.name}@${pkg.version}; preserve the release manifest and retry after registry visibility recovers`,
+  );
+}
+
 function npm(args, cwd = root) {
   execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", args, {
     cwd,
@@ -280,7 +298,116 @@ function npm(args, cwd = root) {
   });
 }
 
-async function publish(destination) {
+async function verifyTrustedPublisher(
+  name,
+  {
+    request = fetch,
+    identityUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL,
+    identityToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN,
+  } = {},
+) {
+  assert.ok(
+    identityUrl && identityToken,
+    "Require GitHub Actions OIDC credentials",
+  );
+  const checked = async (label, url, options = {}) => {
+    const response = await request(url, {
+      ...options,
+      headers: { accept: "application/json", ...options.headers },
+      redirect: "error",
+      signal: AbortSignal.timeout(30000),
+    });
+    assert.ok(
+      response.ok,
+      `${label} failed for ${name} (HTTP ${response.status})`,
+    );
+    return response;
+  };
+  const escaped = encodeURIComponent(name);
+  const packageUrl = registry + escaped;
+  const document = await (await checked("Package metadata", packageUrl)).json();
+  const version = document["dist-tags"]?.latest;
+  assert.ok(
+    typeof version === "string" && document.versions?.[version],
+    `Require an existing latest version for ${name}`,
+  );
+  const identityRequest = new URL(identityUrl);
+  assert.equal(identityRequest.protocol, "https:");
+  identityRequest.searchParams.set("audience", "npm:registry.npmjs.org");
+  const identity = await (
+    await checked("GitHub identity", identityRequest, {
+      headers: { authorization: `Bearer ${identityToken}` },
+    })
+  ).json();
+  assert.ok(
+    typeof identity.value === "string" && identity.value.length,
+    "Missing GitHub OIDC token",
+  );
+  const exchange = await (
+    await checked(
+      "OIDC exchange",
+      `${registry}-/npm/v1/oidc/token/exchange/package/${escaped}`,
+      {
+        method: "POST",
+        headers: { authorization: `Bearer ${identity.value}` },
+      },
+    )
+  ).json();
+  assert.ok(
+    typeof exchange.token === "string" && exchange.token.length,
+    "Missing npm OIDC exchange token",
+  );
+  // npm dist-tag add can return success without authorization when a tag is
+  // already correct. Write that same value directly to test the actual grant.
+  await checked(
+    "Tag authorization",
+    `${registry}-/package/${escaped}/dist-tags/latest`,
+    {
+      method: "PUT",
+      headers: {
+        authorization: `Bearer ${exchange.token}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(version),
+    },
+  );
+  const after = await (await checked("Package metadata", packageUrl)).json();
+  assert.equal(
+    after["dist-tags"]?.latest,
+    version,
+    `Latest changed for ${name}`,
+  );
+  return { name, tag: "latest", version };
+}
+
+async function verifyTrusted(destination) {
+  const plan = read(path.join(destination, "manifest.json"));
+  validateGraph(plan.packages);
+  assert.equal(plan.registry, registry);
+  assert.equal(process.env.WKLY_QUALIFIED_COMMIT, plan.sourceCommit);
+  const packages = [];
+  for (const name of new Set(plan.packages.map((pkg) => pkg.name))) {
+    packages.push(await verifyTrustedPublisher(name));
+    console.log(
+      `PASS trusted publisher: ${name} (OIDC exchange and tag authorization)`,
+    );
+  }
+  write(path.join(destination, "trusted-publishing.json"), {
+    sourceCommit: plan.sourceCommit,
+    verified: true,
+    packages,
+  });
+}
+
+async function publish(
+  destination,
+  {
+    readMetadata = metadata,
+    runNpm = npm,
+    verifyConsumers = verifyRegistry,
+    pause,
+  } = {},
+) {
   const plan = read(path.join(destination, "manifest.json"));
   validateGraph(plan.packages);
   assert.equal(plan.registry, registry);
@@ -298,11 +425,13 @@ async function publish(destination) {
       integrity(path.join(destination, pkg.filename)),
       pkg.integrity,
     );
-    checkExisting(pkg, await metadata(pkg.name));
+    checkExisting(pkg, await readMetadata(pkg.name));
   }
+  // Submit in dependency order so npm can process the versions concurrently.
+  // Verify each version before repairing its tags and testing consumers.
   for (const pkg of plan.packages) {
-    if (!checkExisting(pkg, await metadata(pkg.name)))
-      npm([
+    if (!checkExisting(pkg, await readMetadata(pkg.name))) {
+      runNpm([
         "publish",
         path.join(destination, pkg.filename),
         "--ignore-scripts",
@@ -313,13 +442,13 @@ async function publish(destination) {
         "--tag",
         pkg.tag,
       ]);
-    const document = await metadata(pkg.name);
-    assert.ok(
-      checkExisting(pkg, document),
-      `Published package is missing: ${pkg.name}`,
-    );
+      console.log(`Submitted ${pkg.name}@${pkg.version}`);
+    }
+  }
+  for (const pkg of plan.packages) {
+    const document = await waitForPublished(pkg, readMetadata, pause);
     if (document["dist-tags"]?.[pkg.tag] !== pkg.version)
-      npm([
+      runNpm([
         "dist-tag",
         "add",
         `${pkg.name}@${pkg.version}`,
@@ -329,7 +458,7 @@ async function publish(destination) {
       ]);
     console.log(`Verified ${pkg.name}@${pkg.version}`);
   }
-  npm([
+  runNpm([
     "dist-tag",
     "add",
     `${picker}@${latest.version}`,
@@ -337,7 +466,7 @@ async function publish(destination) {
     "--registry",
     registry,
   ]);
-  await verifyRegistry(plan);
+  await verifyConsumers(plan);
   write(path.join(destination, "published.json"), {
     sourceCommit: plan.sourceCommit,
     verified: true,
@@ -365,6 +494,7 @@ async function verifyRegistry(plan) {
       "@angular/core",
       "@angular/common",
       "@angular/forms",
+      "@angular/platform-browser",
       "rxjs",
     ])
       dependencies[name] = supported[major].dependencies[name];
@@ -433,7 +563,16 @@ async function verifyRegistry(plan) {
   }
 }
 
-module.exports = { evidence, collect, validateGraph, checkExisting, integrity };
+module.exports = {
+  evidence,
+  collect,
+  validateGraph,
+  checkExisting,
+  waitForPublished,
+  publish,
+  verifyTrustedPublisher,
+  integrity,
+};
 if (require.main === module) {
   const [command, input, destination, commit] = process.argv.slice(2);
   (async () => {
@@ -445,9 +584,11 @@ if (require.main === module) {
     )
       collect(path.resolve(input), path.resolve(destination), commit);
     else if (command === "publish" && input) await publish(path.resolve(input));
+    else if (command === "verify-trusted" && input)
+      await verifyTrusted(path.resolve(input));
     else
       throw new Error(
-        "Usage: release.cjs collect <artifacts> <output> <source-commit> | publish <output>",
+        "Usage: release.cjs collect <artifacts> <output> <source-commit> | publish <output> | verify-trusted <output>",
       );
   })().catch((error) => {
     console.error(error.message);

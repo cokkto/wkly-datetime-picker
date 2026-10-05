@@ -4,7 +4,14 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { gzipSync, gunzipSync } = require("node:zlib");
-const { collect, checkExisting, integrity } = require("./release.cjs");
+const {
+  collect,
+  checkExisting,
+  waitForPublished,
+  publish,
+  verifyTrustedPublisher,
+  integrity,
+} = require("./release.cjs");
 const {
   shared,
   picker,
@@ -91,66 +98,321 @@ test("publication skips identical existing versions and rejects conflicting vers
   );
 });
 
-test("collect requires a full single-commit matrix with identical shared artifacts", () => {
+function trustedPublisherMock({
+  exchangeStatus = 201,
+  writeStatus = 201,
+} = {}) {
+  const calls = [];
+  const result = (status, body) => ({
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+  });
+  return {
+    calls,
+    options: {
+      identityUrl: "https://github.example.test/token?api-version=2",
+      identityToken: "fake-github-request-token",
+      request: async (url, options) => {
+        calls.push({ url: String(url), options });
+        const target = new URL(url);
+        if (target.host === "github.example.test") {
+          assert.equal(
+            target.searchParams.get("audience"),
+            "npm:registry.npmjs.org",
+          );
+          assert.equal(
+            options.headers.authorization,
+            "Bearer fake-github-request-token",
+          );
+          return result(200, { value: "fake-identity-token" });
+        }
+        if (options.method === "POST") {
+          assert.ok(target.pathname.includes("/oidc/token/exchange/package/"));
+          assert.equal(
+            options.headers.authorization,
+            "Bearer fake-identity-token",
+          );
+          return result(exchangeStatus, { token: "fake-npm-token" });
+        }
+        if (options.method === "PUT") {
+          assert.ok(target.pathname.endsWith("/dist-tags/latest"));
+          assert.equal(options.headers.authorization, "Bearer fake-npm-token");
+          assert.equal(options.body, JSON.stringify("0.1.0"));
+          return result(writeStatus, {});
+        }
+        return result(200, {
+          "dist-tags": { latest: "0.1.0" },
+          versions: { "0.1.0": {} },
+        });
+      },
+    },
+  };
+}
+
+test("trusted publishing verifies an authenticated write even when latest is already correct", async () => {
+  const mock = trustedPublisherMock();
+  assert.deepEqual(await verifyTrustedPublisher("@wkly/core", mock.options), {
+    name: "@wkly/core",
+    tag: "latest",
+    version: "0.1.0",
+  });
+  assert.equal(
+    mock.calls.filter((call) => call.options.method === "PUT").length,
+    1,
+  );
+  assert.equal(mock.calls.length, 5);
+});
+
+test("public tags cannot hide a rejected trusted publisher exchange", async () => {
+  const mock = trustedPublisherMock({ exchangeStatus: 401 });
+  await assert.rejects(
+    verifyTrustedPublisher("@wkly/core", mock.options),
+    /OIDC exchange failed.*401/,
+  );
+  assert.equal(
+    mock.calls.filter((call) => call.options.method === "PUT").length,
+    0,
+  );
+});
+
+test("trusted publishing fails when the exchanged token cannot manage tags", async () => {
+  const mock = trustedPublisherMock({ writeStatus: 403 });
+  await assert.rejects(
+    verifyTrustedPublisher("@wkly/core", mock.options),
+    /Tag authorization failed.*403/,
+  );
+});
+
+test("publication waits for matching version metadata after npm accepts a tarball", async () => {
+  const pkg = { name: picker, version: "11.0.0", integrity: "sha512-reviewed" };
+  const published = {
+    versions: { "11.0.0": { dist: { integrity: pkg.integrity } } },
+  };
+  const responses = [null, { versions: {} }, published];
+  let pauses = 0;
+  const actual = await waitForPublished(
+    pkg,
+    async (name) => {
+      assert.equal(name, pkg.name);
+      return responses.shift();
+    },
+    async (milliseconds) => {
+      assert.equal(milliseconds, 10000);
+      pauses++;
+    },
+  );
+  assert.equal(actual, published);
+  assert.equal(pauses, 2);
+});
+
+test("publication visibility waits remain bounded and reject conflicts and registry errors", async () => {
+  const pkg = { name: picker, version: "11.0.0", integrity: "sha512-reviewed" };
+  let reads = 0;
+  let pauses = 0;
+  await assert.rejects(
+    waitForPublished(
+      pkg,
+      async () => {
+        reads++;
+        return null;
+      },
+      async () => {
+        pauses++;
+      },
+    ),
+    /not visible after ten minutes/,
+  );
+  assert.equal(reads, 61);
+  assert.equal(pauses, 60);
+  const noPause = async () => assert.fail("Errors must not be retried");
+  await assert.rejects(
+    waitForPublished(
+      pkg,
+      async () => ({
+        versions: { "11.0.0": { dist: { integrity: "sha512-other" } } },
+      }),
+      noPause,
+    ),
+    /Published version differs/,
+  );
+  await assert.rejects(
+    waitForPublished(
+      pkg,
+      async () => {
+        throw new Error("Registry returned 403");
+      },
+      noPause,
+    ),
+    /Registry returned 403/,
+  );
+});
+
+function qualifiedFixture() {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "wkly-release-"));
   const input = path.join(directory, "input");
   const commit = "a".repeat(40);
   const write = (file, value) => fs.writeFileSync(file, JSON.stringify(value));
   const evidenceFiles = [];
+  for (const major of Object.keys(supported)) {
+    const workspace = path.join(input, major);
+    fs.mkdirSync(workspace, { recursive: true });
+    const packages = Object.entries(packageDirs(major)).map(
+      ([name, internal]) => {
+        const version = name === picker ? `${major}.0.0` : "0.1.0";
+        const filename =
+          name.slice(1).replace("/", "-") + "-" + version + ".tgz";
+        const tarball = path.join(workspace, "dist", internal, filename);
+        fs.mkdirSync(path.dirname(tarball), { recursive: true });
+        fs.writeFileSync(tarball, `${name}@${version}`);
+        const manifest = {
+          name,
+          version,
+          license: "MIT",
+          publishConfig: {
+            access: "public",
+            registry: "https://registry.npmjs.org/",
+          },
+          repository: {
+            url: "git+https://github.com/cokkto/wkly-datetime-picker.git",
+          },
+        };
+        if (name === picker) {
+          manifest.dependencies = Object.fromEntries(
+            Object.values(shared).map((name) => [name, "0.1.0"]),
+          );
+          manifest.peerDependencies = Object.fromEntries(
+            [
+              "@angular/core",
+              "@angular/common",
+              "@angular/forms",
+              "@angular/cdk",
+            ].map((name) => [name, `>=${major} <${Number(major) + 1}`]),
+          );
+          manifest.peerDependenciesMeta = {
+            "@angular/cdk": { optional: true },
+          };
+        }
+        return {
+          name,
+          version,
+          filename,
+          internal,
+          integrity: integrity(tarball),
+          manifest,
+        };
+      },
+    );
+    const file = path.join(workspace, "release-evidence.json");
+    write(file, { angular: major, sourceCommit: commit, packages });
+    evidenceFiles.push(file);
+  }
+  return { directory, input, commit, evidenceFiles, write };
+}
+
+test("publication preflights all artifacts and submits the graph before waiting for metadata", async () => {
+  const { directory, input, commit } = qualifiedFixture();
+  const previousCommit = process.env.WKLY_QUALIFIED_COMMIT;
   try {
-    for (const major of Object.keys(supported)) {
-      const workspace = path.join(input, major);
-      fs.mkdirSync(workspace, { recursive: true });
-      const packages = Object.entries(packageDirs(major)).map(
-        ([name, internal]) => {
-          const version = name === picker ? `${major}.0.0` : "0.1.0";
-          const filename =
-            name.slice(1).replace("/", "-") + "-" + version + ".tgz";
-          const tarball = path.join(workspace, "dist", internal, filename);
-          fs.mkdirSync(path.dirname(tarball), { recursive: true });
-          fs.writeFileSync(tarball, `${name}@${version}`);
-          const manifest = {
-            name,
-            version,
-            license: "MIT",
-            publishConfig: {
-              access: "public",
-              registry: "https://registry.npmjs.org/",
-            },
-            repository: {
-              url: "git+https://github.com/cokkto/wkly-datetime-picker.git",
-            },
-          };
-          if (name === picker) {
-            manifest.dependencies = Object.fromEntries(
-              Object.values(shared).map((name) => [name, "0.1.0"]),
-            );
-            manifest.peerDependencies = Object.fromEntries(
-              [
-                "@angular/core",
-                "@angular/common",
-                "@angular/forms",
-                "@angular/cdk",
-              ].map((name) => [name, `>=${major} <${Number(major) + 1}`]),
-            );
-            manifest.peerDependenciesMeta = {
-              "@angular/cdk": { optional: true },
-            };
-          }
-          return {
-            name,
-            version,
-            filename,
-            internal,
-            integrity: integrity(tarball),
-            manifest,
-          };
-        },
-      );
-      const file = path.join(workspace, "release-evidence.json");
-      write(file, { angular: major, sourceCommit: commit, packages });
-      evidenceFiles.push(file);
-    }
+    const output = path.join(directory, "output");
+    const plan = collect(input, output, commit);
+    process.env.WKLY_QUALIFIED_COMMIT = commit;
+    const existing = plan.packages[0];
+    const toSubmit = plan.packages.slice(1);
+    let reads = 0;
+    let submitted = 0;
+    let verifiedConsumers = false;
+    await publish(output, {
+      readMetadata: async (name) => {
+        reads++;
+        const visible = plan.packages.filter(
+          (pkg) =>
+            pkg.name === name &&
+            (pkg === existing || submitted === toSubmit.length),
+        );
+        return {
+          versions: Object.fromEntries(
+            visible.map((pkg) => [
+              pkg.version,
+              { dist: { integrity: pkg.integrity } },
+            ]),
+          ),
+          "dist-tags": Object.fromEntries(
+            visible.map((pkg) => [pkg.tag, pkg.version]),
+          ),
+        };
+      },
+      runNpm: (args) => {
+        assert.ok(
+          reads >= plan.packages.length,
+          "All versions must be preflighted before mutations",
+        );
+        if (args[0] === "publish") {
+          assert.equal(
+            args[1],
+            path.join(output, toSubmit[submitted].filename),
+          );
+          submitted++;
+        } else {
+          assert.equal(submitted, toSubmit.length);
+          assert.equal(args[0], "dist-tag");
+        }
+      },
+      pause: async () =>
+        assert.fail("Every artifact must be submitted before waiting"),
+      verifyConsumers: async (actual) => {
+        assert.deepEqual(actual, plan);
+        assert.equal(submitted, toSubmit.length);
+        verifiedConsumers = true;
+      },
+    });
+    assert.equal(submitted, toSubmit.length);
+    assert.ok(verifiedConsumers);
+    assert.equal(
+      JSON.parse(fs.readFileSync(path.join(output, "published.json"))).verified,
+      true,
+    );
+
+    let mutations = 0;
+    const conflicting = plan.packages.at(-1);
+    await assert.rejects(
+      publish(output, {
+        readMetadata: async (name) => ({
+          versions:
+            name === conflicting.name
+              ? {
+                  [conflicting.version]: {
+                    dist: { integrity: "sha512-conflict" },
+                  },
+                }
+              : {},
+        }),
+        runNpm: () => mutations++,
+      }),
+      /Published version differs/,
+    );
+    assert.equal(mutations, 0);
+    fs.writeFileSync(
+      path.join(output, conflicting.filename),
+      "tampered after qualification",
+    );
+    await assert.rejects(
+      publish(output, {
+        readMetadata: async () => null,
+        runNpm: () => mutations++,
+      }),
+    );
+    assert.equal(mutations, 0);
+  } finally {
+    if (previousCommit === undefined) delete process.env.WKLY_QUALIFIED_COMMIT;
+    else process.env.WKLY_QUALIFIED_COMMIT = previousCommit;
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("collect requires a full single-commit matrix with identical shared artifacts", () => {
+  const { directory, input, commit, evidenceFiles, write } = qualifiedFixture();
+  try {
     const output = path.join(directory, "output");
     const plan = collect(input, output, commit);
     assert.equal(plan.packages.length, Object.keys(supported).length + 3);

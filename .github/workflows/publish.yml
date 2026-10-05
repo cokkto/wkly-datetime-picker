@@ -28,7 +28,7 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
@@ -39,6 +39,8 @@ jobs:
         with:
           node-version: "24.15.0"
           package-manager-cache: false
+      - name: Install npm with trusted dist-tag support
+        run: npm install --global npm@11.21.0 --ignore-scripts --no-audit --no-fund
       - name: Require the complete gate for this main commit
         shell: bash
         run: |
@@ -52,7 +54,9 @@ jobs:
         run: node scripts/release.cjs collect .test-build/release-input .test-build/release "$GITHUB_SHA"
       - name: Publish using trusted publishing
         if: inputs.publish && !inputs.bootstrap
-        run: node scripts/release.cjs publish .test-build/release
+        run: |
+          node scripts/release.cjs verify-trusted .test-build/release
+          node scripts/release.cjs publish .test-build/release
         env:
           WKLY_QUALIFIED_COMMIT: ${{ github.sha }}
       - name: Bootstrap the initial public packages
