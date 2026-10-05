@@ -4,7 +4,12 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { gzipSync, gunzipSync } = require("node:zlib");
-const { collect, checkExisting, integrity } = require("./release.cjs");
+const {
+  collect,
+  checkExisting,
+  waitForPublished,
+  integrity,
+} = require("./release.cjs");
 const {
   shared,
   picker,
@@ -88,6 +93,70 @@ test("publication skips identical existing versions and rejects conflicting vers
         versions: { "11.0.0": { dist: { integrity: "sha512-other" } } },
       }),
     /Published version differs/,
+  );
+});
+
+test("publication waits for matching version metadata after npm accepts a tarball", async () => {
+  const pkg = { name: picker, version: "11.0.0", integrity: "sha512-reviewed" };
+  const published = {
+    versions: { "11.0.0": { dist: { integrity: pkg.integrity } } },
+  };
+  const responses = [null, { versions: {} }, published];
+  let pauses = 0;
+  const actual = await waitForPublished(
+    pkg,
+    async (name) => {
+      assert.equal(name, pkg.name);
+      return responses.shift();
+    },
+    async (milliseconds) => {
+      assert.equal(milliseconds, 5000);
+      pauses++;
+    },
+  );
+  assert.equal(actual, published);
+  assert.equal(pauses, 2);
+});
+
+test("publication visibility waits remain bounded and reject conflicts and registry errors", async () => {
+  const pkg = { name: picker, version: "11.0.0", integrity: "sha512-reviewed" };
+  let reads = 0;
+  let pauses = 0;
+  await assert.rejects(
+    waitForPublished(
+      pkg,
+      async () => {
+        reads++;
+        return null;
+      },
+      async () => {
+        pauses++;
+      },
+    ),
+    /not visible after five minutes/,
+  );
+  assert.equal(reads, 61);
+  assert.equal(pauses, 60);
+  const noPause = async () => assert.fail("Errors must not be retried");
+  await assert.rejects(
+    waitForPublished(
+      pkg,
+      async () => ({
+        versions: { "11.0.0": { dist: { integrity: "sha512-other" } } },
+      }),
+      noPause,
+    ),
+    /Published version differs/,
+  );
+  await assert.rejects(
+    waitForPublished(
+      pkg,
+      async () => {
+        throw new Error("Registry returned 403");
+      },
+      noPause,
+    ),
+    /Registry returned 403/,
   );
 });
 

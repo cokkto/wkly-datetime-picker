@@ -272,6 +272,24 @@ function checkExisting(pkg, document) {
   return true;
 }
 
+async function waitForPublished(
+  pkg,
+  readMetadata = metadata,
+  pause = (milliseconds) =>
+    new Promise((resolve) => setTimeout(resolve, milliseconds)),
+) {
+  // npm can accept a tarball before public version metadata becomes visible.
+  // Retry only missing versions; integrity conflicts and registry errors stop.
+  for (let attempt = 0; attempt < 61; attempt++) {
+    const document = await readMetadata(pkg.name);
+    if (checkExisting(pkg, document)) return document;
+    if (attempt < 60) await pause(5000);
+  }
+  throw new Error(
+    `Published version is not visible after five minutes: ${pkg.name}@${pkg.version}; preserve the release manifest and retry after registry visibility recovers`,
+  );
+}
+
 function npm(args, cwd = root) {
   execFileSync(process.platform === "win32" ? "npm.cmd" : "npm", args, {
     cwd,
@@ -313,11 +331,7 @@ async function publish(destination) {
         "--tag",
         pkg.tag,
       ]);
-    const document = await metadata(pkg.name);
-    assert.ok(
-      checkExisting(pkg, document),
-      `Published package is missing: ${pkg.name}`,
-    );
+    const document = await waitForPublished(pkg);
     if (document["dist-tags"]?.[pkg.tag] !== pkg.version)
       npm([
         "dist-tag",
@@ -433,7 +447,14 @@ async function verifyRegistry(plan) {
   }
 }
 
-module.exports = { evidence, collect, validateGraph, checkExisting, integrity };
+module.exports = {
+  evidence,
+  collect,
+  validateGraph,
+  checkExisting,
+  waitForPublished,
+  integrity,
+};
 if (require.main === module) {
   const [command, input, destination, commit] = process.argv.slice(2);
   (async () => {
