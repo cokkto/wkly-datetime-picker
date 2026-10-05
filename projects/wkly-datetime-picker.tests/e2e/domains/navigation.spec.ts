@@ -128,6 +128,8 @@ test.describe("navigation and accessibility", () => {
         value: today,
         options: { focus: true },
       });
+      // The jump defers focus; wait before sending the first keyboard event.
+      await expect(day(host, today)).toBeFocused();
       let target = today;
       for (const [key, delta] of [
         ["ArrowRight", 1],
