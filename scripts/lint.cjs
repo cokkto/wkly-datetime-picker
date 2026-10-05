@@ -220,10 +220,7 @@ async function main() {
       "projects/wkly-datetime-picker.tests",
     ]) {
       for (const file of filesIn(path.join(root, directory))) {
-        errors += lintScript(
-          file,
-          file.endsWith("contracts.ts") ? oldest : newest,
-        );
+        errors += lintScript(file, newest);
         checked++;
       }
     }

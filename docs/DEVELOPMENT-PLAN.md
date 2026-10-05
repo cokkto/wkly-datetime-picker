@@ -1,24 +1,26 @@
 # Development plan
 
-This is the current work tracker for WKLY. Update a milestone when its implementation changes, and add newly observed issues to the [regression log](REGRESSIONS.md) with reproduction evidence. Keep this plan limited to work that remains.
+This is the current work tracker for WKLY. Keep it limited to work that remains. Record confirmed failures with reproduction evidence in the [regression log](REGRESSIONS.md).
 
 ## Current state
 
-The workspace has three shared packages and numbered Angular integration build targets for 11–22. `supported-angular.json` drives isolated compatibility builds and packed-consumer tests. The showcase has an evergreen host and independently compiled versioned testbeds. The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. No workflow yet maps the internal build artifacts to that public name, publishes packages, or updates release versions automatically. No confirmed product regressions are currently open.
+The workspace has three shared packages and Angular integration build targets for 11–22. The current test project covers source/installed contracts, picker domains, packed AOT/SSR/browser consumers and versioned showcase journeys. The [test coverage index](TEST-DOMAINS.md) links their assertions; the [developer guide](README.DEV.md#checks) describes development, push, PR and release checks. [Compatibility CI](COMPATIBILITY-CI.md#pipeline) runs these checks in separate matrix jobs on pushes to main, pull requests to main and manual dispatch.
 
-## Firefox screenshot coverage
+The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. Mapping internal artifacts to that name, publishing and automatic version updates remain future work. The [calendar title interaction](REGRESSIONS.md#calendar-title-interaction) remains an open UI issue.
 
-- [ ] Establish and review the four missing Firefox month-boundary screenshot baselines. Geometry now passes across Angular 11–22 using the documented whole-CSS-pixel visibility rule; see [test behavior and verification](../projects/wkly-datetime-picker.tests/README.md#visibility-and-firefox-scroll-rounding) and [remaining screenshot coverage](REGRESSIONS.md#firefox-month-boundary-screenshot-baselines).
+Picker domain fixtures now use the showcase's `vN.wkly.localhost` hostname structure on port 4318. Host reuse serves all built registered versions and checks selected virtual hosts over loopback before starting workers. This fixes the repeated setup timeouts caused by reusing a server started with a narrower Angular selection; reproduction and validation are recorded in the [regression log](REGRESSIONS.md#resolved--picker-host-reuse-timeouts).
 
-## Firefox teardown investigation
+## Next milestone
 
-- [ ] Reproduce the reported Angular 16 Firefox `Browser.removeBrowserContext` session-store error in the original launch environment. Headless focused repetitions and the Angular 16/22 contract suites pass; this remains a reported browser teardown issue, with no confirmed picker regression. See [investigation evidence](REGRESSIONS.md#reported-firefox-context-teardown-failure).
+Implement the InXDays view described below.
 
-## Milestone 5 — In X Days
+## Milestone 6 — InXDays view
+
 In Manual Input mode, replace the End label with a two-state toggle:
 [ End ] | [ In X days ]
 Internally, these are two buttons that toggle the End view between Day-Month-Year and InXDays.
 Implement a new InXDays view for the End section.
+
 - It is a visual helper, not a separate end-date implementation. Internally, it acts as a proxy that adds the selected number of days to the selected start date and updates the existing end-date object. Validation and all other operations are still performed on the end-date object only.
 - The InXDays view contains a single numeric field.
 - Its default value is 0, matching the current behavior where the end date initially equals the start date.
@@ -50,9 +52,12 @@ Implement a new InXDays view for the End section.
   - direct input of a negative InXDays value;
   - scrolling or touch-dragging from 0 into a negative InXDays value;
   - automatic start/end swapping after the existing debounce interval.
+
 ### InXDays visual layout
+
 Keep the InXDays view the same height as the existing Day-Month-Year view by arranging its content into the same four logical rows.
 Unlike the Day-Month-Year view, InXDays displays in the top field-label row end date instead of labels. So, the same four logical rows are used as follows:
+
 - Row 1 — resulting end date
   Displays the end date calculated from start date + InXDays. This row is informational and is not part of the numeric input component.
 - Row 2 — previous value
@@ -61,13 +66,14 @@ Unlike the Day-Month-Year view, InXDays displays in the top field-label row end 
   Part of the InXDays numeric input component. Contains the editable numeric field, visually and behaviorally equivalent to the Year input field.
 - Row 4 — next value
   Part of the InXDays numeric input component. Displays the next possible value, equivalent to the next-year value shown below the Year input in the Day-Month-Year view.
-The last three rows therefore form a single spinner-like input component matching the existing Year selector, while the first row uses the otherwise unused vertical space to show the resulting end date.
-The InXDays view preserves exactly the same overall vertical footprint as the Day-Month-Year view, and input control located on the same line as in Day-Month-Year view, so switching between the two does not resize or shift the End section.
+  The last three rows therefore form a single spinner-like input component matching the existing Year selector, while the first row uses the otherwise unused vertical space to show the resulting end date.
+  The InXDays view preserves exactly the same overall vertical footprint as the Day-Month-Year view, and input control located on the same line as in Day-Month-Year view, so switching between the two does not resize or shift the End section.
 
 ### Goal
+
 Allow the user to select an end date in either of two ways: by explicitly specifying a calendar date or by specifying the number of days relative to the selected start date, while preserving the existing automatic start/end swap behavior when the selected end precedes the start.
 
-## Milestone 6 — Prepare publication
+## Milestone 7 — Prepare publication
 
 - [ ] Confirm permission to publish under the `@wkly` npm scope. `@wkly/datetime-picker` had no public registry entry on 2026-10-03; absence of a public entry does not establish scope ownership.
 - [ ] Map each internal `wkly-datetime-picker.N` build to an outgoing `@wkly/datetime-picker@N.S.A` artifact with the matching Angular peer range and CDK entry point. Align shared-package dependencies and versions with the artifacts to publish.
@@ -77,7 +83,7 @@ Allow the user to select an end date in either of two ways: by explicitly specif
 
 **Done when:** the published package graph matches tested artifacts and every support claim has a passing consumer check.
 
-## Milestone 7 — Release automation
+## Milestone 8 — Release automation
 
 - [ ] Implement inspectable shared-revision metadata and the documented `N.S.A` version increments, where `N` is the Angular major, `S` the shared revision, and `A` the Angular-specific revision.
 - [ ] For an Angular-only fix, build and publish only that major's next `N.S.(A+1)` artifact; for a shared change, build and publish `N.(S+1).0` for every supported major, plus changed shared-package artifacts.
@@ -85,7 +91,8 @@ Allow the user to select an end date in either of two ways: by explicitly specif
 
 **Done when:** a rerun cannot create a conflicting version or partial untracked release.
 
-## Milestone 8 — Demo page
+## Milestone 9 — Demo page
+
 Evergreen showcase main page will act as demo page for WKLY calendar.
 
-- [] change main page calendar config as date range
+- [ ] Change the main page calendar configuration to a date range.

@@ -12,18 +12,31 @@ This is the release contract, not the behavior of the current CI. The workspace 
 
 ## Pipeline
 
-On pushes, pull requests, manual dispatch, and the weekly schedule, the planner validates package metadata and builds a matrix of all registered majors. It also reports affected majors based on package dependencies. The independent shared job runs source contracts. Each Angular matrix job creates an isolated `.compat/<major>` toolchain using the pinned Node version, builds shared and numbered packages, packs tarballs, installs them in a fresh consumer, AOT compiles public imports, checks SSR, then installs optional CDK and checks its overlay entry point. The browser contract checks picker interaction and layout against the packed consumer.
+Pushes to `main`, pull requests targeting `main` and manual dispatch run the complete gate. The planner validates metadata and selects every registered major; its affected-package output is diagnostic, not a reason to omit compatibility coverage. Newer runs on the same ref cancel obsolete runs.
 
-The showcase job uses Node 24, installs the pnpm workspace, lints source and templates, checks server routing, builds libraries and testbeds, then runs the active browser suite on Chromium, Firefox, and WebKit. Pixel baselines are excluded from Linux CI; geometry assertions still run. The aggregate `Compatibility result` job fails if a required job fails.
+| Job                       | Runner                          | Checks                                                                                                                              |
+| ------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `plan`                    | Linux, Node 24                  | Validate registry/packages and produce the full Angular matrix                                                                      |
+| `shared`                  | Linux, Node 24                  | Tooling/server contracts, all source/template lint, test types, source contracts and freshly installed shared-package contracts     |
+| `picker` × Angular major  | Windows, Node 24                | Build only that major's picker host; run every supported domain on Chromium/Firefox/WebKit with fixture/context/page reuse auditing |
+| `angular` × Angular major | Linux, pinned Node then Node 24 | Fresh isolated libraries, tarballs and base/CDK installs, public-import AOT and SSR, then packed startup on all three browsers      |
+| `showcase` × browser      | Linux, Node 24                  | Build all versioned testbeds and evergreen showcase; run that engine's version and catalogue journeys                               |
+| `result`                  | Linux                           | Require every job and matrix to succeed, including failures, cancellations or unexpected skips                                      |
 
-The numbered source package's `package.json` declares matching Angular peer ranges. The base entry point does not require CDK; the source project's `cdk-overlay` entry point does. The consumer check verifies local tarball integrity and package entry files. CI artifacts include toolchain and consumer lockfiles, tarballs, and browser failure reports. The pnpm developer lockfile is separate from generated compatibility workspaces.
+Picker jobs use the checked-in Windows screenshot baselines, including all four month-boundary cases per engine. Touch input runs Chromium only; desktop domains run all three engines. Package and showcase jobs use Linux and have no screenshot baseline dependency. The [test coverage index](TEST-DOMAINS.md) links the exact specs.
+
+Heavy jobs have `timeout-minutes: 25` individually; plan/result have five minutes. The workflow uses separate jobs rather than the sequential local release command. Matrix fail-fast is disabled so failures in one version do not hide results from others. The pnpm store is cached by lockfile; workspace installs are frozen, and each package job regenerates and installs fresh compatibility artifacts.
+
+The aggregate check is named **Compatibility result**. Configure it as the required branch-protection check for `main` in GitHub repository settings. The workflow runs on ordinary `pull_request` events with read-only contents permission and does not require publication secrets.
+
+The numbered source package's `package.json` declares matching Angular peer ranges. The base entry point does not require CDK; the source project's `cdk-overlay` entry point does. The consumer check verifies local tarball integrity and entry files. CI artifacts include toolchain/consumer lockfiles, tarballs, per-major package timings, picker reuse/build summaries and native Playwright HTML/JSON/JUnit plus failure attachments. Browser failures also receive native GitHub annotations. Artifact names include their Angular version or browser; each uploads even when tests fail. The pnpm developer lockfile is separate from generated compatibility workspaces.
 
 ## Local commands
 
 Run planning with a modern Node version:
 
 ```sh
-npm run ci:test
+npm run test:tooling
 npm run ci:matrix
 node scripts/compatibility.cjs prepare 22
 ```
@@ -31,19 +44,21 @@ node scripts/compatibility.cjs prepare 22
 Switch to the Node version declared for the chosen major in `supported-angular.json`, then run:
 
 ```sh
-npm run test:angular -- 22
+npm run test:packages:angular:version -- 22
 ```
 
-`prepare` replaces the chosen generated toolchain directory. `test:angular` installs, builds, packs, AOT compiles, and checks SSR for the selected major; it replaces that major's generated consumer. For browser checks, use a modern Node installation and the workflow's browser-tool setup; the Playwright config is `projects/wkly-datetime-picker.tests/compatibility/playwright.config.cjs`.
+`prepare` replaces the chosen generated toolchain directory. `test:packages:angular:version` installs, builds, packs, AOT compiles and checks SSR for the selected major; it replaces that major's generated consumer. Switch back to modern Node for Playwright; `npm run test:packages:angular:reuse` rechecks those installed artifacts with AOT, SSR and browser journeys. Set `WKLY_TEST_ANGULAR` to that major and provide its pinned Node executable as described in the [test README](../projects/wkly-datetime-picker.tests/README.md#package-checks).
 
 The showcase's local browser suite can be restricted to one version:
 
 ```sh
-npm run showcase:test:e2e -- --project=angular-22-chromium
+npm run test:showcase -- --project=angular-22-chromium-showcase
 ```
 
 See [developer guide](README.DEV.md) for the common loop and [test project README](../projects/wkly-datetime-picker.tests/README.md) for suite layout.
 
 ## Adding a major
 
-Add `projects/wkly-datetime-picker.N/` and `projects/wkly-datetime-picker.runtime.N/`, register both in `pnpm-workspace.yaml`, then add the exact toolchain and runtime paths to `supported-angular.json`. Keep common behavior in shared packages and use the public API exercised by the compatibility consumer. Update the evergreen showcase's newest runtime import. Run `npm run ci:test` and `npm run ci:matrix` before the package and browser checks. An unregistered numbered package fails planner validation.
+Add `projects/wkly-datetime-picker.N/` and `projects/wkly-datetime-picker.runtime.N/`, register both in `pnpm-workspace.yaml`, then add the exact toolchain and runtime paths to `supported-angular.json`. Keep common behavior in shared packages and use the public API exercised by the compatibility consumer. Update the evergreen showcase's newest runtime import. Run `npm run test:tooling` and `npm run ci:matrix` before the package and browser checks. An unregistered numbered package fails planner validation.
+
+For the complete local gate use `npm run test:release` (also `test:all`): it rebuilds every registered pinned compatibility toolchain and fresh consumer, including base-without-CDK, AOT, SSR and all three engines. `test:release -- --reuse-packed` is a weaker repeat check of existing artifacts. Stage/total timings are saved in `.test-build/checks/release/summary.json`. `test:pr` runs the full local behavior matrix without Angular package qualification; CI adds that qualification in parallel jobs. See the [developer guide](README.DEV.md#checks) for faster development/push commands.

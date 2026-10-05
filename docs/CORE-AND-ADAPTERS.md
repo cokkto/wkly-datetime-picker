@@ -23,12 +23,12 @@ Every public value is a Gregorian UTC ISO string. Date mode uses midnight; time 
 
 The [Hijri source adapter](../projects/wkly-datetime-picker.showcase/src/hijri-adapter.ts) implements `islamic-civil` with no additional package dependency. Its Friday epoch is Gregorian 622-07-19; months alternate 30/29 days and the final month gains a day in years 2, 5, 7, 10, 13, 16, 18, 21, 24, 26, and 29 of each 30-year cycle. Integer arithmetic performs conversion; `Intl` with an explicit calendar and UTC timezone formats month labels. This is the tabular civil calendar, distinct from observational Hijri and Umm al-Qura. Both Hebrew and Hijri examples are Git source only, excluded from npm artifacts, and support Gregorian 1900-01-01 through 2100-12-31 inclusive. Their advertised year bounds include partial boundary years: Hebrew 5660–5861 and Hijri 1317–1524; epoch-day bounds remain authoritative.
 
-`contracts/example-calendars.ts` checks exact conversion pairs, bounds/errors, month identities, leap years, draft-preserving arithmetic, and UTC values in both host timezones. Hijri's entire advertised interval is checked against independent `Intl` civil-calendar fields and round trips. The existing exhaustive Hebrew round-trip contract remains in `contracts.ts`.
+[example-calendars.spec.ts](../projects/wkly-datetime-picker.tests/contracts/example-calendars.spec.ts) checks exact conversion pairs, bounds/errors, month identities, leap years, draft-preserving arithmetic and UTC values in both host timezones. Hijri's entire advertised interval is checked against independent `Intl` civil-calendar fields and round trips. The exhaustive Hebrew round-trip contract is in [core-adapters.spec.ts](../projects/wkly-datetime-picker.tests/contracts/core-adapters.spec.ts).
 
 ```sh
-npm test
-npm run test:installed
+npm run test:contracts
+npm run test:packages:shared
 npm run build
 ```
 
-Source contracts live in `projects/wkly-datetime-picker.tests/contracts.ts` and `contracts/`. The installed check packs the three shared packages and runs the domain contracts against those tarballs in an isolated consumer. Use [the developer guide](README.DEV.md) for broader checks and [the development plan](DEVELOPMENT-PLAN.md) for open contract coverage.
+Source contracts live in `projects/wkly-datetime-picker.tests/contracts/*.spec.ts`; the [test coverage index](TEST-DOMAINS.md#source-and-installed-shared-package-contracts) links each suite. The installed check packs the three shared packages and runs those contracts against the tarballs in an isolated consumer. Use [the developer guide](README.DEV.md) for broader checks.

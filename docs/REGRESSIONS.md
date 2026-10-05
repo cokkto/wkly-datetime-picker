@@ -1,52 +1,23 @@
 # Open regressions
 
-## Click on Month button inconsistent
-- Click on month button on top of calendar navigates to manual mode
-- Clicking on month button on top of calendar in manual mode doesn't navigate to calendar view
+## Calendar title interaction
 
-### Expected:
-Make Month non-interactive in both views
+The month/year title in the calendar toolbar opens manual mode. In manual mode, clicking the same title keeps manual mode open. The requested behavior is to make the title non-interactive in both views. This remains a UI behavior issue; the separate view-toggle button already switches between calendar and manual entry.
 
-// No confirmed regressions are currently open.
+Relevant source: [picker.component.html](../projects/wkly-datetime-picker.22/src/picker.component.html) (`year-control`) and [picker.component.ts](../projects/wkly-datetime-picker.22/src/picker.component.ts) (`toggleView`), with matching implementations across Angular integrations.
 
-## Firefox month-boundary screenshot baselines
+## Resolved — picker host reuse timeouts
 
-The four Firefox baselines for `visual/month-boundaries.spec.ts` are absent: Finnish LTR and Hijri RTL at widths 360 and 768. The original 48 Firefox failures were caused by overly precise day-containment comparisons; that test issue is resolved with whole-CSS-pixel comparisons, with [evidence and the rounding rule](../projects/wkly-datetime-picker.tests/README.md#visibility-and-firefox-scroll-rounding). All 56 focused geometry cases now pass across Angular 11–22 Firefox and Angular 22 Chromium/WebKit. Screenshot coverage still needs initial Firefox baselines to be created and reviewed separately.
+On 2026-10-05, the server on port 4318 returned 200 for `/health`, `/11/index.html` and `/22/index.html`, but 404 for `/12/index.html` and `/13/index.html`. Saved failure contexts reported `Test timeout of 30000ms exceeded while setting up "host"` across unrelated values, editing, layout and calendar scenarios. The server retained the Angular selection from its original run; Playwright reused it based solely on `/health`, and each missing page waited for a host bridge that could never boot.
 
-The full Angular 22 Chromium/Firefox/WebKit rerun on 2026-10-04 completed with 377 passed, 9 skipped touch-only cases, and 4 failures. Each failure reports `A snapshot doesn't exist` for one of these Firefox baselines; all geometry and interaction assertions passed. The run used `--retries=0 --update-snapshots=none`, leaving baselines unchanged. Full lint and repository formatting passed.
+The server now routes every registered version whose built files exist, including versions built after it started. Picker fixtures use `http://vN.wkly.localhost:4318/index.html`, matching the showcase's versioned hostnames. Global setup checks every selected virtual host over loopback before workers start, and fixture navigation reports HTTP failures directly. Node does not resolve these `.localhost` names in the current environment, so startup sends the versioned Host header while connecting to `127.0.0.1`. An already-running server using the old code must be stopped once, or bypassed with `WKLY_TEST_PORT` set to an unused port.
 
-Reproduce with screenshots enabled and baseline writes disabled:
+Focused regression check: `node --test scripts/test-host-server.test.cjs`. It verifies a healthy server with missing hosts fails startup, a newly built version becomes accessible without restarting, and an unrelated healthy server is rejected.
 
-```sh
-npm run showcase:test:e2e -- --project=angular-22-firefox visual/month-boundaries.spec.ts --retries=0 --update-snapshots=none
-```
+Validation: the existing partial server was rejected in 0.53 seconds before any workers started. With `WKLY_TEST_PREBUILT=1`, `WKLY_TEST_PORT=4319`, `WKLY_TEST_ANGULAR=12,13,22` and `WKLY_TEST_BROWSERS=chromium,firefox,webkit`, `node scripts/playwright.cjs test values-forms selection-editing layout --reporter=list --output=.test-build/timeout-fix/artifacts` passed all 432 scenarios in 3.2 minutes. `npm run test:tooling` passed 12 checks; lint and test typechecking also passed. The full Angular matrix was not rerun for this tooling fix.
 
-## Reported Firefox context teardown failure
+After adopting subdomains, `npm test` with `WKLY_TEST_PORT=4319`, Angular 22 and Chromium passed source contracts and all 123 picker scenarios, including the context/page reuse audit. With all registered versions and engines selected, `node scripts/playwright.cjs test values-forms --grep 'date UTC writes, inclusive bounds, validation and recovery$' --reporter=list --output=.test-build/subdomain-routing/artifacts` passed 36 scenarios in 38.3 seconds, verifying browser startup through each versioned hostname. Tooling, lint and typechecking also passed. This checks the complete startup matrix, rather than the complete behavior matrix.
 
-On 2026-10-04, `angular-16-firefox` was reported to fail in `interaction/angular-contracts.spec.ts:5`, `overlay: immediate close cancels deferred jump focus`, with:
+## Recording and verifying issues
 
-```text
-Error: browserContext.close: Protocol error (Browser.removeBrowserContext): can't access property "_maybeDontRestoreTabs", this._windows[aWindow.__SSi] is undefined
-```
-
-The failing operation is browser-context teardown. The installed Firefox 155 / Playwright 1.63.0 sources show that `Browser.removeBrowserContext` destroys the context, closes its page tabs, and can invoke `SessionStore.maybeDontRestoreTabs` when closing a window's last tab. That method accesses window state without checking whether it exists. This identifies the browser-side error path but does not establish what made that window state unavailable in the reported run.
-
-The investigation has not reproduced the failure: 20 headless repetitions of the reported test passed with retries disabled; all 70 contracts across Angular 16 and 22 Firefox passed; and a standalone headless probe created and immediately closed 100 contexts with blank pages on one Firefox process without errors. No picker, test assertion, retry policy, or browser preference has been changed. The original command, launch mode (headless, headed, UI, or VS Code), and browser version remain needed to match the failing environment.
-
-Headed checks in this execution environment stalled at the second `Jump value past` button's click, waiting for the element to be visible, enabled and stable. Two cases with two workers and one case with one worker reached the 30-second test timeout; both runs were then stopped. None reported the original session-store error. These headed click timeouts are a separate observation with an unconfirmed cause, so they do not validate or reproduce the reported teardown failure.
-
-Focused reproduction command from the repository root:
-
-```sh
-npm run showcase:test:e2e -- interaction/angular-contracts.spec.ts --project=angular-16-firefox --grep "overlay: immediate close cancels deferred jump focus" --retries=0 --repeat-each=20
-```
-
-Add `--headed` to compare a visible browser run. For a subsequent failure, enable `DEBUG=pw:browser,pw:protocol` in the launching shell and retain the Firefox stderr/protocol output alongside the Playwright report; page traces alone may not explain browser-chrome teardown. Treat this as an unresolved reported harness issue until reproduction confirms its trigger.
-
-## Verification rule
-
-Record confirmed product failures with reproduction evidence and focused commands from the repository root; see the [developer guide](README.DEV.md). Run focused checks with `--retries=0` while investigating. Screenshot baselines record appearance and can include a defect; geometry assertions are the correctness gate. Check other Angular majors and browser profiles after a fix. Remove resolved entries and update the [development plan](DEVELOPMENT-PLAN.md).
-
-The focused-jump `attr.tabindex` NG0100 regression was resolved on 2026-10-04. It reproduced in 3 of 10 Angular 21 WebKit runs before the fix; all 344 browser checks after the fix passed with retries disabled. The [test README](../projects/wkly-datetime-picker.tests/README.md#focused-jumps-and-deferred-focus) retains the cause, synchronous reproduction evidence, and focused commands.
-
-The two Chromium local testbed `ERR_NO_BUFFER_SPACE` failures are mitigated by the local Node HTTP relay added on 2026-10-04. Saved traces confirm that Angular 14's document and Angular 11 mobile's application bundle failed at the network layer. All 449 six-worker checks passed without retries, including the complete affected profiles, focused repetitions, and smoke coverage across all 72 Angular/browser profiles. The [test README](../projects/wkly-datetime-picker.tests/README.md#chromium-local-testbed-transport) retains the evidence, deterministic browser-offline regression test, and transport limitations. The underlying Windows resource condition remains unconfirmed.
+Record confirmed failures with reproduction evidence and focused commands from the repository root; see the [developer guide](README.DEV.md). Investigate with retries disabled. Screenshot baselines record appearance; geometry assertions check correctness. Check affected Angular versions and browsers after a fix, remove resolved entries and update the [development plan](DEVELOPMENT-PLAN.md).

@@ -852,9 +852,12 @@ export class WklyDateTimePickerComponent
     this.firstWeek = first;
     this.anchorWeek = first + Math.floor(this.visibleCount / 2);
     if (index < 100 || index > 1900) {
+      // Preserve signed displacement from this week; modulo turns fractional
+      // rounding just below a boundary into almost a full row after rebasing.
+      const offset =
+        element.scrollTop - (first - this.baseWeek) * this.rowHeight;
       this.baseWeek = first - 1000;
-      element.scrollTop =
-        1000 * this.rowHeight + (element.scrollTop % this.rowHeight);
+      element.scrollTop = Math.round(1000 * this.rowHeight + offset);
     }
     this.renderRows();
   }

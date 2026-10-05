@@ -34,22 +34,25 @@ The versioned `/contracts` route hosts public Angular API checks with scoped con
 ## Playwright
 
 ```sh
-npm run showcase:browsers
-npm run showcase:test:e2e -- --project="*-chromium"
-npm run showcase:test:e2e -- --project=angular-22-firefox
-npm run showcase:test:e2e -- testbeds.spec.ts
+npm run test:browsers:install
+npm run showcase:build
+npm run test:showcase -- --project="*-chromium-showcase" --project=chromium-catalogue
+npm run test:showcase -- --project=angular-22-firefox-showcase
+npm run test:showcase -- testbeds.spec.cjs
 ```
 
-The default matrix combines all supported Angular versions with Chromium, Firefox, WebKit, installed Edge, Chromium at DPR 1.5, and mobile Chromium. `WKLY_ANGULAR=11,22` restricts the versions. Set environment variables using your shell's syntax (PowerShell: `$env:WKLY_ANGULAR='11,22'`). Set `PORT=4300` if the default port is occupied. Each project changes only its baseURL and device settings; all versions run the same cases.
+The current matrix combines all registered Angular versions with Chromium, Firefox and WebKit, plus one evergreen catalogue journey per engine. `WKLY_TEST_ANGULAR=11,22` and `WKLY_TEST_BROWSERS=chromium` restrict component runs. Set environment variables using your shell's syntax (PowerShell: `$env:WKLY_TEST_ANGULAR='11,22'`). `WKLY_SHOWCASE_PORT` changes the test host's default port 4330. All versions run the same cases against independently built apps.
 
-Playwright builds with `WKLY_E2E=1`, fixing the clock at `2099-12-16T13:00:00.000Z`, UTC timezone and reduced motion. CI uses prebuilt assets, so its build must also set `WKLY_E2E=1`. Normal showcase builds use the real clock. Reuse a deliberately prepared test server with `WKLY_E2E_REUSE_SERVER=1`.
+The current Playwright suite serves prebuilt showcase assets and starts its own server. `npm run showcase:build` prepares those assets; `WKLY_E2E=1` optionally enables the showcase's fixed test clock. PR and release profiles build the showcase before running these journeys.
 
-Screenshot assertions capture only the picker. Angular versions share browser-specific baselines; update using just one version to avoid concurrent writes:
+Picker domain fixtures use the same `vN.wkly.localhost` hostnames on their own port (4318 by default), with `/index.html` loading a minimal fixture app. The showcase's case routes remain on its separate server.
+
+Picker screenshots belong to the current layout domain, rather than the showcase suite. Angular versions share four month-boundary baselines per engine; the update command selects one Angular version to avoid concurrent writes:
 
 ```sh
-npm run showcase:test:e2e:update -- --project=angular-22-chromium --grep "rendered weeks"
+npm run test:visuals:update
 ```
 
-Baselines are Windows-specific; review updates on the same platform. Geometry assertions run independently of screenshots. Trace, video and screenshots are retained on failure. `node --test scripts/showcase-server.test.cjs` checks host routing, fallback and isolation without Angular.
+Baselines are platform-specific; review updates on the same platform. Geometry assertions run independently of screenshots. Open the native showcase report with `npm run test:report:showcase`. `node --test scripts/showcase-server.test.cjs` checks host routing, fallback and isolation without Angular.
 
 To add an Angular major, register it in `supported-angular.json`, add its versioned runtime/package/toolchain, and update the evergreen module import and host tsconfig to the newest runtime. Library compatibility and packaging scripts remain separate from this browser setup.

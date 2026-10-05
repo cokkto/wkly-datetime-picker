@@ -1,67 +1,58 @@
-# WKLY test project
+# Picker tests
 
-This private project contains source contracts, installed-package contracts, packed Angular consumer fixtures, and browser tests. It is not published. Run commands from the repository root; install workspace dependencies and browser engines first.
+The [test coverage index](../../docs/TEST-DOMAINS.md) links every current spec and its coverage. Versions come from [supported-angular.json](../../supported-angular.json); all commands run from the repository root. Use Node 24.15+ for workspace builds and the Playwright driver.
 
-| Area | Paths | Main check |
-| --- | --- | --- |
-| Shared behavior | `contracts.ts`, `contracts/`, `helpers/` | `npm test` runs in UTC and America/New_York |
-| Installed shared packages | `contracts/` through `scripts/test-installed.cjs` | `npm run test:installed` builds, packs, installs, and tests shared packages |
-| Active versioned browser suite | `e2e/testbeds.spec.ts`, `e2e/interaction/`, `e2e/visual/` | `npm run showcase:test:e2e -- --project=angular-22-chromium` |
-| Packed Angular consumers | `compatibility/` | `npm run test:angular -- 22` with the matching prepared toolchain |
-| Test tooling | `scripts/compatibility.test.cjs`, `scripts/lint.test.cjs` | `npm run ci:test` and `npm run lint:test` |
+## Local checks
 
-The active Playwright suite is selected by [`playwright.config.ts`](../../playwright.config.ts). It runs the same cases against independently compiled Angular 11–22 testbeds, with Chromium, Firefox, WebKit, Edge, Chromium DPR 1.5, and mobile Chromium profiles. `WKLY_ANGULAR=11,22` limits the versions. Playwright writes reports and failure artifacts to ignored `playwright-report/` and `test-results/`. Install engines with `npm run showcase:browsers`; Edge requires an installed branded browser.
+| Command                                                | Scope                                                                        |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `npm test` / `npm run test:dev`                        | Source contracts and newest Angular/Chromium picker domains                  |
+| `npm run test:push`                                    | Tooling, lint, types, source contracts and oldest/newest Chromium domains    |
+| `npm run test:pr`                                      | All versions/engines, source/installed shared contracts, picker and showcase |
+| `npm run test:release` / `npm run test:all`            | PR gate plus fresh Angular package qualification                             |
+| `npm run test:picker`                                  | Build selected hosts and run the picker domains                              |
+| `npm run showcase:build`, then `npm run test:showcase` | Build and test versioned showcase/catalogue journeys                         |
+| `npm run test:browsers:install`                        | Install Chromium, Firefox and WebKit                                         |
 
-`e2e/interaction/` checks selection, manual drafts, keyboard/touch behavior, and accessible state. `e2e/visual/` checks geometry and screenshot baselines. Screenshot comparisons describe appearance; layout assertions decide correctness. Update baselines only after reviewing the images. Current failures and focused commands are in [the regression log](../../docs/REGRESSIONS.md). The [development plan](../../docs/DEVELOPMENT-PLAN.md) tracks the fixes.
-
-The browser server defaults to its own deterministic `WKLY_E2E=1` build and fixed clock. Set `WKLY_E2E_REUSE_SERVER=1` only when you already started a matching server. See [showcase usage](../../docs/SHOWCASE.md) for hosts and routes, [compatibility CI](../../docs/COMPATIBILITY-CI.md) for per-major toolchains, and the [developer guide](../../docs/README.DEV.md) for the full routine.
-
-`e2e/interaction/angular-contracts.spec.ts` uses the versioned `/contracts` fixture to exercise public jump methods on inline, native-dialog, and CDK-overlay pickers, Gregorian, Hebrew, and Hijri adapter boundaries, scoped configuration/localization providers, runtime input changes, and accessible range endpoint edits. `contracts/localization.ts` checks exact regional/script/language fallback against source and installed shared packages.
-
-`contracts/example-calendars.ts` checks Hebrew/Hijri conversion, boundaries, errors, leap months/years, and UTC wire values; the Hijri interval also matches an independent `Intl` oracle. `e2e/interaction/example-calendars.spec.ts` checks navigation, localized manual dates and times, range editing, boundary validation, and three-way paired synchronization under a non-UTC browser timezone. `e2e/visual/example-calendars.spec.ts` checks selected Hebrew/Hijri dates, localized month/year labels and mirrored RTL geometry at mobile/tablet/desktop widths, with browser-specific screenshots.
-
-## Chromium local testbed transport
-
-The Chromium fixture in `e2e/fixtures.ts` relays local testbed GET/HEAD requests through Playwright's Node HTTP client to `127.0.0.1`. It preserves the original Host header so the real showcase server selects the correct compiled Angular major, and fulfills the browser request with that server's response without changing its URL or origin. Redirects remain visible to the browser. Response bodies are disposed after fulfillment to avoid accumulating large bundles. Other hosts and methods retain browser networking; Firefox and WebKit use their normal transport. Console and Angular error assertions remain enabled.
-
-The 2026-10-04 full report recorded 9,328 passed, 246 skipped, and two failures with two workers and no retries. `angular-14-chromium-hidpi` failed a date-range document request with `net::ERR_NO_BUFFER_SPACE` before receiving an HTTP response. `angular-11-mobile` received its HTML and CSS but failed `/main.js` with the same network error, leaving no picker to render. The underlying Windows resource condition is not established. Original traces and report evidence were preserved in ignored `.test-build/navigation-evidence/`.
-
-Sixty focused reruns did not reproduce the intermittent error. The new `e2e/interaction/testbed-transport.spec.ts` provides deterministic fault injection by disabling browser networking: both reported profiles failed navigation before the relay and passed afterward. It verifies that documents and bundles still load from the real server with the correct Angular major and browser URL. After the fix, 60 focused repetitions and the complete affected profiles (263 passed, 5 skipped) passed with six workers, retries disabled, and screenshot baseline writes disabled. The same settings passed smoke checks across all 72 Angular/browser profiles (126 passed, 90 intentional skips), including reloads and evergreen-to-versioned navigation. These are 449 passing browser checks; the entire long-running suite was not rerun. Full lint, source contracts in UTC and America/New_York, server host-isolation checks, and repository formatting also passed.
-
-Focused checks from the repository root:
+Development and component commands accept `WKLY_TEST_ANGULAR` (for example `11,22`) and `WKLY_TEST_BROWSERS` (`chromium,firefox,webkit`). Push fixes oldest/newest Chromium; PR/release always select the full registry/engine matrix. Each profile rebuilds its selected hosts. Pass native Playwright filters after `--`:
 
 ```sh
-npm run showcase:test:e2e -- interaction/testbed-transport.spec.ts --retries=0 --workers=6
-npm run showcase:test:e2e -- interaction/value-contracts.spec.ts visual/snapshots.spec.ts --project=angular-14-chromium-hidpi --project=angular-11-mobile --grep "rendered weeks 360 zoom 1$| date-range: UTC values, inclusive bounds and exact rejection codes$" --retries=0 --repeat-each=10 --workers=6 --update-snapshots=none
+npm run test:picker -- --project=angular-22-chromium-navigation
+npm run test:showcase -- --project=angular-22-firefox-showcase
 ```
 
-## Focused jumps and deferred focus
+The picker uses `http://v11.wkly.localhost:4318/index.html` through `http://v22.wkly.localhost:4318/index.html`, matching the showcase's versioned hostname structure. `WKLY_TEST_PORT` changes the port. Each host serves only that version's fixture app and assets; `http://127.0.0.1:4318/health` checks the server process. Startup checks send the selected version's Host header over loopback, so Node does not need DNS entries for `.localhost` subdomains.
 
-`e2e/interaction/angular-contracts.spec.ts` checks that a public focused jump synchronously moves the calendar's sole `tabindex="0"` to its target before deferred DOM focus runs. Each inline, dialog, and overlay check dispatches the host's jump action and reads tab stops in the same browser task, so a later timer or render cannot conceal stale attributes. The immediate-close cases also verify that deferred focus does not run on a destroyed picker and that reopening remains usable without value emissions.
+The server can be reused and serves every built registered Angular version, including hosts built after it starts. Startup checks every selected host before launching workers. If an older server reports healthy but cannot serve the selection, stop it and rerun, or set `WKLY_TEST_PORT` to an unused port. Packed/showcase ports default to 4321/4330 and accept `WKLY_PACKED_PORT`/`WKLY_SHOWCASE_PORT`.
 
-On 2026-10-04, Angular 21 WebKit reproduced NG0100 in `dialog: immediate close cancels deferred jump focus` in 3 of 10 runs with retries disabled. The trace placed the error after the second `Jump value past` action reopened the dialog; Angular reported `attr.tabindex` changing from `0` to `-1`. `scrollToEpochDay` rendered through `position` before assigning `focused`. The three synchronous checks all found epoch day -20 as the tab stop after jumping to -16, and the dialog and overlay checks also caught NG0100.
+## Browser architecture
 
-Every Angular integration now assigns the requested focus day before that synchronous render. DOM focus remains deferred with the destruction guard intact. After the fix, all 50 repeated Angular 21 WebKit focused cases, 180 focused cases across Angular 11–22 Chromium/Firefox/WebKit, and 114 full Angular 21 contracts across those browsers passed with retries disabled. Full lint and source contracts in UTC and America/New_York also passed.
+Every version/browser/domain has one worker-owned context in America/New_York and named reusable suite pages. Angular boots once per page; each scenario mounts a new picker/form through the public host bridge, exercises behavior and destroys its fixture. Viewport/zoom pages stay within their domain. Two worker slots bound concurrency.
 
-Focused checks from the repository root:
+The [registry](../../scripts/test-domains.cjs), [fixtures](e2e/fixtures.ts) and [runner](../../scripts/test-domains-run.cjs) audit fixture teardown, boot IDs and context/page counts. A complete unfiltered run rejects skips, retries or restarted pages. Filtered debug runs retain fixture lifecycle assertions but do not claim a full matrix audit.
 
-```sh
-npm run showcase:test:e2e -- interaction/angular-contracts.spec.ts --project=angular-21-webkit --grep "dialog: immediate close cancels deferred jump focus" --retries=0 --repeat-each=10
-npm run showcase:test:e2e -- interaction/angular-contracts.spec.ts --project="*-chromium" --project="*-firefox" --project="*-webkit" --grep "focused jump updates the tab stop|immediate close cancels deferred jump focus" --retries=0
-```
+Desktop domains run all three engines; touch uses Chromium CDP at a mobile viewport and DPR 2. This emulates input and resizing, not physical rotation or native keyboards. The hosts compile the numbered picker with its matching Angular toolchain. They expose public inputs, forms/CVA, jump and close operations, scoped configuration, native/CDK/Material presentations, and linked Gregorian/Hebrew/Hijri fixtures.
 
-## Visibility and Firefox scroll rounding
+Layout screenshots share [platform/engine baselines](baselines/) across versions: four month-boundary cases per engine. Only Windows baselines are checked in, so picker CI runs on Windows. `npm run test:visuals:update` selects the newest chosen version and one writer per engine. Review image changes before comparing all versions. `test:all:update` updates visuals and then runs release qualification. Geometry assertions still run during updates.
 
-`e2e/helpers/picker.ts` compares day-button top and bottom edges relative to the scroll viewport, rounding each difference to the nearest whole CSS pixel. Firefox can apply a fractional scroll offset even when the picker requests an integer. Whole-pixel comparison accommodates this browser quantization while still excluding substantially clipped buttons. Round the differences rather than the absolute coordinates so classification does not depend on the picker's position on the page. Do not add browser-specific offsets or tune constants against screenshots.
+## Package checks
 
-On 2026-10-04, Playwright 1.63.0 / Firefox 155 applied `scrollTop = 49000.265625` after the picker requested `49000`. In the Finnish month-boundary fixture, the 49px first row began at `121.81666564941406`, above the viewport top of `122.08332824707031`; exact comparisons excluded all seven buttons. The same rounding reproduced in a standalone HTML scroller without Angular or picker styles, through both Juggler and standard WebDriver BiDi, at emulated DPR 1, 1.5 and 2. Chromium and WebKit applied `49000` exactly. The rounding rule resolves the test's overly precise containment expectation without changing the picker.
+`npm run test:contracts` runs the seven `contracts/*.spec.ts` suites using Node's native test runner in UTC and America/New_York, without browsers or Angular hosts. `test:packages:shared` builds and packs the three shared packages, installs them offline into a fresh consumer, verifies declarations, entries and CommonJS/ESM imports, then runs those same contracts. A bundle audit rejects shared source leakage.
 
-The month-boundary test retains raw geometry attachments on containment failures and checks annotation element bounds before screenshots. Those bounds describe CSS boxes; a text `Range` uses font metrics and can extend beyond them, so it is a different contract.
+`npm run test:packages:angular` freshly prepares every selected isolated toolchain/consumer, builds libraries and tarballs, checks base imports without CDK, then optional CDK imports, AOT, SSR without clock access and one browser startup/forms/dialog/overlay/reload journey per version/engine. It requires dependency network/cache access.
 
-Focused geometry validation (screenshots excluded explicitly):
+Angular build/SSR processes use the registry's pinned Node versions. Set `WKLY_NODE_<node-major>` to each executable; otherwise the runner uses the matching current Node or `.compat/node<node-major>/node_modules/node/bin/node[.exe]`. Missing prerequisites fail before builds start.
 
-```sh
-npm run showcase:test:e2e -- visual/month-boundaries.spec.ts --project="*-firefox" --project=angular-22-chromium --project=angular-22-webkit --retries=0 --ignore-snapshots
-```
+For one major, run `node scripts/compatibility.cjs prepare 22` with modern Node, switch to that major's registered Node and run `npm run test:packages:angular:version -- 22`. CI performs this separately per version and switches back to Node 24 for Playwright.
 
-All 56 cases passed after the change, including the original 48 Firefox failures across Angular 11–22. Run without `--ignore-snapshots` to verify appearance too; the currently missing Firefox month-boundary baselines are tracked separately in [REGRESSIONS.md](../../docs/REGRESSIONS.md).
+`test:packages:angular:reuse` and `test:release -- --reuse-packed` recheck existing tarballs/consumer installations and rebuild AOT fixtures. They do not qualify newly changed library artifacts.
+
+## Reports and timings
+
+Picker, packed and showcase suites use native Playwright list, HTML, JSON and JUnit reporters; Actions adds native GitHub failure annotations. Open HTML with `test:report`, `test:report:packed` or `test:report:showcase`. HTML folders are `playwright-report/`, `playwright-report-packed/` and `playwright-report-showcase/`; traces/failure attachments are under `test-results/`.
+
+Profiles save results under `.test-build/checks/<profile>/<picker|packed|showcase>/` and stage times in `.test-build/checks/<profile>/summary.json`. Component JSON/XML files are `.test-build/domains/results.json`, `.test-build/packed-results.json` and `.test-build/showcase-results.json`, with matching XML. Full picker runs also write the audited `summary.json` beside their JSON report.
+
+The HTML report exposes slow test durations. `.test-build/packed-timings.json` separates package preparation/qualification from browser startup; `.compat/<major>/timings.json` separates installs, builds, packing, base/CDK AOT and SSR. These files describe the latest component run.
+
+See the [developer guide](../../docs/README.DEV.md) for terminal log capture and the [CI guide](../../docs/COMPATIBILITY-CI.md) for matrix jobs and downloadable artifacts.

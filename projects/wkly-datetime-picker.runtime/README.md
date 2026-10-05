@@ -11,7 +11,7 @@ The `hebrew` and `hijri` cases use the Git source adapters; `hijri` displays the
 ```sh
 npm run showcase:start
 npm run showcase:build
-npm run showcase:test:e2e -- --project=angular-22-chromium
+npm run test:showcase -- --project=angular-22-chromium-showcase
 ```
 
 See [showcase usage](../../docs/SHOWCASE.md) for hosts and case IDs, and the [test project README](../wkly-datetime-picker.tests/README.md) for active assertions.

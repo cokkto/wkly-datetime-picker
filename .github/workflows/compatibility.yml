@@ -2,10 +2,10 @@ name: Package compatibility
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
-  schedule:
-    - cron: '23 5 * * 1'
 
 permissions:
   contents: read
@@ -14,46 +14,87 @@ concurrency:
   group: compatibility-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CI: "true"
+  NG_CLI_ANALYTICS: "false"
+
 jobs:
   plan:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
-      has-packages: ${{ steps.matrix.outputs.has-packages }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: "24"
           package-manager-cache: false
-      - run: node --test scripts/compatibility.test.cjs
       - id: matrix
         run: node scripts/compatibility.cjs matrix
 
   shared:
+    name: Tooling, source and shared packages
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: "24"
           package-manager-cache: false
-      - name: Install shared test tools only
-        run: |
-          mkdir -p .compat/shared
-          printf '{"private":true}' > .compat/shared/package.json
-          npm install --prefix .compat/shared --no-audit --no-fund esbuild@0.21.5 @hebcal/core@5.9.0
-      - name: Shared behavior contracts
-        run: node scripts/test.cjs
-        env:
-          NODE_PATH: ${{ github.workspace }}/.compat/shared/node_modules
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+      - run: pnpm install --frozen-lockfile
+      - run: npm run test:tooling
+      - run: npm run test:lint
+      - run: npm run test:typecheck
+      - run: npm run test:contracts
+      - run: npm run test:packages:shared
+
+  picker:
+    needs: plan
+    name: Picker / Angular ${{ matrix.angular }} / all browsers
+    # The reviewed pixel baselines are Windows-specific.
+    runs-on: windows-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      WKLY_TEST_ANGULAR: ${{ matrix.angular }}
+      WKLY_TEST_BROWSERS: chromium,firefox,webkit
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+      - run: pnpm install --frozen-lockfile
+      - run: npm run test:browsers:install
+      - name: Build host and run all domains with reuse auditing
+        run: npm run test:picker
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: picker-${{ matrix.angular }}
+          include-hidden-files: true
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            test-results/domains/
+            .test-build/domains/
+            .test-build/hosts/build.json
 
   angular:
     needs: plan
-    if: needs.plan.outputs.has-packages == 'true'
-    name: Angular ${{ matrix.angular }} / Node ${{ matrix.node }}
+    name: Packed / Angular ${{ matrix.angular }} / Node ${{ matrix.node }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -61,11 +102,13 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     env:
       ANGULAR_MAJOR: ${{ matrix.angular }}
+      WKLY_TEST_ANGULAR: ${{ matrix.angular }}
+      WKLY_TEST_BROWSERS: chromium,firefox,webkit
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: "24"
           package-manager-cache: false
       - name: Generate isolated toolchain
         run: node scripts/compatibility.cjs prepare "$ANGULAR_MAJOR"
@@ -73,23 +116,21 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           package-manager-cache: false
-      - name: Unit contracts, build, pack, and AOT compile base and CDK consumers
-        run: node scripts/compatibility.cjs test "$ANGULAR_MAJOR"
-      # Browser tooling is independent of the library's historical Node version.
+      - name: Fresh libraries, tarballs, base/CDK consumers, AOT and SSR
+        run: npm run test:packages:angular:version -- "$ANGULAR_MAJOR"
+      # Browser tooling uses the workspace lockfile and a modern Node driver.
       - uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: "24"
           package-manager-cache: false
-      - name: Install browser test tools
-        run: |
-          mkdir -p .compat/browser
-          printf '{"private":true}' > .compat/browser/package.json
-          npm install --prefix .compat/browser --no-audit --no-fund @playwright/test@1.58.2
-          node .compat/browser/node_modules/@playwright/test/cli.js install --with-deps chromium
-      - name: Packed package browser and visual contracts
-        run: node .compat/browser/node_modules/@playwright/test/cli.js test --config projects/wkly-datetime-picker.tests/compatibility/playwright.config.cjs
-        env:
-          NODE_PATH: ${{ github.workspace }}/.compat/browser/node_modules
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+      - name: Install locked browser tools without the versioned workspace
+        run: pnpm --filter wkly-workspace install --frozen-lockfile
+      - run: node scripts/playwright.cjs install --with-deps chromium firefox webkit
+      - name: Packed package startup in every browser
+        run: node scripts/playwright.cjs test --config projects/wkly-datetime-picker.tests/packages/angular/playwright.config.cjs
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -102,57 +143,65 @@ jobs:
             .compat/consumer-${{ matrix.angular }}/package-lock.base.json
             .compat/consumer-${{ matrix.angular }}/package-lock.json
             .compat/${{ matrix.angular }}/dist/**/*.tgz
-            test-results/
-            playwright-report/
+            .compat/${{ matrix.angular }}/timings.json
+            test-results/packed/
+            playwright-report-packed/
+            .test-build/packed-results.json
+            .test-build/packed-results.xml
 
   showcase:
     strategy:
       fail-fast: false
       matrix:
         browser: [chromium, firefox, webkit]
-    name: Versioned testbeds / ${{ matrix.browser }}
+    name: Showcase / ${{ matrix.browser }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      WKLY_TEST_BROWSERS: ${{ matrix.browser }}
+      WKLY_E2E: "1"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: '24'
+          node-version: "24"
           package-manager-cache: false
-      - run: corepack pnpm install --frozen-lockfile
-      - run: npm run lint
-      - run: npm run lint:test
-      - run: node --test scripts/showcase-server.test.cjs
-      - run: npm run build
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+      - run: pnpm install --frozen-lockfile
       - run: node scripts/playwright.cjs install --with-deps ${{ matrix.browser }}
       - run: npm run showcase:build
-        env:
-          WKLY_E2E: '1'
-      - run: npm run showcase:test:e2e -- --project="*-${{ matrix.browser }}" --grep-invert="rendered weeks"
+      - run: npm run test:showcase
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: showcase-browser-${{ matrix.browser }}
           if-no-files-found: ignore
+          include-hidden-files: true
           path: |
-            test-results/
-            playwright-report/
+            test-results/showcase/
+            playwright-report-showcase/
+            .test-build/showcase-results.json
+            .test-build/showcase-results.xml
 
   result:
     name: Compatibility result
     if: always()
-    needs: [plan, shared, angular, showcase]
+    needs: [plan, shared, picker, angular, showcase]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Require successful checks
+      - name: Require every matrix and shared check to succeed
         env:
           PLAN: ${{ needs.plan.result }}
           SHARED: ${{ needs.shared.result }}
+          PICKER: ${{ needs.picker.result }}
           ANGULAR: ${{ needs.angular.result }}
           SHOWCASE: ${{ needs.showcase.result }}
-          HAS_PACKAGES: ${{ needs.plan.outputs.has-packages }}
         run: |
           test "$PLAN" = success
           test "$SHARED" = success
+          test "$PICKER" = success
+          test "$ANGULAR" = success
           test "$SHOWCASE" = success
-          if [ "$HAS_PACKAGES" = true ]; then test "$ANGULAR" = success; fi

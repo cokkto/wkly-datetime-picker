@@ -21,7 +21,7 @@ npm run lint -- --angular=22
 npm run build
 npm run pack:check
 npm run showcase:start
-npm run showcase:test:e2e -- --project=angular-22-chromium
+npm run test:picker -- --project=angular-22-chromium-presentations
 ```
 
 `npm run build` uses the newest Angular package by default; version-specific package builds need the matching Node/TypeScript toolchain. Use [compatibility CI](COMPATIBILITY-CI.md) for isolated version checks, [showcase](SHOWCASE.md) for live cases, and the [regression log](REGRESSIONS.md) before changing calendar geometry.
