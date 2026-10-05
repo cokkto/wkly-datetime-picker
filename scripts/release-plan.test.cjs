@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
-const { shared } = require("./public-packages.cjs");
+const { shared, preparePublicSources } = require("./public-packages.cjs");
 const {
   snapshot,
   createPlan,
@@ -48,6 +48,7 @@ function fixture() {
     "scripts/public-packages.cjs",
   ])
     write(file, "initial\n");
+  write("tsconfig.json", { compilerOptions: { paths: {} } });
   const dependencyNames = Object.keys(shared);
   for (const internal of [
     ...dependencyNames,
@@ -286,6 +287,49 @@ test("release receipts and immutable candidate records reject missing artifacts,
           packages: [{ ...valid.packages[0], integrity: "sha512-other" }],
         }),
       /Immutable release artifact conflict/,
+    );
+  } finally {
+    f.dispose();
+  }
+});
+
+test("planned revisions reach public manifests and exact dependencies, with stable line-ending fingerprints", () => {
+  const f = fixture();
+  try {
+    f.write(
+      "projects/wkly-datetime-picker.19/src/index.ts",
+      "export const value = 1;\r\n",
+    );
+    assert.equal(
+      f.plan(),
+      null,
+      "A Windows checkout must match the Linux release baseline",
+    );
+    f.write(
+      "projects/wkly-datetime-picker.core/src/index.ts",
+      "export const value = 2;\n",
+    );
+    const plan = f.plan();
+    applyPlan(plan, f.directory);
+    preparePublicSources(f.directory, "19");
+    const publicManifest = read(
+      path.join(f.directory, "projects/wkly-datetime-picker.19/package.json"),
+    );
+    assert.equal(publicManifest.name, "@wkly/datetime-picker");
+    assert.equal(publicManifest.version, "19.3.0");
+    assert.deepEqual(publicManifest.dependencies, {
+      "@wkly/core": "0.1.1",
+      "@wkly/adapters": "0.1.1",
+      "@wkly/presentation": "0.1.1",
+    });
+    assert.equal(
+      read(
+        path.join(
+          f.directory,
+          "projects/wkly-datetime-picker.adapters/package.json",
+        ),
+      ).dependencies["@wkly/core"],
+      "0.1.1",
     );
   } finally {
     f.dispose();
