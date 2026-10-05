@@ -28,6 +28,40 @@ for (const calendar of ["hebrew", "hijri"] as const) {
         value: initial,
       },
     });
+    test("manual title uses the adapter's draft month at a week boundary", async ({
+      host,
+    }) => {
+      await host.picker
+        .getByRole("button", { name: "Manual date entry" })
+        .click();
+      const month = host.picker.getByRole("textbox", {
+        name: "Month",
+        exact: true,
+      });
+      const year = host.picker.getByRole("textbox", {
+        name: "Year",
+        exact: true,
+      });
+      const title = host.picker.locator(".toolbar .year-control");
+      for (const weekOffset of [0, 1, 2, 3, 4, 5, 6] as const) {
+        await host.inputs({ weekOffset });
+        for (const day of [1, 2, 3, 4]) {
+          const input = host.picker.getByRole("textbox", {
+            name: "Day",
+            exact: true,
+          });
+          await input.fill(String(day));
+          await expect(title).toHaveText(
+            `${await month.inputValue()} ${await year.inputValue()}`,
+          );
+          await input.press("Enter");
+          expect(codes(await host.snapshot())).toEqual([]);
+          await expect(title).toHaveText(
+            `${await month.inputValue()} ${await year.inputValue()}`,
+          );
+        }
+      }
+    });
     test("calendar selection and localized manual drafts preserve canonical UTC values", async ({
       host,
     }) => {

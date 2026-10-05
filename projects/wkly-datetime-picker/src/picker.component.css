@@ -62,6 +62,7 @@ button:focus-visible {
   flex: 1;
 }
 .year-control {
+  padding: 0 6px;
   font-weight: 650;
   text-align: start;
   line-height: 1.2;

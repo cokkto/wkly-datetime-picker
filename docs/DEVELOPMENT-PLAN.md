@@ -6,7 +6,7 @@ This is the current work tracker for WKLY. Keep it limited to work that remains.
 
 The workspace has three shared packages and Angular integration build targets for 11–22. The current test project covers source/installed contracts, picker domains, packed AOT/SSR/browser consumers and versioned showcase journeys. The [test coverage index](TEST-DOMAINS.md) links their assertions; the [developer guide](README.DEV.md#checks) describes development, push, PR and release checks. [Compatibility CI](COMPATIBILITY-CI.md#pipeline) runs these checks in separate matrix jobs on pushes to main, pull requests to main and manual dispatch.
 
-The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. Mapping internal artifacts to that name, publishing and automatic version updates remain future work. The [calendar title interaction](REGRESSIONS.md#calendar-title-interaction) remains an open UI issue.
+The public release target is one name, `@wkly/datetime-picker`, with Angular-specific major version lines. Mapping internal artifacts to that name, publishing and automatic version updates remain future work.
 
 ## Next milestone
 

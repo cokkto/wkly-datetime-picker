@@ -17,16 +17,7 @@
     >
       {{ viewMode === "calendar" ? "☷" : "▦" }}
     </button>
-    <button
-      *ngIf="hasDate"
-      class="year-control"
-      type="button"
-      [disabled]="this[WklyPickerInputsPropertyKeys.Disabled]"
-      [attr.aria-label]="t('year')"
-      (click)="toggleView(true)"
-    >
-      {{ title }}
-    </button>
+    <span *ngIf="hasDate" class="year-control">{{ title }}</span>
     <span class="spacer"></span
     ><button
       type="button"

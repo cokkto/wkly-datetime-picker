@@ -647,27 +647,13 @@ export class WklyDateTimePickerComponent
     // Positioning renders before validation; refresh completion controls afterward.
     this.changeDetector.markForCheck();
   }
-  toggleView(year = false): void {
+  toggleView(): void {
     if (this.isDisabled() || !this.hasDate) return;
-    this.viewMode = year
-      ? "manual"
-      : this.viewMode === "calendar"
-        ? "manual"
-        : "calendar";
+    this.viewMode = this.viewMode === "calendar" ? "manual" : "calendar";
     if (this.viewMode === "manual") this.initializeManualRange();
     if (this.viewMode === "calendar") this.positionOnManualDate();
     this[WklyPickerOutputsPropertyKeys.ViewModeChange].emit(this.viewMode);
     if (this.viewMode === "calendar") setTimeout(() => this.resetScroll());
-    if (year && this.browser)
-      setTimeout(() => {
-        const field = this.host.nativeElement.querySelector(
-          'input[aria-label="' + this.t("year") + '"]',
-        ) as HTMLInputElement;
-        if (field) {
-          field.focus();
-          field.select();
-        }
-      });
   }
   private positionOnManualDate(): void {
     const draft = this.drafts[this.manualDateEndpoint];
