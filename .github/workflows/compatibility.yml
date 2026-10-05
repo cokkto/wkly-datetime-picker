@@ -144,6 +144,7 @@ jobs:
             .compat/consumer-${{ matrix.angular }}/package-lock.json
             .compat/${{ matrix.angular }}/dist/**/*.tgz
             .compat/${{ matrix.angular }}/timings.json
+            .compat/${{ matrix.angular }}/release-evidence.json
             test-results/packed/
             playwright-report-packed/
             .test-build/packed-results.json

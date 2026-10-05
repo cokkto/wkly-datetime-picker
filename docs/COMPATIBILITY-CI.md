@@ -1,6 +1,6 @@
 # Package compatibility CI
 
-`supported-angular.json` is the source of truth for supported Angular majors, their numbered packages, runtime entries, and pinned Node, Angular, TypeScript, and CDK toolchains. It currently registers 11–22. The workflow is [`.github/workflows/compatibility.yml`](../.github/workflows/compatibility.yml); the planner and runner are [`scripts/compatibility.cjs`](../scripts/compatibility.cjs). This workflow tests artifacts and does not publish or change versions.
+`supported-angular.json` is the source of truth for supported Angular majors, their numbered packages, runtime entries, and pinned Node, Angular, TypeScript, and CDK toolchains. It currently registers 11–22. The workflow is [`.github/workflows/compatibility.yml`](../.github/workflows/compatibility.yml); the planner and runner are [`scripts/compatibility.cjs`](../scripts/compatibility.cjs). This workflow tests public npm artifacts and does not publish or change versions. The manually dispatched [publication workflow](PUBLICATION.md) consumes its qualified tarballs.
 
 Angular 22 pins `@angular/build` directly at the same version as `@angular-devkit/build-angular`. Keep these pins aligned: the direct dependency avoids npm's nested build/Vite/SSL peer placement failure during fresh strict installs, including packed consumers.
 
@@ -10,7 +10,7 @@ The release target is one npm package name, `@wkly/datetime-picker`. Its major v
 
 Versions use `N.S.A`: `N` is the Angular major, `S` is a shared revision common to every supported Angular line, and `A` is a revision local to one Angular line. A fix confined to Angular 19 advances `19.2.21` to `19.2.22` and produces only the Angular 19 picker artifact. A change to core, adapters, or shared presentation advances the common revision from `2` to `3` and produces `N.3.0` picker artifacts for every supported Angular major, resetting `A` to zero. Other shared-package artifacts change when their own source changes.
 
-This is the release contract, not the behavior of the current CI. The workspace still builds internal `wkly-datetime-picker.N` packages; their manifests currently range from `11.0.0` to `22.0.0`, and the three shared manifests each use `0.1.0`. The planner enforces that an internal package's first version component matches its Angular suffix. Renaming the outgoing picker tarballs to `@wkly/datetime-picker`, calculating `S` and `A`, and publishing selected artifacts are [development-plan work](DEVELOPMENT-PLAN.md).
+This is the release contract, not the behavior of the current CI. The workspace still builds internal `wkly-datetime-picker.N` packages; their manifests currently range from `11.0.0` to `22.0.0`, and the three shared manifests each use `0.1.0`. The planner enforces that an internal package's first version component matches its Angular suffix. Isolated compatibility workspaces map outgoing picker artifacts to `@wkly/datetime-picker` and shared dependencies to `@wkly/core`, `@wkly/adapters`, and `@wkly/presentation`. ng-packagr compiles the public names and CDK entry points directly. The [publication procedure](PUBLICATION.md) publishes reviewed tarballs; automatic `S` and `A` calculations remain [development-plan work](DEVELOPMENT-PLAN.md).
 
 ## Pipeline
 
