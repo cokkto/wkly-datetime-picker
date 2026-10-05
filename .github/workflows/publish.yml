@@ -39,6 +39,8 @@ jobs:
         with:
           node-version: "24.15.0"
           package-manager-cache: false
+      - name: Install npm with trusted dist-tag support
+        run: npm install --global npm@11.21.0 --ignore-scripts --no-audit --no-fund
       - name: Require the complete gate for this main commit
         shell: bash
         run: |

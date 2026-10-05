@@ -38,7 +38,7 @@ After the four package names exist, add a GitHub Actions trusted publisher in th
 | Environment name | Leave empty |
 | Allowed actions | Direct publishing (`npm publish`) and dist-tag management (`npm dist-tag`) |
 
-The workflow uses GitHub-hosted runners, Node 24.15.0, npm 11.5.1 or later, and `id-token: write`. Later reviewed releases use **publish** true and **bootstrap** false, independently of the temporary token. Once trusted publishing works, remove the bootstrap secret and revoke the token. npm's **Require two-factor authentication and disallow tokens** package setting still permits trusted publishing. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) and [token settings](https://docs.npmjs.com/creating-and-viewing-access-tokens/).
+The workflow uses GitHub-hosted runners, Node 24.15.0, npm 11.21.0, and `id-token: write`. npm 11.21.0 or later is required for trusted dist-tag management. Later reviewed releases use **publish** true and **bootstrap** false, independently of the temporary token. Keep the package's token-permitting publishing access setting until trusted publishing is verified. Then select **Require two-factor authentication and disallow bypass 2FA tokens**, remove the bootstrap secret and revoke the token. This package setting still permits trusted publishing. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) and [token settings](https://docs.npmjs.com/creating-and-viewing-access-tokens/).
 
 ## Tags and recovery
 
