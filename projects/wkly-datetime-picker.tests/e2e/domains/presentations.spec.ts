@@ -56,6 +56,56 @@ for (const presentation of ["native", "cdk", "material"] as const) {
       },
     });
 
+    test("empty manual ranges initialize a complete draft; cancellation discards it and Confirm submits it", async ({
+      host,
+    }) => {
+      for (const mode of ["date-range", "datetime-range"] as const) {
+        await host.inputs({ mode });
+        await host.write(null);
+        const before = emissions(await host.snapshot()).length;
+        await open(host);
+        await dialog(host)
+          .getByRole("button", { name: "Manual date entry" })
+          .click();
+        const confirm = dialog(host).getByRole("button", {
+          name: "Confirm",
+          exact: true,
+        });
+        await expect(confirm).toBeEnabled();
+        expect((await host.snapshot()).value).toBeNull();
+        expect(emissions(await host.snapshot())).toHaveLength(before);
+        const end = dialog(host).getByRole("group", {
+          name: "End",
+          exact: true,
+        });
+        await end
+          .getByRole("button", { name: "In 0 days", exact: true })
+          .click();
+        const days = end.getByRole("textbox", { name: "Days", exact: true });
+        await days.fill("2");
+        await days.press("Enter");
+        await expect(confirm).toBeEnabled();
+        await dialog(host)
+          .getByRole("button", { name: "Close picker", exact: true })
+          .click();
+        await closed(host, "close-button");
+        expect((await host.snapshot()).value).toBeNull();
+        expect(emissions(await host.snapshot())).toHaveLength(before);
+        await open(host);
+        await dialog(host)
+          .getByRole("button", { name: "Manual date entry" })
+          .click();
+        await confirm.click();
+        await closed(host, "submit");
+        const value =
+          mode === "date-range" ? "2099-12-16T00:00:00.000Z" : initial;
+        expect((await host.snapshot()).value).toEqual([value, value]);
+        expect(emissions(await host.snapshot()).slice(before)).toEqual([
+          [value, value],
+        ]);
+      }
+    });
+
     test("confirm commits once; cancellation and reopen restore the last committed value", async ({
       host,
     }) => {

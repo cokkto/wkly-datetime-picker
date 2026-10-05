@@ -25,6 +25,220 @@ async function openDays(host: PickerFixture) {
     .click();
 }
 
+for (const mode of ["date-range", "datetime-range"] as const) {
+  test.describe(`${mode} manual range defaults`, () => {
+    test.use({
+      suite: "manual",
+      spec: {
+        inputs: {
+          mode,
+          locale: "en-GB",
+          hourCycle: "h24",
+          showSeconds: true,
+          required: true,
+        },
+        clock: "2099-12-16T13:37:42.000Z",
+        value: null,
+      },
+    });
+    test("entering manual mode initializes both endpoints so editing only End completes a valid range", async ({
+      host,
+    }) => {
+      expect(codes(await host.snapshot())).toEqual(["incomplete"]);
+      await host.inputs({ minuteStep: 15, secondStep: 5 });
+      await host.picker
+        .getByRole("button", { name: "Manual date entry" })
+        .click();
+      await expect.poll(async () => codes(await host.snapshot())).toEqual([]);
+      for (const endpoint of ["Start", "End"]) {
+        const group = host.picker.getByRole("group", {
+          name: endpoint,
+          exact: true,
+        });
+        await expect(
+          group.getByRole("textbox", { name: "Day", exact: true }),
+        ).toHaveValue("16");
+        if (mode === "datetime-range") {
+          await expect(
+            group.getByRole("textbox", { name: "Hour", exact: true }),
+          ).toHaveValue("13");
+          await expect(
+            group.getByRole("textbox", { name: "Minute", exact: true }),
+          ).toHaveValue("30");
+          await expect(
+            group.getByRole("textbox", { name: "Second", exact: true }),
+          ).toHaveValue("40");
+        }
+      }
+      const time = mode === "date-range" ? "00:00:00" : "13:30:40";
+      const defaults = [`2099-12-16T${time}.000Z`, `2099-12-16T${time}.000Z`];
+      await valueIs(host, defaults);
+      expect(emissions(await host.snapshot())).toEqual([defaults]);
+      const day = endGroup(host).getByRole("textbox", {
+        name: "Day",
+        exact: true,
+      });
+      await day.fill("18");
+      await day.press("Enter");
+      await valueIs(host, [
+        `2099-12-16T${time}.000Z`,
+        `2099-12-18T${time}.000Z`,
+      ]);
+      expect(codes(await host.snapshot())).toEqual([]);
+      await host.picker
+        .getByRole("button", { name: "Now", exact: true })
+        .click();
+      await valueIs(host, defaults);
+    });
+
+    test("date defaults use the explicit anchor, including epoch day zero", async ({
+      host,
+    }) => {
+      await host.inputs({ initialEpochDay: Date.UTC(2099, 11, 12) / 86400000 });
+      await host.picker
+        .getByRole("button", { name: "Year", exact: true })
+        .click();
+      for (const endpoint of ["Start", "End"]) {
+        await expect(
+          host.picker
+            .getByRole("group", { name: endpoint, exact: true })
+            .getByRole("textbox", { name: "Day", exact: true }),
+        ).toHaveValue("12");
+      }
+      await host.picker.getByRole("button", { name: "Calendar view" }).click();
+      await host.inputs({ initialEpochDay: 0 });
+      await host.write(null);
+      await host.picker
+        .getByRole("button", { name: "Manual date entry" })
+        .click();
+      await expect(
+        endGroup(host).getByRole("textbox", { name: "Year", exact: true }),
+      ).toHaveValue("1970");
+      await expect(
+        endGroup(host).getByRole("textbox", { name: "Day", exact: true }),
+      ).toHaveValue("01");
+      await expect.poll(async () => codes(await host.snapshot())).toEqual([]);
+    });
+
+    test("editing only relative days works from an empty range and clearing reinitializes on reentry", async ({
+      host,
+    }) => {
+      await openDays(host);
+      await expect(daysField(host)).toHaveValue("0");
+      await edit(host, "Days", "2");
+      const time = mode === "date-range" ? "00:00:00" : "13:37:42";
+      await valueIs(host, [
+        `2099-12-16T${time}.000Z`,
+        `2099-12-18T${time}.000Z`,
+      ]);
+      await host.picker.getByRole("button", { name: "Calendar view" }).click();
+      await host.write(null);
+      await host.picker
+        .getByRole("button", { name: "Manual date entry" })
+        .click();
+      await expect(daysField(host)).toHaveValue("0");
+      await expect.poll(async () => codes(await host.snapshot())).toEqual([]);
+    });
+
+    test("partial calendar selections and supplied ranges survive manual entry and reentry", async ({
+      host,
+    }) => {
+      await dayButton(host, 18).click();
+      expect(codes(await host.snapshot())).toContain("incomplete");
+      await host.picker
+        .getByRole("button", { name: "Manual date entry" })
+        .click();
+      for (const endpoint of ["Start", "End"]) {
+        await expect(
+          host.picker
+            .getByRole("group", { name: endpoint, exact: true })
+            .getByRole("textbox", { name: "Day", exact: true }),
+        ).toHaveValue("18");
+      }
+      const value =
+        mode === "date-range"
+          ? ([iso(15), iso(19)] as const)
+          : (["2099-12-15T09:25:35.000Z", "2099-12-19T17:30:45.000Z"] as const);
+      await host.write(value);
+      const before = emissions(await host.snapshot());
+      await host.picker.getByRole("button", { name: "Calendar view" }).click();
+      await host.picker
+        .getByRole("button", { name: "Manual date entry" })
+        .click();
+      await valueIs(host, value);
+      await expect(
+        endGroup(host).getByRole("textbox", { name: "Day", exact: true }),
+      ).toHaveValue("19");
+      if (mode === "datetime-range") {
+        await expect(
+          endGroup(host).getByRole("textbox", { name: "Hour", exact: true }),
+        ).toHaveValue("17");
+        await expect(
+          endGroup(host).getByRole("textbox", { name: "Minute", exact: true }),
+        ).toHaveValue("30");
+        await expect(
+          endGroup(host).getByRole("textbox", { name: "Second", exact: true }),
+        ).toHaveValue("45");
+      }
+      const day = endGroup(host).getByRole("textbox", {
+        name: "Day",
+        exact: true,
+      });
+      await day.fill("");
+      await day.press("Enter");
+      expect(codes(await host.snapshot())).toContain("incomplete");
+      await host.picker.getByRole("button", { name: "Calendar view" }).click();
+      await host.picker
+        .getByRole("button", { name: "Manual date entry" })
+        .click();
+      await expect(day).toHaveValue("");
+      expect(codes(await host.snapshot())).toContain("incomplete");
+      expect(emissions(await host.snapshot())).toEqual(before);
+    });
+
+    test.describe("application defaults", () => {
+      test.use({
+        spec: {
+          config: { initialEpochDay: Date.UTC(2099, 11, 10) / 86400000 },
+          inputs: {
+            mode,
+            locale: "en-GB",
+            initialEpochDay: Date.UTC(2099, 11, 12) / 86400000,
+          },
+          clock: "2099-12-16T13:37:42.000Z",
+          value: null,
+        },
+      });
+      test("the input anchor overrides configuration and clearing it restores the configured date", async ({
+        host,
+      }) => {
+        await host.picker
+          .getByRole("button", { name: "Manual date entry" })
+          .click();
+        await expect(
+          endGroup(host).getByRole("textbox", { name: "Day", exact: true }),
+        ).toHaveValue("12");
+        await host.picker
+          .getByRole("button", { name: "Calendar view" })
+          .click();
+        await host.inputs({ initialEpochDay: null });
+        await host.write(null);
+        await host.picker
+          .getByRole("button", { name: "Manual date entry" })
+          .click();
+        for (const endpoint of ["Start", "End"]) {
+          await expect(
+            host.picker
+              .getByRole("group", { name: endpoint, exact: true })
+              .getByRole("textbox", { name: "Day", exact: true }),
+          ).toHaveValue("10");
+        }
+        expect(codes(await host.snapshot())).toEqual([]);
+      });
+    });
+  });
+}
+
 test.describe("In X Days", () => {
   test.use({
     suite: "manual",
@@ -56,7 +270,9 @@ test.describe("In X Days", () => {
     await expect(daysField(host)).toHaveValue("4");
     await edit(host, "Days", "7");
     await valueIs(host, [iso(17), iso(24)]);
-    await expect(end.locator(".resulting-end-date")).toHaveText("24 Dec 2099");
+    await expect(end.locator(".resulting-end-date")).toHaveText(
+      "24 December 2099",
+    );
     const start = host.picker
       .getByRole("group", { name: "Start", exact: true })
       .getByRole("textbox", { name: "Day", exact: true });
@@ -94,7 +310,7 @@ test.describe("In X Days", () => {
       endGroup(host).getByRole("button", { name: "In -17 days", exact: true }),
     ).toBeVisible();
     await expect(endGroup(host).locator(".resulting-end-date")).toHaveText(
-      "29 Nov 2099",
+      "29 November 2099",
     );
     await host.page.waitForTimeout(600);
     await valueIs(host, [iso(16), iso(16)]);
@@ -319,6 +535,9 @@ test.describe("localized In X Days", () => {
       "2099-12-16T13:25:42.000Z",
     ]);
     await expect(input).toHaveValue("١٧");
+    await expect(end.locator(".resulting-end-date")).toHaveText(
+      "١٦ ديسمبر ٢٠٩٩",
+    );
     await expect(
       end.getByRole("button", { name: "خلال ١٧ يومًا", exact: true }),
     ).toBeVisible();

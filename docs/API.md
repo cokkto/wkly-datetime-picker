@@ -81,7 +81,7 @@ Validation errors contain code, messageKey, and optional endpoint, field, reject
 | weekLabelMode / weekLabelFormatter | locale / null |
 | weekCacheSize / overscanWeeks | 256 / 3 |
 | ariaLabel / ariaDescribedBy | null |
-| initialEpochDay | null; selected value precedes initial anchor, then UTC today |
+| initialEpochDay | null; selected value precedes initial anchor, then UTC today; also seeds empty manual date ranges |
 | closeOnBackdrop | true |
 | validators | Empty readonly array of value => error/null callbacks |
 
@@ -96,6 +96,8 @@ The component and triggers expose scrollToEpochDay, scrollToAbsoluteWeek, scroll
 Forms methods follow ControlValueAccessor/Validator: writeValue, registerOnChange, registerOnTouched, setDisabledState, validate, registerOnValidatorChange. Programmatic writes never invoke the registered change callback. Invalid drafts leave the last committed value intact.
 
 Manual `date-range` and `datetime-range` End sections provide calendar-date and relative-day views. Relative input accepts signed integers in `-9999..9999` and updates the end date by epoch-day addition, keeping endpoint times. The toggle always shows the actual calendar-day difference, including ranges larger than the input limits. Completing an edit swaps reversed endpoints through the calendar's ordering path; negative typing previews remain until the existing one-second typing debounce, Enter or blur. Wheel completion uses 140 ms and touch completion occurs on release. Switching End views preserves the selection and does not emit `viewModeChange`, which continues to describe calendar/manual mode only.
+
+Entering manual mode initializes missing endpoints in date ranges. With no selection, the date resolves from the input `initialEpochDay`, configured `initialEpochDay`, then the clock's UTC day; time initialization is shared with Now, including current UTC hours/minutes and visible seconds rounded to configured steps. A selected endpoint seeds its missing partner. Present drafts, including invalid edits, remain unchanged. Normal validation applies to the defaults, with successful inline initialization committing once and transient initialization remaining a draft until Confirm.
 
 `WKLY_CLOCK` provides `WklyClock {now(): Date}`. `WKLY_CONFIG` provides readonly `WklyConfiguration {locale?,weekOffset?,initialEpochDay?}`. Explicit picker inputs precede application configuration; locale falls back to Angular's `LOCALE_ID`, and week start falls back to the effective locale. An existing selection precedes the initial-day input or configured anchor.
 

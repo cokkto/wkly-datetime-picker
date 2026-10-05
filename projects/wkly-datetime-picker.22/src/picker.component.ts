@@ -586,17 +586,7 @@ export class WklyDateTimePickerComponent
     const n = this.clock.now();
     const day = Math.floor(n.getTime() / 86400000);
     this.drafts = [0, 1].map((index) => ({
-      date: this.blank(day).date,
-      hour: n.getUTCHours(),
-      minute:
-        Math.floor(
-          n.getUTCMinutes() / this[WklyPickerInputsPropertyKeys.MinuteStep](),
-        ) * this[WklyPickerInputsPropertyKeys.MinuteStep](),
-      second: this[WklyPickerInputsPropertyKeys.ShowSeconds]()
-        ? Math.floor(
-            n.getUTCSeconds() / this[WklyPickerInputsPropertyKeys.SecondStep](),
-          ) * this[WklyPickerInputsPropertyKeys.SecondStep]()
-        : 0,
+      ...this.clockDraft(day, n),
       present: index === 0 || this.isRange,
     }));
     if (
@@ -611,6 +601,52 @@ export class WklyDateTimePickerComponent
     this.check();
     this.submit("now");
   }
+  private clockDraft(day: number, now: Date): Draft {
+    return {
+      ...this.blank(day),
+      hour: now.getUTCHours(),
+      minute:
+        Math.floor(
+          now.getUTCMinutes() / this[WklyPickerInputsPropertyKeys.MinuteStep](),
+        ) * this[WklyPickerInputsPropertyKeys.MinuteStep](),
+      second: this[WklyPickerInputsPropertyKeys.ShowSeconds]()
+        ? Math.floor(
+            now.getUTCSeconds() /
+              this[WklyPickerInputsPropertyKeys.SecondStep](),
+          ) * this[WklyPickerInputsPropertyKeys.SecondStep]()
+        : 0,
+    };
+  }
+  private initializeManualRange(): void {
+    if (
+      !this.isRange ||
+      !this.hasDate ||
+      this.drafts.every((draft) => draft.present)
+    )
+      return;
+    let seed = this.drafts.find((draft) => draft.present);
+    if (!seed) {
+      if (this.currentValue() !== null) return;
+      const now = this.clock.now();
+      const initialEpochDay =
+        this[WklyPickerInputsPropertyKeys.InitialEpochDay]();
+      const day =
+        initialEpochDay === null
+          ? this.defaults.initialEpochDay === undefined
+            ? Math.floor(now.getTime() / 86400000)
+            : this.defaults.initialEpochDay
+          : initialEpochDay;
+      seed = { ...this.clockDraft(day, now), present: true };
+    }
+    // Complete missing endpoints without replacing selected or invalid drafts.
+    const initial = seed;
+    this.drafts = this.drafts.map((draft) =>
+      draft.present ? draft : { ...initial, date: { ...initial.date } },
+    );
+    this.finish();
+    // Positioning renders before validation; refresh completion controls afterward.
+    this.changeDetector.markForCheck();
+  }
   toggleView(year = false): void {
     if (this.isDisabled() || !this.hasDate) return;
     this.viewMode = year
@@ -618,6 +654,7 @@ export class WklyDateTimePickerComponent
       : this.viewMode === "calendar"
         ? "manual"
         : "calendar";
+    if (this.viewMode === "manual") this.initializeManualRange();
     if (this.viewMode === "calendar") this.positionOnManualDate();
     this[WklyPickerOutputsPropertyKeys.ViewModeChange].emit(this.viewMode);
     if (this.viewMode === "calendar") setTimeout(() => this.resetScroll());
@@ -681,7 +718,11 @@ export class WklyDateTimePickerComponent
         this.adapter.validateDate(draft.date).length
       )
         return "";
-      return this.adapter.formatDate(draft.date);
+      return [
+        this.adapter.formatDay(draft.date),
+        this.adapter.formatMonth(draft.date),
+        this.adapter.formatYear(draft.date),
+      ].join(" ");
     } catch (_) {
       return "";
     }

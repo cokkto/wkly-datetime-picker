@@ -3,6 +3,7 @@ const supported = require("../supported-angular.json");
 const majors = Object.keys(supported);
 const fs = require("fs");
 const { createShowcaseServer } = require("./showcase-server.cjs");
+const { showcaseProgressPlugin } = require("./showcase-progress.cjs");
 const path = require("path");
 const output = path.resolve(
   __dirname,
@@ -34,8 +35,12 @@ const output = path.resolve(
     prepareLegacyAngular();
     assets();
     contexts = await Promise.all(
-      builds.map(async ({ esbuild, options }) => {
-        const context = await esbuild.context(options);
+      builds.map(async ({ esbuild, options }, index) => {
+        const label = index === 0 ? "showcase" : `Angular ${majors[index - 1]}`;
+        const context = await esbuild.context({
+          ...options,
+          plugins: [showcaseProgressPlugin(label), ...options.plugins],
+        });
         await context.rebuild();
         await context.watch();
         return context;
