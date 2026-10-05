@@ -6,11 +6,11 @@
   (touchend)="touchEnd($event)"
   (touchcancel)="touchEnd($event)"
 >
-  <span class="label">{{ label }}</span>
+  <span *ngIf="!hideLabel" class="label">{{ label }}</span>
   <button
     type="button"
     [disabled]="disabled"
-    [attr.aria-label]="label + ': previous'"
+    [attr.aria-label]="previousLabel || label + ': previous'"
     (click)="stepBy(-1)"
   >
     {{ neighbor(-1) }}
@@ -20,7 +20,7 @@
     [attr.aria-invalid]="invalid"
     [disabled]="disabled"
     [value]="display"
-    [attr.inputmode]="labels ? 'text' : 'numeric'"
+    [attr.inputmode]="labels ? 'text' : min < 0 ? 'text' : 'numeric'"
     autocomplete="off"
     (focus)="begin($event)"
     (input)="type($event)"
@@ -30,7 +30,7 @@
   <button
     type="button"
     [disabled]="disabled"
-    [attr.aria-label]="label + ': next'"
+    [attr.aria-label]="nextLabel || label + ': next'"
     (click)="stepBy(1)"
   >
     {{ neighbor(1) }}

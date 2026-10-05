@@ -44,6 +44,36 @@ async function drag(
   }
 }
 
+test.describe("In X Days gestures", () => {
+  test.use({
+    suite: "fields",
+    spec: {
+      inputs: { mode: "date-range", locale: "en-GB" },
+      value: ["2099-12-16T00:00:00.000Z", "2099-12-16T00:00:00.000Z"],
+    },
+  });
+  test("dragging below zero previews negative days and swaps the range on release", async ({
+    host,
+  }) => {
+    await host.picker.getByRole("button", { name: "Manual date entry" }).tap();
+    const end = host.picker.getByRole("group", { name: "End", exact: true });
+    await end.getByRole("button", { name: "In 0 days", exact: true }).tap();
+    const input = end.getByRole("textbox", { name: "Days", exact: true });
+    await drag(host, input, [-8, -25, -60], async (index) => {
+      await expect(input).toHaveValue(["0", "-1", "-2"][index]);
+      expect(emissions(await host.snapshot())).toEqual([]);
+    });
+    await expect
+      .poll(async () => (await host.snapshot()).value)
+      .toEqual(["2099-12-14T00:00:00.000Z", "2099-12-16T00:00:00.000Z"]);
+    await expect(input).toHaveValue("2");
+    await expect(
+      end.getByRole("button", { name: "In 2 days", exact: true }),
+    ).toBeVisible();
+    expect(emissions(await host.snapshot())).toHaveLength(1);
+  });
+});
+
 test.describe("calendar taps", () => {
   test.use({
     suite: "calendar",

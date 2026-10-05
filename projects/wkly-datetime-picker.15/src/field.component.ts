@@ -2,6 +2,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnChanges,
   OnDestroy,
   Output,
 } from "@angular/core";
@@ -12,9 +13,12 @@ import { normalizeDigits } from "wkly-datetime-picker.adapters";
   templateUrl: "./field.component.html",
   styleUrls: ["./field.component.css"],
 })
-export class WklyFieldComponent implements OnDestroy {
+export class WklyFieldComponent implements OnChanges, OnDestroy {
   @Input() value: number | null = 0;
   @Input() label = "";
+  @Input() hideLabel = false;
+  @Input() previousLabel = "";
+  @Input() nextLabel = "";
   @Input() min = 0;
   @Input() max = 59;
   @Input() step = 1;
@@ -41,6 +45,17 @@ export class WklyFieldComponent implements OnDestroy {
             useGrouping: false,
             minimumIntegerDigits: this.max < 60 ? 2 : 1,
           }).format(this.value);
+  }
+  ngOnChanges(changes: any): void {
+    if (changes.value && this.min < 0 && this.typed !== null) {
+      const typedValue =
+        this.typed === "" || this.typed === "-" ? null : Number(this.typed);
+      if (this.value !== typedValue) {
+        // External date edits replace a pending relative-day preview.
+        this.cancelInput();
+        this.typed = null;
+      }
+    }
   }
   ngOnDestroy(): void {
     this.cancelInput();
@@ -82,7 +97,20 @@ export class WklyFieldComponent implements OnDestroy {
     const numeric = Array.from(raw).every(
       (character) => normalizeDigits(character).length === 1,
     );
-    if (numeric) {
+    if (this.min < 0 && !this.labels) {
+      // Preserve the sign while using the same locale digit normalization.
+      const signed = raw
+        .replace(/[\u200e\u200f\u061c]/g, "")
+        .replace(/\u2212/g, "-");
+      const digits = normalizeDigits(signed);
+      this.typed = input.value = (signed.startsWith("-") ? "-" : "") + digits;
+      this.value =
+        digits === ""
+          ? null
+          : Math.max(this.min, Math.min(this.max, Number(this.typed)));
+      if (this.value !== null && Number(this.typed) !== this.value)
+        this.typed = input.value = String(this.value);
+    } else if (numeric) {
       const normalized = normalizeDigits(raw);
       this.typed = input.value =
         this.min >= 0 && this.max < 100 ? normalized.slice(-2) : normalized;
@@ -105,7 +133,7 @@ export class WklyFieldComponent implements OnDestroy {
     if (!numeric && this.labels && this.value !== null) this.complete.emit();
     this.inputTimer = setTimeout(() => {
       this.inputTimer = null;
-      if (this.labels) this.typed = null;
+      this.typed = null;
       if (!this.disabled) this.complete.emit();
     }, 1000);
   }

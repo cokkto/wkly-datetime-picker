@@ -15,6 +15,322 @@ async function valueIs(host: PickerFixture, value: unknown) {
   await expect.poll(async () => (await host.snapshot()).value).toEqual(value);
 }
 
+const endGroup = (host: PickerFixture) =>
+  host.picker.getByRole("group", { name: "End", exact: true });
+const daysField = (host: PickerFixture) => field(host, "Days");
+async function openDays(host: PickerFixture) {
+  await host.picker.getByRole("button", { name: "Manual date entry" }).click();
+  await endGroup(host)
+    .getByRole("button", { name: /^In .* days$/ })
+    .click();
+}
+
+test.describe("In X Days", () => {
+  test.use({
+    suite: "manual",
+    spec: {
+      inputs: { mode: "date-range", locale: "en-GB" },
+      value: [iso(16), iso(16)],
+    },
+  });
+
+  test("calendar, date fields, start edits and relative days stay synchronized when views switch", async ({
+    host,
+  }) => {
+    await dayButton(host, 17).click();
+    await dayButton(host, 20).click();
+    await host.picker
+      .getByRole("button", { name: "Manual date entry" })
+      .click();
+    const end = endGroup(host);
+    await expect(
+      end.getByRole("button", { name: "In 3 days", exact: true }),
+    ).toHaveAttribute("aria-pressed", "false");
+    const day = end.getByRole("textbox", { name: "Day", exact: true });
+    await day.fill("21");
+    await day.press("Enter");
+    await expect(
+      end.getByRole("button", { name: "In 4 days", exact: true }),
+    ).toBeVisible();
+    await end.getByRole("button", { name: "In 4 days", exact: true }).click();
+    await expect(daysField(host)).toHaveValue("4");
+    await edit(host, "Days", "7");
+    await valueIs(host, [iso(17), iso(24)]);
+    await expect(end.locator(".resulting-end-date")).toHaveText("24 Dec 2099");
+    const start = host.picker
+      .getByRole("group", { name: "Start", exact: true })
+      .getByRole("textbox", { name: "Day", exact: true });
+    await start.fill("18");
+    await start.press("Enter");
+    await expect(daysField(host)).toHaveValue("6");
+    const before = emissions(await host.snapshot());
+    await end.getByRole("button", { name: "End", exact: true }).click();
+    await expect(day).toHaveValue("24");
+    await end.getByRole("button", { name: "In 6 days", exact: true }).click();
+    expect(emissions(await host.snapshot())).toEqual(before);
+    await host.picker.getByRole("button", { name: "Calendar view" }).click();
+    await dayButton(host, 15).click();
+    await dayButton(host, 18).click();
+    await host.picker
+      .getByRole("button", { name: "Manual date entry" })
+      .click();
+    await expect(daysField(host)).toHaveValue("3");
+    await host.write([iso(16), iso(20)]);
+    await expect(daysField(host)).toHaveValue("4");
+    await daysField(host).fill("5");
+    const written = emissions(await host.snapshot());
+    await host.write([iso(16), iso(19)]);
+    await expect(daysField(host)).toHaveValue("3");
+    await host.page.waitForTimeout(1100);
+    expect(emissions(await host.snapshot())).toEqual(written);
+  });
+
+  test("negative typing previews the end date and swaps both displayed endpoints after the typing debounce", async ({
+    host,
+  }) => {
+    await openDays(host);
+    await daysField(host).fill("-17");
+    await expect(
+      endGroup(host).getByRole("button", { name: "In -17 days", exact: true }),
+    ).toBeVisible();
+    await expect(endGroup(host).locator(".resulting-end-date")).toHaveText(
+      "29 Nov 2099",
+    );
+    await host.page.waitForTimeout(600);
+    await valueIs(host, [iso(16), iso(16)]);
+    expect(emissions(await host.snapshot())).toEqual([]);
+    await expect(daysField(host)).toHaveValue("17");
+    await expect(daysField(host)).toBeFocused();
+    await valueIs(host, ["2099-11-29T00:00:00.000Z", iso(16)]);
+    await expect(
+      endGroup(host).getByRole("button", { name: "In 17 days", exact: true }),
+    ).toBeVisible();
+    await endGroup(host)
+      .getByRole("button", { name: "End", exact: true })
+      .click();
+    await expect(
+      endGroup(host).getByRole("textbox", { name: "Day", exact: true }),
+    ).toHaveValue("16");
+    await expect(
+      host.picker
+        .getByRole("group", { name: "Start", exact: true })
+        .getByRole("textbox", { name: "Month", exact: true }),
+    ).toHaveValue("November");
+  });
+
+  test("wheel input crosses zero and reuses wheel settlement to swap the range", async ({
+    host,
+  }) => {
+    await openDays(host);
+    await daysField(host).hover();
+    await host.page.mouse.wheel(0, -60);
+    await expect(daysField(host)).toHaveValue("-1");
+    await expect(
+      endGroup(host).getByRole("button", { name: "In -1 days", exact: true }),
+    ).toBeVisible();
+    await valueIs(host, [iso(15), iso(16)]);
+    await expect(daysField(host)).toHaveValue("1");
+    expect(emissions(await host.snapshot())).toEqual([[iso(15), iso(16)]]);
+    await host.disable(true);
+    await daysField(host).hover();
+    await host.page.mouse.wheel(0, -60);
+    await host.page.waitForTimeout(200);
+    await expect(daysField(host)).toHaveValue("1");
+    expect(emissions(await host.snapshot())).toHaveLength(1);
+  });
+
+  test("manual past-year entry uses the same displayed endpoint swap", async ({
+    host,
+  }) => {
+    await host.picker
+      .getByRole("button", { name: "Manual date entry" })
+      .click();
+    const year = endGroup(host).getByRole("textbox", {
+      name: "Year",
+      exact: true,
+    });
+    await year.fill("2098");
+    await expect(
+      endGroup(host).getByRole("button", { name: "In -365 days", exact: true }),
+    ).toBeVisible();
+    await expect(year).toHaveValue("2099");
+    await valueIs(host, ["2098-12-16T00:00:00.000Z", iso(16)]);
+    await expect(
+      endGroup(host).getByRole("button", { name: "In 365 days", exact: true }),
+    ).toBeVisible();
+  });
+
+  test("empty and signed-limit inputs recover and Escape restores the previous day count", async ({
+    host,
+  }) => {
+    await openDays(host);
+    await daysField(host).fill("-");
+    await expect(daysField(host)).toHaveValue("-");
+    await expect
+      .poll(async () => codes(await host.snapshot()))
+      .toContain("incomplete");
+    await daysField(host).press("Escape");
+    await expect(daysField(host)).toHaveValue("0");
+    for (const [typed, expected] of [
+      ["10000", "9999"],
+      ["-10000", "-9999"],
+    ]) {
+      await daysField(host).fill(typed);
+      await expect(daysField(host)).toHaveValue(expected);
+      await daysField(host).press("Escape");
+      await expect(daysField(host)).toHaveValue("0");
+    }
+    await daysField(host).focus();
+    await daysField(host).pressSequentially("-017");
+    await expect(daysField(host)).toHaveValue("-017");
+    await expect(
+      endGroup(host).getByRole("button", { name: "In -17 days", exact: true }),
+    ).toBeVisible();
+    await daysField(host).press("Escape");
+    await edit(host, "Days", "0");
+    await valueIs(host, [iso(16), iso(16)]);
+    expect(codes(await host.snapshot())).toEqual([]);
+  });
+
+  test("both views keep the same height, input line and palette divider in narrow RTL layouts", async ({
+    host,
+  }) => {
+    await host.page.setViewportSize({ width: 320, height: 1000 });
+    await host.picker.evaluate((el) => {
+      el.style.setProperty("--wkly-text-color", "rgb(234, 235, 236)");
+      el.style.setProperty("--wkly-background-color", "rgb(30, 31, 32)");
+    });
+    await host.picker
+      .getByRole("button", { name: "Manual date entry" })
+      .click();
+    const end = endGroup(host);
+    for (const direction of ["ltr", "rtl"]) {
+      await host.picker
+        .locator("section.wkly")
+        .evaluate((el, dir) => el.setAttribute("dir", dir), direction);
+      const before = await end.boundingBox();
+      const year = await end
+        .getByRole("textbox", { name: "Year", exact: true })
+        .boundingBox();
+      const toggle = end.getByRole("button", {
+        name: "In 0 days",
+        exact: true,
+      });
+      await toggle.click();
+      const after = await end.boundingBox();
+      const input = await daysField(host).boundingBox();
+      expect(after!.height).toBeCloseTo(before!.height, 1);
+      expect(input!.y).toBeCloseTo(year!.y, 1);
+      const divider = await toggle.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return {
+          width: parseFloat(style.borderInlineStartWidth),
+          style: style.borderInlineStartStyle,
+          color: style.borderInlineStartColor,
+        };
+      });
+      // Firefox rounds the declared CSS pixel to its physical pixel grid.
+      expect(Math.abs(divider.width - 1)).toBeLessThan(0.2);
+      expect(divider.style).toBe("solid");
+      expect(divider.color).toBe("rgb(234, 235, 236)");
+      await end.getByRole("button", { name: "End", exact: true }).click();
+    }
+  });
+});
+
+test.describe("In X Days validation", () => {
+  test.use({
+    suite: "manual",
+    spec: {
+      inputs: { mode: "date-range", locale: "en-GB", max: iso(20) },
+      value: [iso(16), iso(16)],
+      disabledEpochDays: [Date.UTC(2099, 11, 18) / 86400000],
+    },
+  });
+  test("relative and date controls show the same end-date validation and preserve the committed range", async ({
+    host,
+  }) => {
+    await openDays(host);
+    for (const [days, code] of [
+      ["5", "above-maximum"],
+      ["2", "disabled-endpoint"],
+    ]) {
+      await edit(host, "Days", days);
+      await expect
+        .poll(async () => codes(await host.snapshot()))
+        .toContain(code);
+      await expect(daysField(host)).toHaveAttribute("aria-invalid", "true");
+      expect(
+        await daysField(host).evaluate(
+          (el) => getComputedStyle(el).borderBlockStartColor,
+        ),
+      ).toBe("rgb(180, 35, 24)");
+      const before = codes(await host.snapshot());
+      await endGroup(host)
+        .getByRole("button", { name: "End", exact: true })
+        .click();
+      expect(codes(await host.snapshot())).toEqual(before);
+      await endGroup(host)
+        .getByRole("button", { name: /^In .* days$/ })
+        .click();
+      await valueIs(host, [iso(16), iso(16)]);
+    }
+    await edit(host, "Days", "1");
+    await valueIs(host, [iso(16), iso(17)]);
+    expect(codes(await host.snapshot())).toEqual([]);
+  });
+});
+
+test.describe("localized In X Days", () => {
+  test.use({
+    suite: "manual",
+    spec: {
+      inputs: {
+        mode: "datetime-range",
+        locale: "ar-EG-u-nu-arab",
+        showSeconds: true,
+      },
+      translations: {
+        ar: {
+          inDays: "خلال {{days}} يومًا",
+          days: "الأيام",
+          daysPrevious: "السابق",
+          daysNext: "التالي",
+        },
+      },
+      value: ["2099-12-16T13:25:42.000Z", "2099-12-16T16:30:45.000Z"],
+    },
+  });
+  test("localized labels, signed Arabic digits and endpoint times survive the swap", async ({
+    host,
+  }) => {
+    await host.picker
+      .getByRole("button", { name: "Manual date entry" })
+      .click();
+    const end = endGroup(host);
+    await end
+      .getByRole("button", { name: "خلال ٠ يومًا", exact: true })
+      .click();
+    const input = field(host, "الأيام");
+    await input.fill("−١٧");
+    await input.press("Enter");
+    await valueIs(host, [
+      "2099-11-29T16:30:45.000Z",
+      "2099-12-16T13:25:42.000Z",
+    ]);
+    await expect(input).toHaveValue("١٧");
+    await expect(
+      end.getByRole("button", { name: "خلال ١٧ يومًا", exact: true }),
+    ).toBeVisible();
+    await expect(
+      end.getByRole("button", { name: "السابق", exact: true }),
+    ).toBeVisible();
+    await expect(
+      end.getByRole("button", { name: "التالي", exact: true }),
+    ).toBeVisible();
+  });
+});
+
 test.describe("calendar selection", () => {
   test.use({
     suite: "calendar",

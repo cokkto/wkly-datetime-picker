@@ -70,6 +70,8 @@ Set `mode` to one of these six values:
 
 An empty selection is `null`. A completed range is an ordered readonly pair.
 
+In manual entry for `date-range` and `datetime-range`, the End section lets you switch between calendar-date fields and **In X days**. The number always reflects the current end date relative to the start date, including calendar selections and programmatic writes. Enter or step through integers from `-9999` to `9999`; `0` selects the same calendar date as Start. Endpoint times are preserved. A negative count previews an earlier end date, then swaps the endpoints when the field edit settles (typing: one second, wheel: 140 ms, touch: release, or Enter/blur). Both views use the same validation and keep the same height.
+
 **Values are Gregorian UTC ISO strings.** WKLY does not convert timezones. Date selections use midnight, and time selections use the fixed date `0000-01-01`. Milliseconds must be `.000`; seconds must be `00` unless shown. Convert your application's timezone outside the picker. These rules also apply when the display uses a different calendar.
 
 ## Configure selection and validation
@@ -290,6 +292,8 @@ translations: WklyTranslations = {
 ```
 
 Label precedence is `WKLY_LOCALIZATION` overrides, matching regional/script catalog entries, the language catalog entry, then built-in English. Unknown keys fall back to the key itself. An input catalog replaces the injected `WKLY_TRANSLATIONS` catalog for that picker, including when the input is empty; `null` uses the injected catalog. Lookup does not use a different region's entry. Available keys cover actions, date/time fields, navigation, range endpoints, and validation codes; see the [English label catalog](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker/src/public-api.ts). The injection tokens are described below.
+
+The relative-day view uses `inDays` (default `"In {{days}} days"`), `days`, `endDate`, `daysPrevious`, `daysNext`, and `daysUnavailable`. The picker replaces `{{days}}` with the localized number; `daysUnavailable` is shown when an incomplete or impossible date prevents calculating the difference.
 
 ## Use a different calendar
 
