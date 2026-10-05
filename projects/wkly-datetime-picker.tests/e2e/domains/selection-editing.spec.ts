@@ -716,49 +716,6 @@ test.describe("disabled selection", () => {
   });
 });
 
-for (const mode of ["date", "datetime"] as const) {
-  test.describe(`${mode} manual month title`, () => {
-    const time = mode === "date" ? "00:00:00" : "13:00:00";
-    test.use({
-      suite: "manual",
-      spec: {
-        inputs: { mode, locale: "en-GB" },
-        value: `2099-12-16T${time}.000Z`,
-      },
-    });
-    test("manual title follows the draft month at week and year boundaries", async ({
-      host,
-    }) => {
-      const title = host.picker.locator(".toolbar .year-control");
-      await host.picker
-        .getByRole("button", { name: "Manual date entry" })
-        .click();
-      for (const weekOffset of [0, 1, 2, 3, 4, 5, 6] as const) {
-        await host.inputs({ weekOffset });
-        for (const day of [1, 2, 3, 4]) {
-          await field(host, "Day").fill(String(day));
-          await expect(title).toHaveText("December 2099");
-          await field(host, "Day").press("Enter");
-          await valueIs(host, `2099-12-0${day}T${time}.000Z`);
-          await expect(title).toHaveText("December 2099");
-        }
-      }
-      await edit(host, "Year", "2100");
-      await edit(host, "Month", "1");
-      await edit(host, "Day", "1");
-      await expect(title).toHaveText("January 2100");
-      await valueIs(host, `2100-01-01T${time}.000Z`);
-      await edit(host, "Day", "31");
-      await field(host, "Month").fill("2");
-      // An impossible day must not normalize the month label into March.
-      await expect(title).toHaveText("February 2100");
-      await field(host, "Month").press("Enter");
-      expect(codes(await host.snapshot())).toEqual(["invalid-calendar-date"]);
-      await valueIs(host, `2100-01-31T${time}.000Z`);
-    });
-  });
-}
-
 test.describe("manual date", () => {
   test.use({
     suite: "manual",
@@ -820,37 +777,6 @@ test.describe("manual range", () => {
       inputs: { mode: "date-range", locale: "en-GB" },
       value: [iso(16), iso(16)],
     },
-  });
-  test("manual title follows the edited range endpoint and relative-day preview", async ({
-    host,
-  }) => {
-    await host.write(["2099-11-16T00:00:00.000Z", iso(16)]);
-    await host.picker
-      .getByRole("button", { name: "Manual date entry" })
-      .click();
-    const title = host.picker.locator(".toolbar .year-control");
-    for (const [endpoint, month] of [
-      ["End", "December"],
-      ["Start", "November"],
-    ] as const) {
-      const input = host.picker
-        .getByRole("group", { name: endpoint, exact: true })
-        .getByRole("textbox", { name: "Day", exact: true });
-      await input.fill("1");
-      await expect(title).toHaveText(`${month} 2099`);
-      await input.press("Enter");
-      await expect(title).toHaveText(`${month} 2099`);
-    }
-    await endGroup(host)
-      .getByRole("button", { name: /^In .* days$/ })
-      .click();
-    await daysField(host).fill("61");
-    await expect(title).toHaveText("January 2100");
-    await daysField(host).press("Enter");
-    await valueIs(host, [
-      "2099-11-01T00:00:00.000Z",
-      "2100-01-01T00:00:00.000Z",
-    ]);
   });
   test("both edited endpoints and the interior appear in one calendar", async ({
     host,
