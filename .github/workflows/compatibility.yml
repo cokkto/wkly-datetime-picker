@@ -58,8 +58,8 @@ jobs:
   picker:
     needs: plan
     name: Picker / Angular ${{ matrix.angular }} / all browsers
-    # The reviewed pixel baselines are Windows-specific.
-    runs-on: windows-latest
+    # Keep the OS image aligned with the reviewed server screenshot baselines.
+    runs-on: windows-2025-vs2026
     timeout-minutes: 25
     strategy:
       fail-fast: false

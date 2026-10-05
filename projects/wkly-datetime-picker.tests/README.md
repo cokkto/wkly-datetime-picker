@@ -27,13 +27,13 @@ The server can be reused and serves every built registered Angular version, incl
 
 ## Browser architecture
 
-Every version/browser/domain has one worker-owned context in America/New_York and named reusable suite pages. Angular boots once per page; each scenario mounts a new picker/form through the public host bridge, exercises behavior and destroys its fixture. Viewport/zoom pages stay within their domain. Two worker slots bound concurrency.
+Every version/browser/domain has one worker-owned context in America/New_York and named reusable suite pages. Angular boots once per page; each scenario mounts a new picker/form through the public host bridge, exercises behavior and destroys its fixture. Viewport/zoom pages stay within their domain. Six worker slots bound local concurrency; `CI=true` limits this to two on hosted runners.
 
 The [registry](../../scripts/test-domains.cjs), [fixtures](e2e/fixtures.ts) and [runner](../../scripts/test-domains-run.cjs) audit fixture teardown, boot IDs and context/page counts. A complete unfiltered run rejects skips, retries or restarted pages. Filtered debug runs retain fixture lifecycle assertions but do not claim a full matrix audit.
 
 Desktop domains run all three engines; touch uses Chromium CDP at a mobile viewport and DPR 2. This emulates input and resizing, not physical rotation or native keyboards. The hosts compile the numbered picker with its matching Angular toolchain. They expose public inputs, forms/CVA, jump and close operations, scoped configuration, native/CDK/Material presentations, and linked Gregorian/Hebrew/Hijri fixtures.
 
-Layout screenshots share [platform/engine baselines](baselines/) across versions: four month-boundary cases per engine. Only Windows baselines are checked in, so picker CI runs on Windows. `npm run test:visuals:update` selects the newest chosen version and one writer per engine. Review image changes before comparing all versions. `test:all:update` updates visuals and then runs release qualification. Geometry assertions still run during updates.
+Layout screenshots share [platform/engine baselines](baselines/) across versions: four month-boundary cases per engine. Only Windows baselines are checked in, so picker CI runs on Windows. Firefox on Windows Actions selects `win32-server2025/firefox` references for the pinned server image; local Firefox and the other engines use `win32/<engine>`. See the [CI guide](../../docs/COMPATIBILITY-CI.md#pipeline) for server baseline maintenance. `npm run test:visuals:update` selects the newest chosen version and one writer per engine. Review image changes before comparing all versions. `test:all:update` updates visuals and then runs release qualification. Geometry assertions still run during updates.
 
 ## Package checks
 

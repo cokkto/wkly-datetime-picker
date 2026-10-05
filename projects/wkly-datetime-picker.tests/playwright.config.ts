@@ -25,6 +25,11 @@ const {
   supports: (browser: string, domain: { id: string }) => boolean;
 } = require("../../scripts/test-browsers.cjs");
 const root = path.resolve(__dirname, "../..");
+// Firefox rasterizes text differently on the pinned Windows Server CI image.
+const firefoxBaselinePlatform =
+  process.platform === "win32" && process.env.GITHUB_ACTIONS === "true"
+    ? "win32-server2025"
+    : "{platform}";
 const {
   testHostURL,
 }: {
@@ -34,7 +39,8 @@ export default defineConfig({
   testDir: path.join(__dirname, "e2e/domains"),
   globalSetup: require.resolve("../../scripts/test-host-setup.cjs"),
   fullyParallel: false,
-  workers: 6,
+  // Bound hosted-runner load to avoid stalled browser operations.
+  workers: process.env.CI === "true" ? 2 : 6,
   retries: 0,
   timeout: 30000,
   expect: { timeout: 5000 },
@@ -49,7 +55,7 @@ export default defineConfig({
         .filter((domain) => supports(browser, domain))
         .map((domain) => ({
           name: `angular-${major}-${browser}-${domain.id}`,
-          snapshotPathTemplate: `{testDir}/../../baselines/{platform}/${browser}/{arg}{ext}`,
+          snapshotPathTemplate: `{testDir}/../../baselines/${browser === "firefox" ? firefoxBaselinePlatform : "{platform}"}/${browser}/{arg}{ext}`,
           workers: 1,
           testMatch: `${domain.id}.spec.ts`,
           metadata: {
