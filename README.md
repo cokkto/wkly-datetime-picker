@@ -70,6 +70,10 @@ Set `mode` to one of these six values:
 
 An empty selection is `null`. A completed range is an ordered readonly pair.
 
+In manual entry for `date-range` and `datetime-range`, the End section lets you switch between calendar-date fields and **In X days**. The number always reflects the current end date relative to the start date, including calendar selections and programmatic writes. Enter or step through integers from `-9999` to `9999`; `0` selects the same calendar date as Start. Endpoint times are preserved. A negative count previews an earlier end date, then swaps the endpoints when the field edit settles (typing: one second, wheel: 140 ms, touch: release, or Enter/blur). Both views use the same validation and keep the same height.
+
+Entering manual mode initializes missing range endpoints so you can edit only End. An empty range uses `initialEpochDay` from the picker or application configuration, falling back to the current UTC day. Its time uses the same initialization as **Now**, including current UTC hours, minutes and visible seconds rounded to their configured steps. A partial range copies its selected endpoint to the missing endpoint; supplied selections and edited drafts are preserved. Valid defaults commit inline, while dialogs and overlays wait for Confirm.
+
 **Values are Gregorian UTC ISO strings.** WKLY does not convert timezones. Date selections use midnight, and time selections use the fixed date `0000-01-01`. Milliseconds must be `.000`; seconds must be `00` unless shown. Convert your application's timezone outside the picker. These rules also apply when the display uses a different calendar.
 
 ## Configure selection and validation
@@ -128,7 +132,7 @@ An epoch day is an integer day index, with `1970-01-01 = 0`. Disabled-date callb
 | `weekLabelFormatter` | `null` | Override week labels with a callback receiving the week and adapter |
 | `ariaLabel` | `null` | Replace the default accessible name, “Date and time picker” |
 | `ariaDescribedBy` | `null` | Associate help or error text by element ID |
-| `initialEpochDay` | `null` | Set the initial calendar position when there is no selected value; otherwise it uses the application default or today |
+| `initialEpochDay` | `null` | Set the initial calendar position and empty manual range date; otherwise use the application default or UTC today |
 | `weekCacheSize` | `256` | Limit cached weeks; `0` disables caching |
 | `overscanWeeks` | `3` | Render extra weeks on either side of the viewport; supported range is `0..50` |
 | `closeOnBackdrop` | `true` | Allow a dialog or overlay to close when its backdrop is clicked |
@@ -290,6 +294,8 @@ translations: WklyTranslations = {
 ```
 
 Label precedence is `WKLY_LOCALIZATION` overrides, matching regional/script catalog entries, the language catalog entry, then built-in English. Unknown keys fall back to the key itself. An input catalog replaces the injected `WKLY_TRANSLATIONS` catalog for that picker, including when the input is empty; `null` uses the injected catalog. Lookup does not use a different region's entry. Available keys cover actions, date/time fields, navigation, range endpoints, and validation codes; see the [English label catalog](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker/src/public-api.ts). The injection tokens are described below.
+
+The relative-day view uses `inDays` (default `"In {{days}} days"`), `days`, `endDate`, `daysPrevious`, `daysNext`, and `daysUnavailable`. The picker replaces `{{days}}` with the localized number; `daysUnavailable` is shown when an incomplete or impossible date prevents calculating the difference.
 
 ## Use a different calendar
 

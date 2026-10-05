@@ -142,6 +142,12 @@ export const ENGLISH: WklyStrings = {
   confirm: "Confirm",
   start: "Start",
   end: "End",
+  inDays: "In {{days}} days",
+  days: "Days",
+  daysUnavailable: "…",
+  endDate: "Resulting end date",
+  daysPrevious: "Previous number of days",
+  daysNext: "Next number of days",
   day: "Day",
   month: "Month",
   year: "Year",
@@ -233,3 +239,4 @@ type _UnknownInputNames = AssertNever<
 >;
 export { createWeekRows, WklyDayCell, WklyWeekRow } from "./week-rows";
 export { validateDrafts, WklyDraft } from "./draft-validation";
+export { draftDayDifference, setDraftDayDifference } from "./relative-days";

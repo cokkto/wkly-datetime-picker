@@ -15,6 +15,8 @@ import {
 /** Manual fields stay editable even when their calendar date is impossible. */
 export interface WklyDraft {
   date: WklyCalendarDate;
+  /** Preserve a relative end outside adapter bounds until the date is corrected. */
+  unsupportedEpochDay?: number;
   hour: number | null;
   minute: number | null;
   second: number | null;
@@ -67,7 +69,16 @@ export function validateDrafts(
         errors.push(error("incomplete", draft, undefined, endpoint));
       return;
     }
-    if (hasDate)
+    if (hasDate && draft.unsupportedEpochDay !== undefined)
+      errors.push(
+        error(
+          "unsupported-adapter-date",
+          draft.unsupportedEpochDay,
+          "date",
+          endpoint,
+        ),
+      );
+    else if (hasDate)
       for (const entry of adapter.validateDate(draft.date))
         errors.push(
           error(entry.code as any, draft.date, entry.field, endpoint),

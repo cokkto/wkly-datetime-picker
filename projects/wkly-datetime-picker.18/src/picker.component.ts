@@ -32,6 +32,8 @@ import {
   WklyWeekOffset,
 } from "wkly-datetime-picker.core";
 import {
+  draftDayDifference,
+  setDraftDayDifference,
   calendarMonthBounds,
   resolveWklyTranslation,
   createWeekRows,
@@ -98,6 +100,7 @@ export class WklyDateTimePickerComponent
   @ViewChild("scroller") scroller?: ElementRef<HTMLElement>;
   presentation: "inline" | "transient" = "inline";
   viewMode: "calendar" | "manual" = "calendar";
+  endView: "date" | "days" = "date";
   adapter!: WklyCalendarAdapter;
   effectiveLocale = "en-US";
   effectiveOffset: WklyWeekOffset = 0;
@@ -525,8 +528,30 @@ export class WklyDateTimePickerComponent
     this.pendingValue = result.pendingValue;
     this.report(result.errors);
   }
+  trackDraft(index: number): number {
+    // Endpoint controls keep their identity and focus when draft objects swap.
+    return index;
+  }
+  private orderDrafts(): void {
+    if (!this.isRange || !this.drafts.every((draft) => draft.present)) return;
+    if (this.drafts.some((draft) => draft.unsupportedEpochDay !== undefined))
+      return;
+    try {
+      const a = this.drafts[0],
+        b = this.drafts[1];
+      const key = (d: Draft) =>
+        this.adapter.dateToEpochDay(d.date) * 86400 +
+        (d.hour || 0) * 3600 +
+        (d.minute || 0) * 60 +
+        (d.second || 0);
+      if (key(a) > key(b)) this.drafts = [b, a];
+    } catch (_) {
+      // Impossible or incomplete dates remain editable until corrected.
+    }
+  }
   finish(): void {
     if (this.isDisabled()) return;
+    this.orderDrafts();
     if (this.viewMode === "manual" && this.hasDate) this.positionOnManualDate();
     this.check();
     if (this.presentation === "inline" && this.canSubmit) this.commit();
@@ -560,17 +585,7 @@ export class WklyDateTimePickerComponent
     const n = this.clock.now();
     const day = Math.floor(n.getTime() / 86400000);
     this.drafts = [0, 1].map((index) => ({
-      date: this.blank(day).date,
-      hour: n.getUTCHours(),
-      minute:
-        Math.floor(
-          n.getUTCMinutes() / this[WklyPickerInputsPropertyKeys.MinuteStep](),
-        ) * this[WklyPickerInputsPropertyKeys.MinuteStep](),
-      second: this[WklyPickerInputsPropertyKeys.ShowSeconds]()
-        ? Math.floor(
-            n.getUTCSeconds() / this[WklyPickerInputsPropertyKeys.SecondStep](),
-          ) * this[WklyPickerInputsPropertyKeys.SecondStep]()
-        : 0,
+      ...this.clockDraft(day, n),
       present: index === 0 || this.isRange,
     }));
     if (
@@ -585,26 +600,59 @@ export class WklyDateTimePickerComponent
     this.check();
     this.submit("now");
   }
-  toggleView(year = false): void {
+  private clockDraft(day: number, now: Date): Draft {
+    return {
+      ...this.blank(day),
+      hour: now.getUTCHours(),
+      minute:
+        Math.floor(
+          now.getUTCMinutes() / this[WklyPickerInputsPropertyKeys.MinuteStep](),
+        ) * this[WklyPickerInputsPropertyKeys.MinuteStep](),
+      second: this[WklyPickerInputsPropertyKeys.ShowSeconds]()
+        ? Math.floor(
+            now.getUTCSeconds() /
+              this[WklyPickerInputsPropertyKeys.SecondStep](),
+          ) * this[WklyPickerInputsPropertyKeys.SecondStep]()
+        : 0,
+    };
+  }
+  private initializeManualRange(): void {
+    if (
+      !this.isRange ||
+      !this.hasDate ||
+      this.drafts.every((draft) => draft.present)
+    )
+      return;
+    let seed = this.drafts.find((draft) => draft.present);
+    if (!seed) {
+      if (this.currentValue() !== null) return;
+      const now = this.clock.now();
+      const initialEpochDay =
+        this[WklyPickerInputsPropertyKeys.InitialEpochDay]();
+      const day =
+        initialEpochDay === null
+          ? this.defaults.initialEpochDay === undefined
+            ? Math.floor(now.getTime() / 86400000)
+            : this.defaults.initialEpochDay
+          : initialEpochDay;
+      seed = { ...this.clockDraft(day, now), present: true };
+    }
+    // Complete missing endpoints without replacing selected or invalid drafts.
+    const initial = seed;
+    this.drafts = this.drafts.map((draft) =>
+      draft.present ? draft : { ...initial, date: { ...initial.date } },
+    );
+    this.finish();
+    // Positioning renders before validation; refresh completion controls afterward.
+    this.changeDetector.markForCheck();
+  }
+  toggleView(): void {
     if (this.isDisabled() || !this.hasDate) return;
-    this.viewMode = year
-      ? "manual"
-      : this.viewMode === "calendar"
-        ? "manual"
-        : "calendar";
+    this.viewMode = this.viewMode === "calendar" ? "manual" : "calendar";
+    if (this.viewMode === "manual") this.initializeManualRange();
     if (this.viewMode === "calendar") this.positionOnManualDate();
     this[WklyPickerOutputsPropertyKeys.ViewModeChange].emit(this.viewMode);
     if (this.viewMode === "calendar") setTimeout(() => this.resetScroll());
-    if (year && this.browser)
-      setTimeout(() => {
-        const field = this.host.nativeElement.querySelector(
-          'input[aria-label="' + this.t("year") + '"]',
-        ) as HTMLInputElement;
-        if (field) {
-          field.focus();
-          field.select();
-        }
-      });
   }
   private positionOnManualDate(): void {
     const draft = this.drafts[this.manualDateEndpoint];
@@ -633,12 +681,54 @@ export class WklyDateTimePickerComponent
   monthCount(draft: Draft): number {
     return this.months(draft).length || 12;
   }
+  get inDays(): number | null {
+    return draftDayDifference(this.drafts, this.adapter);
+  }
+  get inDaysLabel(): string {
+    const days = this.inDays;
+    return this.t("inDays").replace(
+      /{{\s*days\s*}}/g,
+      days === null
+        ? this.t("daysUnavailable")
+        : new Intl.NumberFormat(this.effectiveLocale, {
+            useGrouping: false,
+          }).format(days),
+    );
+  }
+  get resultingEndDate(): string {
+    try {
+      const draft = this.drafts[1];
+      if (
+        draft.unsupportedEpochDay !== undefined ||
+        this.adapter.validateDate(draft.date).length
+      )
+        return "";
+      return [
+        this.adapter.formatDay(draft.date),
+        this.adapter.formatMonth(draft.date),
+        this.adapter.formatYear(draft.date),
+      ].join(" ");
+    } catch (_) {
+      return "";
+    }
+  }
+  toggleEndView(view: "date" | "days"): void {
+    if (this.isDisabled()) return;
+    this.endView = view;
+  }
+  days(value: number | null): void {
+    if (this.isDisabled()) return;
+    this.manualDateEndpoint = 1;
+    setDraftDayDifference(this.drafts, this.adapter, value);
+    this.check();
+  }
   field(index: number, field: string, value: number | null): void {
     if (this.isDisabled()) return;
     const draft = this.drafts[index];
     draft.present = true;
     if (field === "day" || field === "year" || field === "month") {
       this.manualDateEndpoint = index;
+      delete draft.unsupportedEpochDay;
       let date = { ...draft.date, [field]: value } as WklyCalendarDate;
       if (field === "month") {
         let month;
@@ -739,18 +829,10 @@ export class WklyDateTimePickerComponent
     const index =
       this.isRange && this.drafts[0].present && !this.drafts[1].present ? 1 : 0;
     if (this.isRange && index === 0) this.drafts[1].present = false;
+    delete this.drafts[index].unsupportedEpochDay;
     this.drafts[index].date = this.adapter.epochDayToDate(day);
     this.drafts[index].present = true;
-    if (this.isRange && this.drafts[1].present) {
-      const a = this.drafts[0],
-        b = this.drafts[1];
-      const key = (d: Draft) =>
-        this.adapter.dateToEpochDay(d.date) * 86400 +
-        (d.hour || 0) * 3600 +
-        (d.minute || 0) * 60 +
-        (d.second || 0);
-      if (key(a) > key(b)) this.drafts = [b, a];
-    }
+    this.orderDrafts();
     this.renderRows();
     this.finish();
     if (

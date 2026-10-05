@@ -37,7 +37,7 @@ Layout screenshots share [platform/engine baselines](baselines/) across versions
 
 ## Package checks
 
-`npm run test:contracts` runs the seven `contracts/*.spec.ts` suites using Node's native test runner in UTC and America/New_York, without browsers or Angular hosts. `test:packages:shared` builds and packs the three shared packages, installs them offline into a fresh consumer, verifies declarations, entries and CommonJS/ESM imports, then runs those same contracts. A bundle audit rejects shared source leakage.
+`npm run test:contracts` runs the eight `contracts/*.spec.ts` suites using Node's native test runner in UTC and America/New_York, without browsers or Angular hosts. `test:packages:shared` builds and packs the three shared packages, installs them offline into a fresh consumer, verifies declarations, entries and CommonJS/ESM imports, then runs those same contracts. A bundle audit rejects shared source leakage.
 
 `npm run test:packages:angular` freshly prepares every selected isolated toolchain/consumer, builds libraries and tarballs, checks base imports without CDK, then optional CDK imports, AOT, SSR without clock access and one browser startup/forms/dialog/overlay/reload journey per version/engine. It requires dependency network/cache access.
 

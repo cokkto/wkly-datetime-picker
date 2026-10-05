@@ -62,6 +62,7 @@ button:focus-visible {
   flex: 1;
 }
 .year-control {
+  padding: 0 6px;
   font-weight: 650;
   text-align: start;
   line-height: 1.2;
@@ -227,6 +228,40 @@ legend {
   grid-template-columns: 1fr 2fr 1.4fr;
   gap: 7px;
   padding: 12px 0;
+}
+.end-view-toggle {
+  display: inline-flex;
+}
+.end-view-toggle button {
+  min-height: 0;
+  min-width: 0;
+  padding: 0 6px;
+  border-radius: 0;
+  line-height: inherit;
+}
+.end-view-toggle button:first-child {
+  padding-inline-start: 0;
+}
+.end-view-toggle button + button {
+  border-inline-start: 1px solid var(--wkly-text-color);
+}
+.end-view-toggle button[aria-pressed="false"] {
+  color: var(--wkly-muted-color);
+  font-weight: 400;
+}
+.in-days-fields {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  text-align: center;
+}
+.resulting-end-date {
+  font-size: 11px;
+  color: var(--wkly-muted-color);
+  height: 1.4em;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .time-fields {
   display: grid;

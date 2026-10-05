@@ -19,15 +19,7 @@
       </button>
     }
     @if (hasDate) {
-      <button
-        class="year-control"
-        type="button"
-        [disabled]="isDisabled()"
-        [attr.aria-label]="t('year')"
-        (click)="toggleView(true)"
-      >
-        {{ title }}
-      </button>
+      <span class="year-control">{{ title }}</span>
     }
     <span class="spacer"></span
     ><button
@@ -179,13 +171,74 @@
       </button>
     </div>
   </ng-container>
-  <ng-container *ngFor="let draft of drafts; let i = index">
+  <ng-container
+    *ngFor="let draft of drafts; let i = index; trackBy: trackDraft"
+  >
     <fieldset
       *ngIf="(i === 0 || isRange) && (hasTime || viewMode === 'manual')"
       [disabled]="isDisabled()"
+      [attr.aria-label]="isRange ? t(i === 0 ? 'start' : 'end') : null"
     >
-      <legend *ngIf="isRange">{{ t(i === 0 ? "start" : "end") }}</legend>
-      <div *ngIf="hasDate && viewMode === 'manual'" class="date-fields">
+      <legend *ngIf="isRange">
+        <ng-container
+          *ngIf="
+            i === 1 && hasDate && viewMode === 'manual';
+            else endpointLabel
+          "
+        >
+          <span class="end-view-toggle">
+            <button
+              type="button"
+              [disabled]="isDisabled()"
+              [attr.aria-pressed]="endView === 'date'"
+              (click)="toggleEndView('date')"
+            >
+              {{ t("end") }}
+            </button>
+            <button
+              type="button"
+              [disabled]="isDisabled()"
+              [attr.aria-pressed]="endView === 'days'"
+              (click)="toggleEndView('days')"
+            >
+              {{ inDaysLabel }}
+            </button>
+          </span>
+        </ng-container>
+        <ng-template #endpointLabel>{{
+          t(i === 0 ? "start" : "end")
+        }}</ng-template>
+      </legend>
+      <div
+        *ngIf="
+          i === 1 && hasDate && viewMode === 'manual' && endView === 'days'
+        "
+        class="date-fields in-days-fields"
+      >
+        <span class="resulting-end-date" [attr.aria-label]="t('endDate')">{{
+          resultingEndDate
+        }}</span>
+        <wkly-field
+          [label]="t('days')"
+          [hideLabel]="true"
+          [previousLabel]="t('daysPrevious')"
+          [nextLabel]="t('daysNext')"
+          [locale]="effectiveLocale"
+          [value]="inDays"
+          [min]="-9999"
+          [max]="9999"
+          [disabled]="isDisabled()"
+          [invalid]="!!errors.length"
+          (valueChange)="days($event)"
+          (complete)="finish()"
+        ></wkly-field>
+      </div>
+      <div
+        *ngIf="
+          hasDate && viewMode === 'manual' && (i === 0 || endView === 'date')
+        "
+        class="date-fields"
+      >
         <wkly-field
           [label]="t('day')"
           [locale]="effectiveLocale"

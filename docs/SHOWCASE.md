@@ -10,6 +10,8 @@ node scripts/serve.cjs --prebuilt
 
 Use Node 24.15+ for the combined build. Each app uses its version-specific TypeScript and Angular compiler; Angular 11 dependencies receive ngcc preparation. esbuild watches source and templates. The default app uses the latest runtime compiler. Each app is compiled independently into `dist/showcase` or `dist/showcase/runtime/N`.
 
+The dev server logs build and rebuild starts, successful completion with elapsed time, and failures for the showcase and each Angular testbed. Refresh the browser after the relevant app reports `Rebuilt`; browser refresh is manual.
+
 The generic Node HTTP server serves `wkly.localhost:4200` (and localhost/127.0.0.1 aliases) as the showcase, and `v11.wkly.localhost:4200` through `v22.wkly.localhost:4200` as testbeds. It falls back to the selected app's index for extensionless navigation, returns 404 for missing assets and unknown hosts, and prevents cross-app paths. `--prebuilt` does not load Angular or build tools. `WKLY_OUTPUT` changes the build/serve directory (use the same value for both commands), allowing isolated concurrent servers. `PORT` changes the port; `WKLY_DOMAIN` changes the local host suffix (custom domains require local DNS). Standard `.localhost` names must resolve to loopback in the browser/environment.
 
 ## Controlled pages
