@@ -298,7 +298,15 @@ function npm(args, cwd = root) {
   });
 }
 
-async function publish(destination) {
+async function publish(
+  destination,
+  {
+    readMetadata = metadata,
+    runNpm = npm,
+    verifyConsumers = verifyRegistry,
+    pause,
+  } = {},
+) {
   const plan = read(path.join(destination, "manifest.json"));
   validateGraph(plan.packages);
   assert.equal(plan.registry, registry);
@@ -316,11 +324,13 @@ async function publish(destination) {
       integrity(path.join(destination, pkg.filename)),
       pkg.integrity,
     );
-    checkExisting(pkg, await metadata(pkg.name));
+    checkExisting(pkg, await readMetadata(pkg.name));
   }
+  // Submit in dependency order so npm can process the versions concurrently.
+  // Verify each version before repairing its tags and testing consumers.
   for (const pkg of plan.packages) {
-    if (!checkExisting(pkg, await metadata(pkg.name)))
-      npm([
+    if (!checkExisting(pkg, await readMetadata(pkg.name))) {
+      runNpm([
         "publish",
         path.join(destination, pkg.filename),
         "--ignore-scripts",
@@ -331,9 +341,13 @@ async function publish(destination) {
         "--tag",
         pkg.tag,
       ]);
-    const document = await waitForPublished(pkg);
+      console.log(`Submitted ${pkg.name}@${pkg.version}`);
+    }
+  }
+  for (const pkg of plan.packages) {
+    const document = await waitForPublished(pkg, readMetadata, pause);
     if (document["dist-tags"]?.[pkg.tag] !== pkg.version)
-      npm([
+      runNpm([
         "dist-tag",
         "add",
         `${pkg.name}@${pkg.version}`,
@@ -343,7 +357,7 @@ async function publish(destination) {
       ]);
     console.log(`Verified ${pkg.name}@${pkg.version}`);
   }
-  npm([
+  runNpm([
     "dist-tag",
     "add",
     `${picker}@${latest.version}`,
@@ -351,7 +365,7 @@ async function publish(destination) {
     "--registry",
     registry,
   ]);
-  await verifyRegistry(plan);
+  await verifyConsumers(plan);
   write(path.join(destination, "published.json"), {
     sourceCommit: plan.sourceCommit,
     verified: true,
@@ -379,6 +393,7 @@ async function verifyRegistry(plan) {
       "@angular/core",
       "@angular/common",
       "@angular/forms",
+      "@angular/platform-browser",
       "rxjs",
     ])
       dependencies[name] = supported[major].dependencies[name];
@@ -453,6 +468,7 @@ module.exports = {
   validateGraph,
   checkExisting,
   waitForPublished,
+  publish,
   integrity,
 };
 if (require.main === module) {

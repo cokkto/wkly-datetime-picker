@@ -8,6 +8,7 @@ const {
   collect,
   checkExisting,
   waitForPublished,
+  publish,
   integrity,
 } = require("./release.cjs");
 const {
@@ -160,66 +161,171 @@ test("publication visibility waits remain bounded and reject conflicts and regis
   );
 });
 
-test("collect requires a full single-commit matrix with identical shared artifacts", () => {
+function qualifiedFixture() {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "wkly-release-"));
   const input = path.join(directory, "input");
   const commit = "a".repeat(40);
   const write = (file, value) => fs.writeFileSync(file, JSON.stringify(value));
   const evidenceFiles = [];
+  for (const major of Object.keys(supported)) {
+    const workspace = path.join(input, major);
+    fs.mkdirSync(workspace, { recursive: true });
+    const packages = Object.entries(packageDirs(major)).map(
+      ([name, internal]) => {
+        const version = name === picker ? `${major}.0.0` : "0.1.0";
+        const filename =
+          name.slice(1).replace("/", "-") + "-" + version + ".tgz";
+        const tarball = path.join(workspace, "dist", internal, filename);
+        fs.mkdirSync(path.dirname(tarball), { recursive: true });
+        fs.writeFileSync(tarball, `${name}@${version}`);
+        const manifest = {
+          name,
+          version,
+          license: "MIT",
+          publishConfig: {
+            access: "public",
+            registry: "https://registry.npmjs.org/",
+          },
+          repository: {
+            url: "git+https://github.com/cokkto/wkly-datetime-picker.git",
+          },
+        };
+        if (name === picker) {
+          manifest.dependencies = Object.fromEntries(
+            Object.values(shared).map((name) => [name, "0.1.0"]),
+          );
+          manifest.peerDependencies = Object.fromEntries(
+            [
+              "@angular/core",
+              "@angular/common",
+              "@angular/forms",
+              "@angular/cdk",
+            ].map((name) => [name, `>=${major} <${Number(major) + 1}`]),
+          );
+          manifest.peerDependenciesMeta = {
+            "@angular/cdk": { optional: true },
+          };
+        }
+        return {
+          name,
+          version,
+          filename,
+          internal,
+          integrity: integrity(tarball),
+          manifest,
+        };
+      },
+    );
+    const file = path.join(workspace, "release-evidence.json");
+    write(file, { angular: major, sourceCommit: commit, packages });
+    evidenceFiles.push(file);
+  }
+  return { directory, input, commit, evidenceFiles, write };
+}
+
+test("publication preflights all artifacts and submits the graph before waiting for metadata", async () => {
+  const { directory, input, commit } = qualifiedFixture();
+  const previousCommit = process.env.WKLY_QUALIFIED_COMMIT;
   try {
-    for (const major of Object.keys(supported)) {
-      const workspace = path.join(input, major);
-      fs.mkdirSync(workspace, { recursive: true });
-      const packages = Object.entries(packageDirs(major)).map(
-        ([name, internal]) => {
-          const version = name === picker ? `${major}.0.0` : "0.1.0";
-          const filename =
-            name.slice(1).replace("/", "-") + "-" + version + ".tgz";
-          const tarball = path.join(workspace, "dist", internal, filename);
-          fs.mkdirSync(path.dirname(tarball), { recursive: true });
-          fs.writeFileSync(tarball, `${name}@${version}`);
-          const manifest = {
-            name,
-            version,
-            license: "MIT",
-            publishConfig: {
-              access: "public",
-              registry: "https://registry.npmjs.org/",
-            },
-            repository: {
-              url: "git+https://github.com/cokkto/wkly-datetime-picker.git",
-            },
-          };
-          if (name === picker) {
-            manifest.dependencies = Object.fromEntries(
-              Object.values(shared).map((name) => [name, "0.1.0"]),
-            );
-            manifest.peerDependencies = Object.fromEntries(
-              [
-                "@angular/core",
-                "@angular/common",
-                "@angular/forms",
-                "@angular/cdk",
-              ].map((name) => [name, `>=${major} <${Number(major) + 1}`]),
-            );
-            manifest.peerDependenciesMeta = {
-              "@angular/cdk": { optional: true },
-            };
-          }
-          return {
-            name,
-            version,
-            filename,
-            internal,
-            integrity: integrity(tarball),
-            manifest,
-          };
-        },
-      );
-      const file = path.join(workspace, "release-evidence.json");
-      write(file, { angular: major, sourceCommit: commit, packages });
-      evidenceFiles.push(file);
-    }
+    const output = path.join(directory, "output");
+    const plan = collect(input, output, commit);
+    process.env.WKLY_QUALIFIED_COMMIT = commit;
+    const existing = plan.packages[0];
+    const toSubmit = plan.packages.slice(1);
+    let reads = 0;
+    let submitted = 0;
+    let verifiedConsumers = false;
+    await publish(output, {
+      readMetadata: async (name) => {
+        reads++;
+        const visible = plan.packages.filter(
+          (pkg) =>
+            pkg.name === name &&
+            (pkg === existing || submitted === toSubmit.length),
+        );
+        return {
+          versions: Object.fromEntries(
+            visible.map((pkg) => [
+              pkg.version,
+              { dist: { integrity: pkg.integrity } },
+            ]),
+          ),
+          "dist-tags": Object.fromEntries(
+            visible.map((pkg) => [pkg.tag, pkg.version]),
+          ),
+        };
+      },
+      runNpm: (args) => {
+        assert.ok(
+          reads >= plan.packages.length,
+          "All versions must be preflighted before mutations",
+        );
+        if (args[0] === "publish") {
+          assert.equal(
+            args[1],
+            path.join(output, toSubmit[submitted].filename),
+          );
+          submitted++;
+        } else {
+          assert.equal(submitted, toSubmit.length);
+          assert.equal(args[0], "dist-tag");
+        }
+      },
+      pause: async () =>
+        assert.fail("Every artifact must be submitted before waiting"),
+      verifyConsumers: async (actual) => {
+        assert.deepEqual(actual, plan);
+        assert.equal(submitted, toSubmit.length);
+        verifiedConsumers = true;
+      },
+    });
+    assert.equal(submitted, toSubmit.length);
+    assert.ok(verifiedConsumers);
+    assert.equal(
+      JSON.parse(fs.readFileSync(path.join(output, "published.json"))).verified,
+      true,
+    );
+
+    let mutations = 0;
+    const conflicting = plan.packages.at(-1);
+    await assert.rejects(
+      publish(output, {
+        readMetadata: async (name) => ({
+          versions:
+            name === conflicting.name
+              ? {
+                  [conflicting.version]: {
+                    dist: { integrity: "sha512-conflict" },
+                  },
+                }
+              : {},
+        }),
+        runNpm: () => mutations++,
+      }),
+      /Published version differs/,
+    );
+    assert.equal(mutations, 0);
+    fs.writeFileSync(
+      path.join(output, conflicting.filename),
+      "tampered after qualification",
+    );
+    await assert.rejects(
+      publish(output, {
+        readMetadata: async () => null,
+        runNpm: () => mutations++,
+      }),
+    );
+    assert.equal(mutations, 0);
+  } finally {
+    if (previousCommit === undefined) delete process.env.WKLY_QUALIFIED_COMMIT;
+    else process.env.WKLY_QUALIFIED_COMMIT = previousCommit;
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("collect requires a full single-commit matrix with identical shared artifacts", () => {
+  const { directory, input, commit, evidenceFiles, write } = qualifiedFixture();
+  try {
     const output = path.join(directory, "output");
     const plan = collect(input, output, commit);
     assert.equal(plan.packages.length, Object.keys(supported).length + 3);

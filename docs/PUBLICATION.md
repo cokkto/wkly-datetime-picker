@@ -42,7 +42,7 @@ The workflow uses GitHub-hosted runners, Node 24.15.0, npm 11.5.1 or later, and 
 
 ## Tags and recovery
 
-Publication orders core, adapters, presentation, then picker lines in ascending Angular order. Shared packages use `latest`; picker lines use `angular-11` through `angular-22`. Picker `latest` advances to the newest supported line after all artifacts are verified. Consumers should pin their Angular major.
+Publication submits core, adapters, presentation, then picker lines in ascending Angular order. It submits the qualified graph before waiting for public metadata, allowing npm to process versions concurrently. Shared packages use `latest`; picker lines use `angular-11` through `angular-22`. Picker `latest` advances to the newest supported line after all artifacts are verified. Consumers should pin their Angular major.
 
 All candidate versions are checked before the first mutation. Existing versions are skipped only if registry integrity matches the qualified tarball. A conflict requires a new source version; do not unpublish or overwrite it. Only HTTP 404 means a registry name is absent; other registry errors stop the release. After npm accepts a tarball, verification waits up to ten minutes for matching public version metadata. Missing metadata keeps the release incomplete; integrity conflicts and registry errors fail immediately. If npm reports success but metadata remains absent, preserve the run and manifest and investigate registry visibility before retrying publication.
 
