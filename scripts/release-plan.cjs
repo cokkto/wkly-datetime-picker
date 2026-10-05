@@ -58,6 +58,7 @@ function snapshot(directory = root) {
     "docs/API.md",
     "tsconfig.json",
     "scripts/build.cjs",
+    "scripts/compatibility.cjs",
     "scripts/public-packages.cjs",
   ].map((file) => [file, contents(file)]);
   const packages = {};

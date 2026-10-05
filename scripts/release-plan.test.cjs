@@ -44,6 +44,7 @@ function fixture() {
     "docs/API.md",
     "tsconfig.json",
     "scripts/build.cjs",
+    "scripts/compatibility.cjs",
     "scripts/public-packages.cjs",
   ])
     write(file, "initial\n");
