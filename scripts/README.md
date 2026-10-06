@@ -14,7 +14,7 @@ Run scripts through the root [`package.json`](../package.json) when a matching n
 | `test-host-address.cjs`, `test-host-setup.cjs`, `test-host-server.test.cjs` | Use showcase-style versioned hostnames, check virtual hosts over loopback before workers start and cover isolation/reuse across build selections |
 | `test.cjs`, `test-installed.cjs` | Run source and installed shared-package contracts |
 | `lint.cjs`, `lint.test.cjs` | Lint source, templates, and tooling |
-| `showcase-build.cjs`, `serve.cjs`, `showcase-server.cjs`, `showcase-server.test.cjs` | Compile and serve the evergreen showcase and versioned testbeds; test host routing |
+| `showcase-build.cjs`, `serve.cjs`, `showcase-server.cjs`, `showcase-server.test.cjs` | Compile and serve the public showcase and static route documents; test subpath serving |
 | `playwright.cjs` | Launch native Playwright commands with the locked workspace toolchain |
 
 `npm run test:visuals:update` changes screenshot baselines. Review those images before committing them.

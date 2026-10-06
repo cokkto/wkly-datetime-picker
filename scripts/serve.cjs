@@ -1,6 +1,3 @@
-// Hostnames isolate independently compiled Angular testbeds on one local port.
-const supported = require("../supported-angular.json");
-const majors = Object.keys(supported);
 const fs = require("fs");
 const { createShowcaseServer } = require("./showcase-server.cjs");
 const { showcaseProgressPlugin } = require("./showcase-progress.cjs");
@@ -18,25 +15,17 @@ const output = path.resolve(
     for (const file of [
       path.join(output, "index.html"),
       path.join(output, "main.js"),
-      ...majors.map((major) =>
-        path.join(output, "runtime", major, "index.html"),
-      ),
-      ...majors.map((major) => path.join(output, "runtime", major, "main.js")),
+      path.join(output, "main.css"),
     ]) {
       if (!fs.existsSync(file))
         throw new Error(`Missing showcase asset: ${file}`);
     }
   } else {
-    const {
-      assets,
-      builds,
-      prepareLegacyAngular,
-    } = require("./showcase-build.cjs");
-    prepareLegacyAngular();
+    const { assets, builds } = require("./showcase-build.cjs");
     assets();
     contexts = await Promise.all(
-      builds.map(async ({ esbuild, options }, index) => {
-        const label = index === 0 ? "showcase" : `Angular ${majors[index - 1]}`;
+      builds.map(async ({ esbuild, options }) => {
+        const label = "showcase";
         const context = await esbuild.context({
           ...options,
           plugins: [showcaseProgressPlugin(label), ...options.plugins],
@@ -49,10 +38,14 @@ const output = path.resolve(
   }
   const domain = process.env.WKLY_DOMAIN || "wkly.localhost";
   const port = Number(process.env.PORT || 4200);
-  const server = createShowcaseServer({ output, majors, domain });
+  const server = createShowcaseServer({
+    output,
+    domain,
+    basePath: process.env.WKLY_BASE_PATH || "/",
+  });
   server.listen(port, "127.0.0.1", () =>
     console.log(
-      `WKLY showcase: http://${domain}:${port} (testbeds: ${majors.map((major) => `v${major}.${domain}`).join(", ")})`,
+      `WKLY showcase: http://${domain}:${port}${process.env.WKLY_BASE_PATH || "/"}`,
     ),
   );
   process.on("SIGINT", async () => {

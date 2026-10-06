@@ -1,5 +1,4 @@
 import { Component } from "@angular/core";
-import { RuntimeVersionService } from "./runtime-version.service";
 import { PAGES } from "./pages";
 
 @Component({
@@ -8,10 +7,6 @@ import { PAGES } from "./pages";
   templateUrl: "./app.component.html",
 })
 export class AppComponent {
-  constructor(public versions: RuntimeVersionService) {}
-  selectVersion(event: Event): void {
-    this.versions.select((event.target as HTMLSelectElement).value);
-  }
   menu = false;
   routes = Object.keys(PAGES);
   labels: Record<string, string> = {

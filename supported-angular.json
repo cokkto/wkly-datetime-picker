@@ -1,8 +1,6 @@
 {
   "11": {
     "package": "wkly-datetime-picker.11",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.11/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.11/src/index.html",
     "toolchain": "Angular 11.2, TypeScript 4.1, RxJS 6.6",
     "node": "16",
     "dependencies": {
@@ -30,8 +28,6 @@
   },
   "12": {
     "package": "wkly-datetime-picker.12",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.12/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.12/src/index.html",
     "toolchain": "Angular 12.2, TypeScript 4.3, RxJS 7.8",
     "node": "16",
     "dependencies": {
@@ -59,8 +55,6 @@
   },
   "13": {
     "package": "wkly-datetime-picker.13",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.13/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.13/src/index.html",
     "toolchain": "Angular 13.4, TypeScript 4.6, RxJS 7.8",
     "node": "16",
     "dependencies": {
@@ -88,8 +82,6 @@
   },
   "14": {
     "package": "wkly-datetime-picker.14",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.14/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.14/src/index.html",
     "toolchain": "Angular 14.3, TypeScript 4.8, RxJS 7.8",
     "node": "16",
     "dependencies": {
@@ -117,8 +109,6 @@
   },
   "15": {
     "package": "wkly-datetime-picker.15",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.15/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.15/src/index.html",
     "toolchain": "Angular 15.2, TypeScript 4.9, RxJS 7.8",
     "node": "18",
     "dependencies": {
@@ -146,8 +136,6 @@
   },
   "16": {
     "package": "wkly-datetime-picker.16",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.16/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.16/src/index.html",
     "toolchain": "Angular 16.2, TypeScript 5.1, RxJS 7.8",
     "node": "16",
     "dependencies": {
@@ -175,8 +163,6 @@
   },
   "17": {
     "package": "wkly-datetime-picker.17",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.17/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.17/src/index.html",
     "toolchain": "Angular 17.3, TypeScript 5.4, RxJS 7.8",
     "node": "20",
     "dependencies": {
@@ -204,8 +190,6 @@
   },
   "18": {
     "package": "wkly-datetime-picker.18",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.18/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.18/src/index.html",
     "toolchain": "Angular 18.2, TypeScript 5.5, RxJS 7.8",
     "node": "20",
     "dependencies": {
@@ -233,8 +217,6 @@
   },
   "19": {
     "package": "wkly-datetime-picker.19",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.19/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.19/src/index.html",
     "toolchain": "Angular 19.2, TypeScript 5.8, RxJS 7.8",
     "node": "22",
     "dependencies": {
@@ -262,8 +244,6 @@
   },
   "20": {
     "package": "wkly-datetime-picker.20",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.20/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.20/src/index.html",
     "toolchain": "Angular 20.3, TypeScript 5.9, RxJS 7.8",
     "node": "24",
     "dependencies": {
@@ -291,8 +271,6 @@
   },
   "21": {
     "package": "wkly-datetime-picker.21",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.21/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.21/src/index.html",
     "toolchain": "Angular 21.2, TypeScript 5.9, RxJS 7.8",
     "node": "24",
     "dependencies": {
@@ -320,8 +298,6 @@
   },
   "22": {
     "package": "wkly-datetime-picker.22",
-    "runtimeEntry": "projects/wkly-datetime-picker.runtime.22/src/main.ts",
-    "runtimeHtml": "projects/wkly-datetime-picker.runtime.22/src/index.html",
     "toolchain": "Angular 22.2, TypeScript 6.0, RxJS 7.8",
     "node": "24.15.0",
     "dependencies": {

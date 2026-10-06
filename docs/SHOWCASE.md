@@ -1,6 +1,6 @@
-# Evergreen showcase and versioned testbeds
+# Public showcase
 
-The default host serves the latest Angular showcase. Its catalogue covers single/range selection, localization, calendars, validation, virtual scrolling, presentation, and styling, with live controls and diagnostics. Pickers render directly in the page. Version links navigate to separate apps.
+The showcase is the public landing page and live demo, compiled with the newest supported Angular runtime. Its catalogue covers single/range selection, localization, calendars, validation, virtual scrolling, presentations and styling. Version selectors, controlled `/cases` pages and `/contracts` hosts have been removed. Angular compatibility and picker behavior belong to the independent [test project](../projects/wkly-datetime-picker.tests/README.md).
 
 ```sh
 npm run showcase:start
@@ -8,53 +8,36 @@ npm run showcase:build
 node scripts/serve.cjs --prebuilt
 ```
 
-Use Node 24.15+ for the combined build. Each app uses its version-specific TypeScript and Angular compiler; Angular 11 dependencies receive ngcc preparation. esbuild watches source and templates. The default app uses the latest runtime compiler. Each app is compiled independently into `dist/showcase` or `dist/showcase/runtime/N`.
+Use Node 24.15+. The build produces one JavaScript/CSS bundle and real HTML entry documents for the overview and each public route in `dist/showcase`. Every entry includes a readable heading, description and example links before Angular boots. Titles and descriptions come from `src/page-metadata.json`; keep its keys aligned with `src/pages.ts`. Angular updates page metadata when navigating between examples.
 
-The dev server logs build and rebuild starts, successful completion with elapsed time, and failures for the showcase and each Angular testbed. Refresh the browser after the relevant app reports `Rebuilt`; browser refresh is manual.
+The local server serves `wkly.localhost:4200` and localhost/127.0.0.1 aliases. It serves generated routes directly, returns 404 for unknown routes/assets/hosts and blocks access to obsolete runtime assets. Versioned subdomains are no longer showcase hosts. `--prebuilt` does not load build tools. `WKLY_OUTPUT` changes the output directory (use the same value for build and serve), `PORT` changes the port, and `WKLY_DOMAIN` changes the local hostname. The dev server watches source/templates and logs rebuilds; refresh manually after `Rebuilt`.
 
-The generic Node HTTP server serves `wkly.localhost:4200` (and localhost/127.0.0.1 aliases) as the showcase, and `v11.wkly.localhost:4200` through `v22.wkly.localhost:4200` as testbeds. It falls back to the selected app's index for extensionless navigation, returns 404 for missing assets and unknown hosts, and prevents cross-app paths. `--prebuilt` does not load Angular or build tools. `WKLY_OUTPUT` changes the build/serve directory (use the same value for both commands), allowing isolated concurrent servers. `PORT` changes the port; `WKLY_DOMAIN` changes the local host suffix (custom domains require local DNS). Standard `.localhost` names must resolve to loopback in the browser/environment.
+## GitHub Pages
 
-## Controlled pages
+[The Pages workflow](../.github/workflows/pages.yml) builds and smoke-tests the public demo, then publishes `dist/showcase` on pushes to main or manual dispatch. Enable **Settings → Pages → Build and deployment → Source: GitHub Actions** before running it. No deployment was performed as part of the local implementation.
 
-Each version exposes `/` as a case index and `/cases/<layout>/<example-id>` as a single-example page. Reloading a deep link preserves the case. IDs and feature configurations come from `src/pages.ts`.
+The workflow obtains the base path and public URL from GitHub, supporting repository Pages URLs and custom domains. Local builds default to `/`. To reproduce the repository deployment in PowerShell:
 
-| Layout | Purpose |
-| --- | --- |
-| `empty` | Minimal document; default for component behavior and pixel comparisons |
-| `contained` | Fixed maximum-width card with padding and a border |
-| `form` | Actual form with neighboring native inputs and a submit button |
-| `booking` | Small realistic page with header, responsive columns, summary and footer |
-
-For example, `/cases/empty/date-range`, `/cases/form/dialog`, `/cases/contained/overlay`, and `/cases/booking/material` work on every version. Native dialog and CDK overlay pickers attach to the top-level document. The anchored overlay uses WKLY's CDK integration.
-
-Controls, diagnostics and layouts are shared source. Testbeds include their own bounded shell CSS and picker theme rules.
-
-The versioned `/contracts` route hosts public Angular API checks with scoped configuration and localization providers. Query parameters `presentation=inline|dialog|overlay` and `calendar=gregorian|hebrew|hijri` select the fixture, and `initial=<epochDay>` sets an explicit initial anchor. Its buttons call public jump methods and update runtime inputs; outputs expose committed values, validation codes, and emission counts.
-
-`/cases/empty/hebrew` and `/cases/empty/hijri` provide RTL datetime examples on every Angular version. `/calendars` renders paired Gregorian, Hebrew, and Hijri date pickers in both the evergreen showcase and versioned testbeds; selecting any picker updates its companions without emitting additional user edits. The Hijri example uses the source-only `islamic-civil` adapter; see [adapter rules and bounds](CORE-AND-ADAPTERS.md).
-
-## Playwright
-
-```sh
-npm run test:browsers:install
+```powershell
+$env:WKLY_BASE_PATH='/wkly-datetime-picker/'
+$env:WKLY_SITE_URL='https://cokkto.github.io/wkly-datetime-picker/'
 npm run showcase:build
-npm run test:showcase -- --project="*-chromium-showcase" --project=chromium-catalogue
-npm run test:showcase -- --project=angular-22-firefox-showcase
-npm run test:showcase -- testbeds.spec.cjs
+npm run test:showcase
+node scripts/serve.cjs --prebuilt
 ```
 
-The current matrix combines all registered Angular versions with Chromium, Firefox and WebKit, plus one evergreen catalogue journey per engine. `WKLY_TEST_ANGULAR=11,22` and `WKLY_TEST_BROWSERS=chromium` restrict component runs. Set environment variables using your shell's syntax (PowerShell: `$env:WKLY_TEST_ANGULAR='11,22'`). `WKLY_SHOWCASE_PORT` changes the test host's default port 4330. All versions run the same cases against independently built apps.
+`WKLY_BASE_PATH` must start and end with `/`. `WKLY_SITE_URL`, when supplied, must be the full public URL including that same path and trailing slash. It adds canonical/Open Graph URLs and `sitemap.xml`. The build includes `.nojekyll`. Normal path routes have their own `index.html`, so direct navigation/reload works without a server rewrite or hash routing. Static landing copy is available without JavaScript; interactive picker controls require JavaScript. These are search foundations, not a promise of indexing or rankings.
 
-The current Playwright suite serves prebuilt showcase assets and starts its own server. `npm run showcase:build` prepares those assets; `WKLY_E2E=1` optionally enables the showcase's fixed test clock. PR and release profiles build the showcase before running these journeys.
-
-Picker domain fixtures use the same `vN.wkly.localhost` hostnames on their own port (4318 by default), with `/index.html` loading a minimal fixture app. The showcase's case routes remain on its separate server.
-
-Picker screenshots belong to the current layout domain, rather than the showcase suite. Angular versions share four month-boundary baselines per engine; the update command selects one Angular version to avoid concurrent writes:
+## Minimal smoke coverage
 
 ```sh
-npm run test:visuals:update
+npm run showcase:build
+npm run test:showcase
+npm run test:showcase -- --project=chromium-showcase
 ```
 
-Baselines are platform-specific; review updates on the same platform. Geometry assertions run independently of screenshots. Open the native showcase report with `npm run test:report:showcase`. `node --test scripts/showcase-server.test.cjs` checks host routing, fallback and isolation without Angular.
+One journey per browser visits every public route and checks a successful document response, its title, compiled WKLY demo controls, initial value diagnostics and absence of browser errors. The full command runs three journeys: Chromium, Firefox and WebKit. It does not repeat picker behavior tests. Build and test must use the same `WKLY_BASE_PATH`; `WKLY_TEST_BROWSERS` selects engines and `WKLY_SHOWCASE_PORT` changes the default test port 4330. PR/release profiles retain this small smoke gate; Pages deployment checks Chromium. Open the report with `npm run test:report:showcase`.
 
-To add an Angular major, register it in `supported-angular.json`, add its versioned runtime/package/toolchain, and update the evergreen module import and host tsconfig to the newest runtime. Library compatibility and packaging scripts remain separate from this browser setup.
+`node --test scripts/showcase-server.test.cjs` checks static routes, removed routes, subpath serving and invalid requests without Angular. Picker screenshots remain in the picker layout domain, with `npm run test:visuals:update` for deliberate baseline updates.
+
+The paired Gregorian/Hebrew/Hijri example remains at `/calendars/`. See [adapter rules and bounds](CORE-AND-ADAPTERS.md). To add an Angular major, register its package/toolchain and update the showcase's runtime import and host tsconfig to the newest version.

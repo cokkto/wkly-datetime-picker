@@ -91,7 +91,17 @@ function snapshot(directory = root) {
           ),
           manifest: normalized,
           files: projectFiles.map((file) => [file, contents(file)]),
-          ...(angular ? { toolchain: supported[angular] } : {}),
+          ...(angular
+            ? {
+                toolchain: {
+                  ...supported[angular],
+                  // Preserve the recorded hash shape while ignoring retired demo
+                  // entry paths. They never changed published picker artifacts.
+                  runtimeEntry: `projects/wkly-datetime-picker.runtime.${angular}/src/main.ts`,
+                  runtimeHtml: `projects/wkly-datetime-picker.runtime.${angular}/src/index.html`,
+                },
+              }
+            : {}),
         }),
       ),
       dependencies: Object.keys(manifest.dependencies || {}).filter((name) =>
