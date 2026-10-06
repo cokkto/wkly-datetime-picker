@@ -64,6 +64,7 @@ function validateGraph(packages) {
   const versions = new Map(
     packages.map((pkg) => [`${pkg.name}@${pkg.version}`, pkg]),
   );
+  assert.equal(versions.size, packages.length, "Duplicate release artifact");
   for (const pkg of packages) {
     assert.equal(
       path.basename(pkg.filename),
@@ -128,13 +129,17 @@ function validateGraph(packages) {
   }
 }
 
-function collect(input, destination, commit) {
+function collect(input, destination, commit, selection) {
   const files = findEvidence(input);
-  const majors = Object.keys(supported);
+  const majors = selection?.angular || Object.keys(supported);
+  assert.ok(
+    majors.length && majors.every((major) => supported[major]),
+    "Invalid release Angular selection",
+  );
   assert.equal(
     files.length,
     majors.length,
-    "Require one qualified artifact set per Angular major",
+    "Require one qualified artifact set per Angular major in the release",
   );
   fs.mkdirSync(destination, { recursive: true });
   const found = new Set();
@@ -223,12 +228,51 @@ function collect(input, destination, commit) {
     angular: majors,
     registry,
     packages: ordered,
+    ...(selection
+      ? {
+          releaseId: selection.id,
+          publish: selection.publish.map(({ name, version }) => ({
+            name,
+            version,
+          })),
+        }
+      : {}),
   };
+  selectedPackages(plan);
   write(path.join(destination, "manifest.json"), plan);
   console.table(
     ordered.map(({ name, version, tag }) => ({ name, version, tag })),
   );
   return plan;
+}
+
+function selectedPackages(plan) {
+  const selected =
+    plan.publish ||
+    plan.packages.map(({ name, version }) => ({ name, version }));
+  const keys = selected.map((pkg) => `${pkg.name}@${pkg.version}`);
+  assert.ok(
+    keys.length && new Set(keys).size === keys.length,
+    "Empty/duplicate publication selection",
+  );
+  if (plan.releaseId) assert.match(plan.releaseId, /^[a-f0-9]{64}$/);
+  for (const key of keys)
+    assert.ok(
+      plan.packages.some((pkg) => `${pkg.name}@${pkg.version}` === key),
+      `Unqualified publication candidate: ${key}`,
+    );
+  return plan.packages.filter((pkg) =>
+    keys.includes(`${pkg.name}@${pkg.version}`),
+  );
+}
+
+function compareVersions(first, second) {
+  assert.match(first, /^\d+\.\d+\.\d+$/);
+  assert.match(second, /^\d+\.\d+\.\d+$/);
+  const a = first.split(".").map(Number);
+  const b = second.split(".").map(Number);
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] - b[i];
+  return 0;
 }
 
 function metadata(name) {
@@ -419,17 +463,46 @@ async function publish(
   );
   const latest = plan.packages.filter((pkg) => pkg.name === picker).at(-1);
   assert.ok(latest);
+  const selected = selectedPackages(plan);
+  const advancesLatest =
+    latest.version.split(".")[0] === Object.keys(supported).at(-1);
+  write(path.join(destination, "progress.json"), {
+    sourceCommit: plan.sourceCommit,
+    releaseId: plan.releaseId,
+    status: "preflight",
+    submitted: [],
+  });
   // Check every version before the first mutation; only a real 404 means absent.
   for (const pkg of plan.packages) {
     assert.equal(
       integrity(path.join(destination, pkg.filename)),
       pkg.integrity,
     );
-    checkExisting(pkg, await readMetadata(pkg.name));
+    const document = await readMetadata(pkg.name);
+    const exists = checkExisting(pkg, document);
+    if (!selected.includes(pkg))
+      assert.ok(
+        exists,
+        `Unselected dependency is not published: ${pkg.name}@${pkg.version}`,
+      );
+    if (selected.includes(pkg)) {
+      const currentTag = document?.["dist-tags"]?.[pkg.tag];
+      if (currentTag)
+        assert.ok(
+          compareVersions(currentTag, pkg.version) <= 0,
+          `Refuse to move ${pkg.name} ${pkg.tag} backwards`,
+        );
+    }
+    if (pkg === latest && advancesLatest && document?.["dist-tags"]?.latest)
+      assert.ok(
+        compareVersions(document["dist-tags"].latest, pkg.version) <= 0,
+        "Refuse to move picker latest backwards",
+      );
   }
   // Submit in dependency order so npm can process the versions concurrently.
   // Verify each version before repairing its tags and testing consumers.
-  for (const pkg of plan.packages) {
+  const submitted = [];
+  for (const pkg of selected) {
     if (!checkExisting(pkg, await readMetadata(pkg.name))) {
       runNpm([
         "publish",
@@ -443,11 +516,21 @@ async function publish(
         pkg.tag,
       ]);
       console.log(`Submitted ${pkg.name}@${pkg.version}`);
+      submitted.push({ name: pkg.name, version: pkg.version });
+      write(path.join(destination, "progress.json"), {
+        sourceCommit: plan.sourceCommit,
+        releaseId: plan.releaseId,
+        status: "submitted",
+        submitted,
+      });
     }
   }
   for (const pkg of plan.packages) {
     const document = await waitForPublished(pkg, readMetadata, pause);
-    if (document["dist-tags"]?.[pkg.tag] !== pkg.version)
+    if (
+      selected.includes(pkg) &&
+      document["dist-tags"]?.[pkg.tag] !== pkg.version
+    )
       runNpm([
         "dist-tag",
         "add",
@@ -458,23 +541,33 @@ async function publish(
       ]);
     console.log(`Verified ${pkg.name}@${pkg.version}`);
   }
-  runNpm([
-    "dist-tag",
-    "add",
-    `${picker}@${latest.version}`,
-    "latest",
-    "--registry",
-    registry,
-  ]);
+  if (advancesLatest)
+    runNpm([
+      "dist-tag",
+      "add",
+      `${picker}@${latest.version}`,
+      "latest",
+      "--registry",
+      registry,
+    ]);
   await verifyConsumers(plan);
   write(path.join(destination, "published.json"), {
     sourceCommit: plan.sourceCommit,
     verified: true,
+    ...(plan.releaseId
+      ? { releaseId: plan.releaseId, publish: plan.publish }
+      : {}),
     packages: plan.packages.map(({ name, version, integrity }) => ({
       name,
       version,
       integrity,
     })),
+  });
+  write(path.join(destination, "progress.json"), {
+    sourceCommit: plan.sourceCommit,
+    releaseId: plan.releaseId,
+    status: "verified",
+    submitted,
   });
 }
 
@@ -571,6 +664,7 @@ module.exports = {
   waitForPublished,
   publish,
   verifyTrustedPublisher,
+  selectedPackages,
   integrity,
 };
 if (require.main === module) {
@@ -582,7 +676,15 @@ if (require.main === module) {
       destination &&
       /^[a-f0-9]{40}$/.test(commit || "")
     )
-      collect(path.resolve(input), path.resolve(destination), commit);
+      collect(
+        path.resolve(input),
+        path.resolve(destination),
+        commit,
+        fs.existsSync(path.join(root, "release-state.json")) &&
+          read(path.join(root, "release-state.json")).release
+          ? require("./release-plan.cjs").qualifiedSelection()
+          : undefined,
+      );
     else if (command === "publish" && input) await publish(path.resolve(input));
     else if (command === "verify-trusted" && input)
       await verifyTrusted(path.resolve(input));

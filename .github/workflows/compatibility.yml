@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
+      package-matrix: ${{ steps.matrix.outputs.package-matrix }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -99,7 +100,7 @@ jobs:
     timeout-minutes: 25
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.package-matrix) }}
     env:
       ANGULAR_MAJOR: ${{ matrix.angular }}
       WKLY_TEST_ANGULAR: ${{ matrix.angular }}

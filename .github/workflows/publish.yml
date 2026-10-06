@@ -11,13 +11,9 @@ on:
         description: Publish the reviewed tarballs (false prepares artifacts only)
         default: false
         type: boolean
-      bootstrap:
-        description: Use the temporary npm token for initial package creation
-        default: false
-        type: boolean
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   id-token: write
 
@@ -35,6 +31,8 @@ jobs:
       COMPATIBILITY_RUN: ${{ inputs.compatibility_run }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: "24.15.0"
@@ -50,25 +48,31 @@ jobs:
           node -e 'const r=require("./run.json"); const a=require("node:assert/strict"); a.equal(r.conclusion,"success"); a.equal(r.status,"completed"); a.equal(r.head_sha,process.env.GITHUB_SHA); a.equal(r.head_branch,"main"); a.equal(r.path,".github/workflows/compatibility.yml"); a.equal(r.repository.full_name,process.env.GH_REPO);'
       - name: Download the qualified tarballs
         run: gh run download "$COMPATIBILITY_RUN" --pattern 'compatibility-*' --dir .test-build/release-input
+      - name: Require prepared package versions
+        run: node scripts/release-plan.cjs check
       - name: Prepare the review manifest
         run: node scripts/release.cjs collect .test-build/release-input .test-build/release "$GITHUB_SHA"
+      - name: Retain immutable candidates before npm writes
+        if: inputs.publish
+        run: node scripts/release-record.cjs begin .test-build/release
+        env:
+          WKLY_QUALIFIED_COMMIT: ${{ github.sha }}
       - name: Publish using trusted publishing
-        if: inputs.publish && !inputs.bootstrap
+        if: inputs.publish
         run: |
           node scripts/release.cjs verify-trusted .test-build/release
           node scripts/release.cjs publish .test-build/release
         env:
           WKLY_QUALIFIED_COMMIT: ${{ github.sha }}
-      - name: Bootstrap the initial public packages
-        if: inputs.publish && inputs.bootstrap
-        shell: bash
-        run: |
-          test -n "$NODE_AUTH_TOKEN"
-          printf '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}\n' > "$NPM_CONFIG_USERCONFIG"
-          node scripts/release.cjs publish .test-build/release
+      - name: Complete the verified release
+        if: inputs.publish
+        run: node scripts/release-record.cjs complete .test-build/release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
-          NPM_CONFIG_USERCONFIG: ${{ runner.temp }}/wkly-bootstrap.npmrc
+          WKLY_QUALIFIED_COMMIT: ${{ github.sha }}
+      - name: Retain partial-publication progress
+        if: failure() && inputs.publish
+        run: node scripts/release-record.cjs failure .test-build/release
+        env:
           WKLY_QUALIFIED_COMMIT: ${{ github.sha }}
       - uses: actions/upload-artifact@v7
         if: always()

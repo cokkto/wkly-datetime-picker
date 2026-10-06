@@ -6,10 +6,10 @@ Local imports retain their internal names. Compatibility builds rename manifests
 
 ## Qualify, review and publish
 
-1. Merge reviewed release changes to `main`, including manually chosen source-manifest versions. Automatic version increments remain Milestone 8 work. A shared change advances `S` for every picker line and resets `A`; an Angular-only fix advances only its line's `A`. Increment changed shared artifact versions too, including packaged README/API changes.
+1. Merge reviewed source changes to `main`. **Prepare npm release** runs automatically on main pushes and can also be dispatched manually. It compares package inputs with `release-state.json`, calculates versions, and pushes a release branch with an affected-package summary and review link. Open, review and merge its version PR; where repository policy permits Actions to create PRs, the workflow opens it automatically. A shared change advances `S` for every picker line and resets `A`; an Angular-only fix advances only its line's `A`. Changed shared artifacts and shared packages whose exact dependencies change receive patch increments. Do not edit versions manually.
 2. Wait for **Compatibility result** on that exact main commit. The complete workflow qualifies source contracts, installed public shared packages, all Angular picker/browser combinations, base/CDK tarball integrity, AOT, SSR and showcase journeys. Set **Compatibility result** as the required main branch check in GitHub repository settings.
-3. Open Actions → **Publish npm packages** → **Run workflow**. Select `main`, enter the successful compatibility run ID, and leave **publish** and **bootstrap** false. The workflow rejects another branch, an unsuccessful/incomplete gate or a different source commit.
-4. Download `reviewed-npm-release`. Inspect `manifest.json`, tarball contents (`tar -tzf <file.tgz>`), manifests, peers, dependencies, license, README/API and base/CDK entries. Initial publication has three shared tarballs and twelve picker tarballs. The manifest records source commit and SHA-512 integrity. Collection rejects missing majors, mixed commits, altered tarballs and differing shared artifacts.
+3. Open Actions → **Publish npm packages** → **Run workflow**. Select `main`, enter the successful compatibility run ID, and leave **publish** false. The workflow rejects another branch, an unsuccessful/incomplete gate, a different source commit or unprepared package changes.
+4. Download `reviewed-npm-release`. Inspect `manifest.json`, tarball contents (`tar -tzf <file.tgz>`), manifests, peers, dependencies, license, README/API and base/CDK entries. `publish` lists the candidates that will be released; `packages` also contains unchanged shared dependencies needed to qualify and verify consumers. An Angular-only plan qualifies its one picker major; a shared plan qualifies all twelve. The manifest records release ID, source commit and SHA-512 integrity. Collection rejects missing selected majors, mixed commits, altered tarballs and differing shared artifacts.
 5. After reviewing those artifacts, rerun with **publish** true and the same compatibility run ID. Publication uses the qualified tarballs without rebuilding. A change to main requires another successful gate and artifact review.
 
 For a local preview after `npm run test:release`:
@@ -20,11 +20,28 @@ node scripts/release.cjs collect .compat .test-build/release <full-source-commit
 
 Local collection is a preview; publishing requires the full GitHub gate for a clean main checkout. Per-major release evidence is written after base/CDK integrity, AOT and SSR pass; the publishing workflow additionally requires the complete browser and shared gates to succeed.
 
-## Bootstrap authentication
+## Inspect and apply a plan locally
 
-The initial package creation uses the short-lived granular npm token. **Packages and scopes** must grant direct publish access covering `@wkly`, with **Bypass 2FA** enabled. Organization-management permissions alone do not grant publishing rights.
+```sh
+npm run release:plan
+npm run release:prepare
+```
 
-Store it as the repository Actions secret **NPM_BOOTSTRAP_TOKEN**, keeping it out of Git and logs. The ignored local `token.log` is never copied into build workspaces or release artifacts. For the first reviewed publish, enable both **publish** and **bootstrap**. Only the bootstrap step receives the secret; its npm configuration contains an environment-variable reference rather than the token value.
+The planner writes `.test-build/release-plan.json` and `release-summary.md` only when package inputs change. Preparation updates affected source-manifest versions and `release-state.json`; run `npm run format`, review and commit them together. Reapplying an unchanged plan leaves versions unchanged. A stale plan or manual version change fails before any manifest write.
+
+If a previous prepared release exists, download its `published.json` from the `wkly-release-<release-id>` GitHub release and supply it when preparing the next release:
+
+```sh
+npm run release:prepare -- .test-build/release-plan.json .test-build/previous-release/published.json
+```
+
+Preparation requires a matching verified receipt covering every previously selected artifact. The GitHub workflow additionally requires that previous release to be finalized. A draft or missing receipt blocks new versions until recovery finishes. Release preparation and publication share a non-cancelling concurrency group.
+
+Fingerprints cover package sources/configuration, normalized manifests without versions or stripped build scripts, toolchains, the build/public-name scripts, root README, API reference and license. Changed exact shared dependencies propagate new shared artifact versions. Test-only, showcase-only, workflow and source-local README edits do not increment package versions. Line endings are normalized across Windows and Linux. New Angular lines need an explicit metadata baseline migration along with their registry entry.
+
+The preparation workflow uses the repository GitHub token to push its release branch and explicitly dispatches compatibility CI for that branch. Its summary links to PR creation. Optional automatic PR creation requires the repository variable `WKLY_RELEASE_CREATE_PR=true` and Actions settings permitting GitHub Actions to create pull requests. That setting additionally permits Actions to approve PR reviews; the workflow does not enable it. No additional npm secret is needed.
+
+The initial release used a short-lived token; that token and its GitHub bootstrap secret have been revoked/removed. The publishing workflow now uses trusted publishing exclusively.
 
 ## npm trusted publishing
 
@@ -38,16 +55,18 @@ After the four package names exist, add a GitHub Actions trusted publisher in th
 | Environment name | Leave empty |
 | Allowed actions | Direct publishing (`npm publish`) and dist-tag management (`npm dist-tag`) |
 
-The workflow uses GitHub-hosted runners, Node 24.15.0, npm 11.21.0, and `id-token: write`. npm 11.21.0 or later is required for trusted dist-tag management. Later reviewed releases use **publish** true and **bootstrap** false, independently of the temporary token. Before publication, the workflow verifies each package's OIDC exchange and authorization by writing its existing `latest` tag value directly to the registry, then records `trusted-publishing.json`. This tests all four bindings even when every candidate version and tag already exists; `npm dist-tag add` can otherwise skip an unchanged tag without proving write access. Direct-publishing permission must also be enabled in each saved publisher configuration. Keep the package's token-permitting publishing access setting until trusted publishing is verified. Then select **Require two-factor authentication and disallow bypass 2FA tokens**, remove the bootstrap secret and revoke the token. This package setting still permits trusted publishing. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) and [token settings](https://docs.npmjs.com/creating-and-viewing-access-tokens/).
+The workflow uses GitHub-hosted runners, Node 24.15.0, npm 11.21.0, and `id-token: write`. npm 11.21.0 or later is required for trusted dist-tag management. Reviewed releases use **publish** true. Before publication, the workflow verifies each package's OIDC exchange and authorization by writing its existing `latest` tag value directly to the registry, then records `trusted-publishing.json`. This tests all four bindings even when every candidate version and tag already exists; `npm dist-tag add` can otherwise skip an unchanged tag without proving write access. Direct-publishing permission must also be enabled in each saved publisher configuration. Package publishing access is **Require two-factor authentication and disallow bypass 2FA tokens**, which still permits trusted publishing. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
 
 ## Tags and recovery
 
-Publication submits core, adapters, presentation, then picker lines in ascending Angular order. It submits the qualified graph before waiting for public metadata, allowing npm to process versions concurrently. Shared packages use `latest`; picker lines use `angular-11` through `angular-22`. Picker `latest` advances to the newest supported line after all artifacts are verified. Consumers should pin their Angular major.
+Before npm writes, publication creates an annotated `wkly-release-<release-id>` tag at the qualified source and a draft GitHub release retaining the immutable manifest and tarballs. A retry validates retained bytes and fills any missing assets without replacing existing ones. The initial release retains its original `npm-release-80eec1db6981` tag.
+
+Publication submits only selected candidates: changed core, adapters, presentation, then affected picker lines in ascending Angular order. It submits the candidates before waiting for public metadata, allowing npm to process versions concurrently. Unselected shared dependencies must already exist with identical integrity. Shared packages use `latest`; picker lines use `angular-11` through `angular-22`. Picker `latest` advances only when the newest supported line is part of the plan; an older Angular-only fix preserves it. Tags cannot move backwards. Consumers should pin their Angular major.
 
 All candidate versions are checked before the first mutation. Existing versions are skipped only if registry integrity matches the qualified tarball. A conflict requires a new source version; do not unpublish or overwrite it. Only HTTP 404 means a registry name is absent; other registry errors stop the release. After npm accepts a tarball, verification waits up to ten minutes for matching public version metadata. Missing metadata keeps the release incomplete; integrity conflicts and registry errors fail immediately. If npm reports success but metadata remains absent, preserve the run and manifest and investigate registry visibility before retrying publication.
 
 After partial failure, rerun with the same successful compatibility run ID and unchanged versions/tarballs. Matching published versions are verified and skipped, missing versions publish, and missing tags are repaired. Finish recovery before advancing main. If main has advanced, qualify it again: existing versions must still have identical bytes, or changed artifacts need new versions. Preserve the original manifest and partial-run URL.
 
-Final verification freshly installs every picker major from npm twice: base without CDK, then with pinned CDK. Strict peer resolution must pass, and all four installed versions and lockfile SHA-512 integrities must match the qualified tarballs. This proves registry consumers receive the artifacts already qualified by AOT, SSR and browsers. Success writes `published.json`; a verification failure remains incomplete and can be retried.
+Final verification freshly installs each selected picker major from npm twice: base without CDK, then with pinned CDK. Strict peer resolution must pass, and all four installed versions and lockfile SHA-512 integrities must match the qualified tarballs. This proves registry consumers receive the artifacts already qualified by AOT, SSR and browsers. Success writes `published.json` with the release ID and candidate selection. A verification failure remains incomplete and can be retried; `progress.json` and attempt-specific draft assets retain partial-publication evidence.
 
-After success, create and push an annotated Git tag `npm-release-<first-12-source-sha-characters>` pointing at the qualified source commit. Retain the workflow URL, manifest and verification record in a GitHub release. Development continues on `main`.
+After registry verification, the workflow retains `published.json` and `trusted-publishing.json`, adds the affected-version summary and workflow URL, and finalizes the draft release. Existing immutable receipts must match before reuse. Development continues on `main`.

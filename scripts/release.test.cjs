@@ -21,6 +21,8 @@ const {
   normalizeTarball,
 } = require("./public-packages.cjs");
 const supported = require("../supported-angular.json");
+const { record } = require("./release-record.cjs");
+const { createHash } = require("node:crypto");
 
 test("tarball normalization preserves the npm tar payload and removes compression variants", () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "wkly-gzip-"));
@@ -455,6 +457,261 @@ test("collect requires a full single-commit matrix with identical shared artifac
       /one qualified artifact set/,
     );
   } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("an Angular-only release publishes one candidate, preserves latest, and resumes without another version", async () => {
+  const { directory, input, commit, evidenceFiles } = qualifiedFixture();
+  const previousCommit = process.env.WKLY_QUALIFIED_COMMIT;
+  try {
+    for (const file of evidenceFiles)
+      if (JSON.parse(fs.readFileSync(file)).angular !== "19")
+        fs.unlinkSync(file);
+    const selection = {
+      id: "c".repeat(64),
+      angular: ["19"],
+      publish: [{ name: picker, version: "19.0.0" }],
+    };
+    const output = path.join(directory, "output");
+    const plan = collect(input, output, commit, selection);
+    assert.equal(plan.packages.length, 4);
+    const candidate = plan.packages.at(-1);
+    let submitted = false;
+    const mutations = [];
+    const readMetadata = async (name) => ({
+      versions: Object.fromEntries(
+        plan.packages
+          .filter(
+            (pkg) => pkg.name === name && (pkg !== candidate || submitted),
+          )
+          .map((pkg) => [pkg.version, { dist: { integrity: pkg.integrity } }]),
+      ),
+      "dist-tags":
+        name === picker
+          ? {
+              latest: "22.0.0",
+              ...(submitted ? { "angular-19": "19.0.0" } : {}),
+            }
+          : { latest: "0.1.0" },
+    });
+    const runNpm = (args) => {
+      mutations.push(args);
+      assert.equal(args[0], "publish");
+      assert.equal(args[1], path.join(output, candidate.filename));
+      submitted = true;
+    };
+    process.env.WKLY_QUALIFIED_COMMIT = commit;
+    await assert.rejects(
+      publish(output, {
+        readMetadata,
+        runNpm,
+        verifyConsumers: async () => {
+          throw new Error("Consumer verification interrupted");
+        },
+      }),
+      /Consumer verification interrupted/,
+    );
+    assert.equal(fs.existsSync(path.join(output, "published.json")), false);
+    assert.equal(
+      JSON.parse(fs.readFileSync(path.join(output, "progress.json"))).submitted
+        .length,
+      1,
+    );
+    await publish(output, {
+      readMetadata,
+      runNpm,
+      verifyConsumers: async () => {},
+    });
+    assert.equal(mutations.length, 1);
+    const receipt = JSON.parse(
+      fs.readFileSync(path.join(output, "published.json")),
+    );
+    assert.equal(receipt.verified, true);
+    assert.equal(receipt.releaseId, selection.id);
+    assert.deepEqual(receipt.publish, selection.publish);
+    assert.equal(
+      JSON.parse(fs.readFileSync(path.join(output, "progress.json"))).status,
+      "verified",
+    );
+
+    let writes = 0;
+    await assert.rejects(
+      publish(output, {
+        readMetadata: async () => null,
+        runNpm: () => writes++,
+      }),
+      /Unselected dependency is not published/,
+    );
+    assert.equal(writes, 0);
+    await assert.rejects(
+      publish(output, {
+        readMetadata: async (name) => ({
+          ...(await readMetadata(name)),
+          "dist-tags":
+            name === picker
+              ? { "angular-19": "19.0.1", latest: "22.0.0" }
+              : { latest: "0.1.0" },
+        }),
+        runNpm: () => writes++,
+      }),
+      /backwards/,
+    );
+    assert.equal(writes, 0);
+  } finally {
+    if (previousCommit === undefined) delete process.env.WKLY_QUALIFIED_COMMIT;
+    else process.env.WKLY_QUALIFIED_COMMIT = previousCommit;
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("draft retention recovers a partial upload, retains failure progress, and finalizes only verified receipts", () => {
+  const { directory, input, commit, evidenceFiles, write } = qualifiedFixture();
+  const previousEnv = Object.fromEntries(
+    [
+      "GH_REPO",
+      "WKLY_QUALIFIED_COMMIT",
+      "GITHUB_RUN_ID",
+      "GITHUB_RUN_ATTEMPT",
+    ].map((name) => [name, process.env[name]]),
+  );
+  try {
+    Object.assign(process.env, {
+      GH_REPO: "example/wkly",
+      WKLY_QUALIFIED_COMMIT: commit,
+      GITHUB_RUN_ID: "123",
+      GITHUB_RUN_ATTEMPT: "1",
+    });
+    for (const file of evidenceFiles)
+      if (JSON.parse(fs.readFileSync(file)).angular !== "19")
+        fs.unlinkSync(file);
+    const selection = {
+      id: "d".repeat(64),
+      sharedRevision: 0,
+      angular: ["19"],
+      publish: [
+        {
+          name: picker,
+          internal: "wkly-datetime-picker.19",
+          previous: "19.0.0",
+          version: "19.0.0",
+          reason: "test",
+        },
+      ],
+    };
+    const output = path.join(directory, "output");
+    const plan = collect(input, output, commit, selection);
+    const assets = new Map();
+    let exists = false;
+    let draft = true;
+    let interrupt = true;
+    let tags = 0;
+    const options = {
+      getSelection: () => selection,
+      runGit: (args) => {
+        if (args.includes("tag")) tags++;
+        return "";
+      },
+      runGh: (args) => {
+        if (args[0] === "api") {
+          if (!exists)
+            throw Object.assign(new Error("Not found"), {
+              stderr: "Not Found (HTTP 404)",
+            });
+          return JSON.stringify({
+            draft,
+            assets: [...assets].map(([name, bytes]) => ({
+              name,
+              digest:
+                "sha256:" + createHash("sha256").update(bytes).digest("hex"),
+            })),
+          });
+        }
+        if (args[1] === "create") {
+          exists = true;
+          return "";
+        }
+        if (args[1] === "upload") {
+          for (const file of args.slice(3)) {
+            const name = path.basename(file);
+            assert.ok(
+              !assets.has(name),
+              "Existing assets must not be overwritten",
+            );
+            assets.set(name, fs.readFileSync(file));
+            if (name.endsWith(".tgz") && interrupt) {
+              interrupt = false;
+              throw new Error("Upload interrupted");
+            }
+          }
+          return "";
+        }
+        if (args[1] === "download") {
+          const name = args[args.indexOf("--pattern") + 1];
+          fs.writeFileSync(
+            path.join(args[args.indexOf("--dir") + 1], name),
+            assets.get(name),
+          );
+          return "";
+        }
+        assert.equal(args[1], "edit");
+        draft = false;
+        return "";
+      },
+    };
+    assert.throws(() => record("begin", output, options), /Upload interrupted/);
+    assert.equal(draft, true);
+    assert.equal(assets.size, 2);
+    record("begin", output, options);
+    assert.equal(assets.size, 5);
+    assert.equal(tags, 1);
+    write(path.join(output, "progress.json"), {
+      status: "submitted",
+      submitted: selection.publish,
+    });
+    record("failure", output, options);
+    assert.ok(assets.has("progress-123-1.json"));
+    const receipt = {
+      sourceCommit: commit,
+      releaseId: selection.id,
+      verified: false,
+      publish: plan.publish,
+      packages: plan.packages.map(({ name, version, integrity }) => ({
+        name,
+        version,
+        integrity,
+      })),
+    };
+    write(path.join(output, "published.json"), receipt);
+    assert.throws(
+      () => record("complete", output, options),
+      /not completed registry verification/,
+    );
+    assert.equal(draft, true);
+    assert.equal(assets.has("published.json"), false);
+    write(path.join(output, "published.json"), { ...receipt, verified: true });
+    write(path.join(output, "trusted-publishing.json"), {
+      sourceCommit: commit,
+      verified: true,
+      packages: plan.packages.map(({ name }) => ({ name })),
+    });
+    record("complete", output, options);
+    assert.equal(draft, false);
+    const count = assets.size;
+    record("complete", output, options);
+    assert.equal(assets.size, count);
+    assets.set(
+      plan.packages[0].filename,
+      Buffer.from("different retained bytes"),
+    );
+    assert.throws(
+      () => record("begin", output, options),
+      /Retained tarball conflict/,
+    );
+  } finally {
+    for (const [name, value] of Object.entries(previousEnv))
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "sharedRevision": 0,
+  "baselineRelease": {
+    "sourceCommit": "80eec1db698108b1ccc41722035fa940ab4ddf5e",
+    "tag": "npm-release-80eec1db6981"
+  },
+  "packages": {
+    "wkly-datetime-picker.core": {
+      "name": "@wkly/core",
+      "version": "0.1.0",
+      "input": "85dc509193c1107b3be70e74c92fcfd473c9a816dcf13ade61b95b4816d0e11f",
+      "dependencies": []
+    },
+    "wkly-datetime-picker.adapters": {
+      "name": "@wkly/adapters",
+      "version": "0.1.0",
+      "input": "c367edc4f08e280758af01f275cb037949b43d71a7901993a27660146ba294fb",
+      "dependencies": ["wkly-datetime-picker.core"]
+    },
+    "wkly-datetime-picker": {
+      "name": "@wkly/presentation",
+      "version": "0.1.0",
+      "input": "bb0e013f79e19640313096a342dcb36c67593cc1dfe1c94ab0fcce4783f6d738",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters"
+      ]
+    },
+    "wkly-datetime-picker.11": {
+      "name": "@wkly/datetime-picker",
+      "version": "11.0.0",
+      "input": "a7295f8bc646f00730d75146110e9ed82ab96f5277e7e688da9b1ae3d829661c",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.12": {
+      "name": "@wkly/datetime-picker",
+      "version": "12.0.0",
+      "input": "3633370eab64bbe77b202c666ff641e3d74e9d9e2f46bddad72a87e0865059de",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.13": {
+      "name": "@wkly/datetime-picker",
+      "version": "13.0.0",
+      "input": "7a99bb4fd93e40f4ceb78525ed8f55eb79b76c0bf83a3fa7ac344fb6b111041f",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.14": {
+      "name": "@wkly/datetime-picker",
+      "version": "14.0.0",
+      "input": "171e871b5a98d79c9005d8846cff4483faa40155c21b0ee3936594a9911c2efa",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.15": {
+      "name": "@wkly/datetime-picker",
+      "version": "15.0.0",
+      "input": "8a39594ddeb30f2a5c68ec20ff25f7a52c2af7bdf6102ce6bfa542bfada2dc25",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.16": {
+      "name": "@wkly/datetime-picker",
+      "version": "16.0.0",
+      "input": "4ce6785f770a92f39a42934a3fa97ab8105aadb99dd68e3546207e614bbd0f22",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.17": {
+      "name": "@wkly/datetime-picker",
+      "version": "17.0.0",
+      "input": "9df2fd7a2ec15da2b31bc0349aa35cee120fa38edc82c39daf0876d707906d19",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.18": {
+      "name": "@wkly/datetime-picker",
+      "version": "18.0.0",
+      "input": "5ff5d43aa650930c06144d944299c0baab8cc98d4728f9ed20dea0d28d955b35",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.19": {
+      "name": "@wkly/datetime-picker",
+      "version": "19.0.0",
+      "input": "1ee9852ce58f764330aac3162d0f508eca1f6f8e733c43dcd904f1228f05f6bf",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.20": {
+      "name": "@wkly/datetime-picker",
+      "version": "20.0.0",
+      "input": "dbbcb25f1a89b63a377edbf148c8450a2e3b6e43e036bcaba3137f61fbce1ea6",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.21": {
+      "name": "@wkly/datetime-picker",
+      "version": "21.0.0",
+      "input": "61471baae92cde56ac3a5af7624f44c2c7d534300a8dba0890e28a8445ef5851",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    },
+    "wkly-datetime-picker.22": {
+      "name": "@wkly/datetime-picker",
+      "version": "22.0.0",
+      "input": "20e1a1eba1d40882db0817a26d858542cd060feb5478715510915eb25a78e28b",
+      "dependencies": [
+        "wkly-datetime-picker.core",
+        "wkly-datetime-picker.adapters",
+        "wkly-datetime-picker"
+      ]
+    }
+  },
+  "release": null
+}
