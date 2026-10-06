@@ -1,23 +1,45 @@
-# Shared WKLY presentation package
+# @wkly/presentation
 
-`wkly-datetime-picker` is the Angular-independent presentation source package. It does not export an Angular picker component. Applications use `@wkly/datetime-picker@N.x.x`, where N matches their Angular major; this source package supplies common contracts and styling to the versioned integration builds.
+Shared presentation contracts, rendering helpers, draft validation, and CSS for WKLY. This Angular-independent package supplies common behavior to every supported Angular picker version. Use it to build a custom host or presentation extension. Applications wanting the complete Angular component should install [@wkly/datetime-picker](https://www.npmjs.com/package/@wkly/datetime-picker).
 
-| Source                     | Role                                                                            |
-| -------------------------- | ------------------------------------------------------------------------------- |
-| `src/public-api.ts`        | Picker input/output names, configuration, localization, viewport and jump types |
-| `src/week-rows.ts`         | Turns generated weeks and adapter dates into renderable rows and labels         |
-| `src/draft-validation.ts`  | Validates editable calendar and time drafts before commit                       |
-| `src/relative-days.ts`     | Derives day differences and projects relative edits onto the existing end draft |
-| `src/picker.component.css` | Shared picker theme and layout rules, emitted as `picker.css`                   |
+Showcase: [https://cokkto.github.io/wkly-datetime-picker](https://cokkto.github.io/wkly-datetime-picker)
 
-The package depends on [core](../../docs/CORE-AND-ADAPTERS.md) and adapters, never on Angular. The numbered integrations use these shared contracts and the CSS. Change common behavior here when it should apply to every supported Angular major; check the [API reference](../../docs/API.md), [Angular integration guide](../../docs/ANGULAR.md), and [developer routine](../../docs/README.DEV.md) before changing public behavior.
-
-Renderable rows are derived from absolute weeks and the active calendar adapter. Month and year labels annotate those rows; they are not calendar containers. The default overscan is three weeks on each side of the visible viewport. Draft validation reports invalid dates without silently changing the committed value.
-
-`calendarMonthBounds` derives full-month coordinates from a supported anchor, including partial adapter boundary months. It avoids converting unsupported month edges; the numbered pickers use it for viewport positioning. Source and installed unit contracts cover this boundary behavior.
+## Install
 
 ```sh
-npm run build
-npm run test:contracts
-npm run test:packages:shared
+npm install @wkly/presentation
 ```
+
+Depends on `@wkly/core` and `@wkly/adapters`, and provides CommonJS, ES modules, TypeScript declarations, and `picker.css`. Declare core or adapters as direct dependencies if you import them in your code.
+
+## Use shared contracts
+
+```ts
+import {
+  DEFAULT_OVERSCAN_WEEKS,
+  WklyJumpOptions,
+} from '@wkly/presentation';
+
+const jump: WklyJumpOptions = { align: 'center', focus: true };
+console.log(DEFAULT_OVERSCAN_WEEKS); // 3 buffered weeks on each side
+```
+
+Custom hosts can include the shared stylesheet through their bundler:
+
+```css
+@import '@wkly/presentation/picker.css';
+```
+
+## Functionality
+
+- `WklyPickerInputs`, `WklyPickerOutputs`, and binding-name constants describe the shared picker interface.
+- Configuration, localization, clock, viewport, close-reason, and jump types keep hosts consistent.
+- `createWeekRows` combines immutable weeks and adapter dates into cells with localized labels, accessibility text, annotations, and disabled/hidden states.
+- `calendarMonthBounds` computes full-month coordinates from a supported anchor, including partial adapter boundary months, without converting unsupported edges.
+- `validateDrafts` checks editable calendar and time drafts before commit, preserving invalid drafts for error reporting.
+- `draftDayDifference` and `setDraftDayDifference` support relative range-end editing.
+- `picker.css` supplies the shared layout and theme variables.
+
+Renderable rows follow continuous absolute weeks; month and year labels annotate those rows. Angular components, dialogs, forms, and the optional CDK overlay are supplied by `@wkly/datetime-picker`. See its [consumer guide](https://github.com/cokkto/wkly-datetime-picker#readme) for UI usage.
+
+See the [API reference](https://github.com/cokkto/wkly-datetime-picker/blob/main/docs/API.md). [MIT license](LICENSE).
