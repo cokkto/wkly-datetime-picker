@@ -1,4 +1,7 @@
-import { Component } from "@angular/core";
+import { DOCUMENT } from "@angular/common";
+import { Title, Meta } from "@angular/platform-browser";
+import metadata from "./page-metadata.json";
+import { Component, Inject } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import { decodeIso } from "wkly-datetime-picker.adapters";
 import { DemoConfig } from "./demo.component";
@@ -62,9 +65,32 @@ export class PageComponent {
   constructor(
     route: ActivatedRoute,
     private pairsService: PairedSelectionService,
+    title: Title,
+    meta: Meta,
+    @Inject(DOCUMENT) document: Document,
   ) {
     this.routeName = route.snapshot.data.page || "";
     this.page = PAGES[this.routeName] || null;
+    const pageMetadata =
+      metadata[this.routeName as keyof typeof metadata] || metadata[""];
+    title.setTitle(pageMetadata.title);
+    meta.updateTag({ name: "description", content: pageMetadata.description });
+    meta.updateTag({ property: "og:title", content: pageMetadata.title });
+    meta.updateTag({
+      property: "og:description",
+      content: pageMetadata.description,
+    });
+    const canonical = document.querySelector<HTMLLinkElement>(
+      'link[rel="canonical"]',
+    );
+    if (canonical) {
+      const url = new URL(
+        this.routeName ? this.routeName + "/" : "",
+        document.baseURI,
+      ).href;
+      canonical.href = url;
+      meta.updateTag({ property: "og:url", content: url });
+    }
   }
   choosePair(value: string): void {
     this.pairsService.select(value);

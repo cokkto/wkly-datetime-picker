@@ -149,9 +149,7 @@ function runCheck(plan) {
           ),
         );
         passed =
-          report.stats.expected ===
-            summary.angular.length * summary.browsers.length +
-              summary.browsers.length &&
+          report.stats.expected === summary.browsers.length &&
           !report.stats.unexpected &&
           !report.stats.skipped &&
           !report.stats.flaky;

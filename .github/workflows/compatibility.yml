@@ -156,12 +156,13 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, firefox, webkit]
-    name: Showcase / ${{ matrix.browser }}
+    name: Showcase smoke / ${{ matrix.browser }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
       WKLY_TEST_BROWSERS: ${{ matrix.browser }}
       WKLY_E2E: "1"
+      WKLY_BASE_PATH: /showcase/
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

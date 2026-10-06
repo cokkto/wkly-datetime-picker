@@ -14,7 +14,11 @@ const types = {
   ".woff2": "font/woff2",
 };
 
-function createShowcaseServer({ output, majors, domain = "wkly.localhost" }) {
+function createShowcaseServer({
+  output,
+  domain = "wkly.localhost",
+  basePath = "/",
+}) {
   output = path.resolve(output);
   return http.createServer((req, res) => {
     const finish = (status, message) => {
@@ -34,17 +38,11 @@ function createShowcaseServer({ output, majors, domain = "wkly.localhost" }) {
     } catch (_) {
       return finish(400, "Invalid request");
     }
-    const version = hostname.endsWith(`.${domain}`)
-      ? hostname.slice(0, -(domain.length + 1))
-      : "";
-    let appRoot;
-    if (/^v\d+$/.test(version) && majors.includes(version.slice(1))) {
-      appRoot = path.join(output, "runtime", version.slice(1));
-    } else if ([domain, "localhost", "127.0.0.1", "[::1]"].includes(hostname)) {
-      appRoot = output;
-    } else {
+    if (![domain, "localhost", "127.0.0.1", "[::1]"].includes(hostname))
       return finish(404, "Unknown application host");
-    }
+    if (!pathname.startsWith(basePath)) return finish(404, "Not found");
+    pathname = "/" + pathname.slice(basePath.length);
+    const appRoot = output;
     // Reject Windows path aliases too, so host isolation is identical on every OS.
     const segments = pathname.split("/").filter(Boolean);
     if (
@@ -61,9 +59,7 @@ function createShowcaseServer({ output, majors, domain = "wkly.localhost" }) {
     try {
       if (fs.existsSync(file) && fs.statSync(file).isDirectory())
         file = path.join(file, "index.html");
-      // Missing assets are real 404s; extensionless navigation gets this app's shell.
-      if (!fs.existsSync(file) && !path.extname(pathname))
-        file = path.join(appRoot, "index.html");
+      // Use only generated route documents, matching static GitHub Pages hosting.
       if (!fs.existsSync(file) || !fs.statSync(file).isFile())
         return finish(404, "Not found");
       const body = req.method === "HEAD" ? undefined : fs.readFileSync(file);

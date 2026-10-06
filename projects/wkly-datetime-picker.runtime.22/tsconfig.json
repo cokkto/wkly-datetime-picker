@@ -25,6 +25,6 @@
     },
     "ignoreDeprecations": "6.0"
   },
-  "files": ["src/main.ts"],
+  "files": ["src/runtime.module.ts"],
   "include": ["src/**/*.d.ts"]
 }

@@ -104,6 +104,30 @@ function receipt(release) {
   };
 }
 
+test("retiring showcase entry metadata preserves release fingerprints; dependency changes still release", () => {
+  const f = fixture();
+  try {
+    const supported = read(path.join(f.directory, "supported-angular.json"));
+    for (const [major, row] of Object.entries(supported)) {
+      row.runtimeEntry = `projects/wkly-datetime-picker.runtime.${major}/src/main.ts`;
+      row.runtimeHtml = `projects/wkly-datetime-picker.runtime.${major}/src/index.html`;
+    }
+    f.write("supported-angular.json", supported);
+    assert.equal(f.plan(), null);
+    for (const row of Object.values(supported)) {
+      delete row.runtimeEntry;
+      delete row.runtimeHtml;
+    }
+    f.write("supported-angular.json", supported);
+    assert.equal(f.plan(), null);
+    supported["19"].dependencies.typescript = "5.6.3";
+    f.write("supported-angular.json", supported);
+    assert.deepEqual(f.plan().release.angular, ["19"]);
+  } finally {
+    f.dispose();
+  }
+});
+
 test("an Angular-only fix advances its A revision, qualifies one line, and applies idempotently", () => {
   const f = fixture();
   try {
