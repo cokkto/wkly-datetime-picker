@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "files": ["src/main.ts"],
+  "files": ["src/runtime.module.ts"],
   "include": [],
   "compilerOptions": {
     "paths": {

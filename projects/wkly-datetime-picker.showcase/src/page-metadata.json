@@ -1,0 +1,38 @@
+{
+  "": {
+    "title": "WKLY — Angular date and time picker",
+    "description": "A continuous week-based Angular date and time picker with ranges, UTC values, localization, calendar adapters, dialogs and CDK overlays."
+  },
+  "single": {
+    "title": "Date and time selections | WKLY Angular picker",
+    "description": "Select a date, a time, or both. Every completed inline selection is available immediately as a canonical UTC value."
+  },
+  "ranges": {
+    "title": "Date and time ranges | WKLY Angular picker",
+    "description": "Choose two endpoints in one calendar. Reverse selections are ordered automatically, and incomplete ranges stay in the draft."
+  },
+  "presentations": {
+    "title": "Inline, dialog and overlay presentations | WKLY Angular picker",
+    "description": "The same picker, four ways to present it. Dialogs and overlays keep edits private until you confirm."
+  },
+  "localization": {
+    "title": "Localization and RTL | WKLY Angular picker",
+    "description": "Explore calendar systems, reading direction, localized digits, and regional week starts side by side."
+  },
+  "calendars": {
+    "title": "Gregorian, Hebrew and Hijri calendars | WKLY Angular picker",
+    "description": "All three representations share the same epoch day. Select any calendar to update its companions."
+  },
+  "validation": {
+    "title": "Validation and Angular forms | WKLY Angular picker",
+    "description": "Impossible dates remain editable. Constraints apply equally to the calendar, typed fields, Now, and programmatic values."
+  },
+  "virtualization": {
+    "title": "Virtual scrolling calendar | WKLY Angular picker",
+    "description": "Jump decades in one operation. The calendar only renders the visible weeks and a small overscan buffer."
+  },
+  "styling": {
+    "title": "Picker colors and sizing | WKLY Angular picker",
+    "description": "CSS color tokens and a size multiplier fit the picker to your interface. Touch targets stay at least 44 pixels."
+  }
+}

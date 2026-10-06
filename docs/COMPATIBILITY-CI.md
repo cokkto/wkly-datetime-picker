@@ -14,7 +14,7 @@ Versions use `N.S.A`: `N` is the Angular major, `S` is a shared revision common 
 
 ## Pipeline
 
-Pushes to `main`, pull requests targeting `main` and manual dispatch run the gate. Picker/browser and showcase coverage always spans every registered major. Package qualification normally spans every major too; an applied release plan with unchanged recorded inputs limits fresh package jobs to its affected picker lines. Thus an Angular-only version PR builds its one new picker line, alongside unchanged shared dependencies needed for base/CDK verification. A shared revision qualifies all majors. Unprepared source changes get full package coverage and cannot publish until their versions are prepared. Newer runs on the same ref cancel obsolete runs.
+Pushes to `main`, pull requests targeting `main` and manual dispatch run the gate. Picker/browser coverage always spans every registered major; showcase smoke checks use only the newest Angular runtime across all three engines. Package qualification normally spans every major too; an applied release plan with unchanged recorded inputs limits fresh package jobs to its affected picker lines. Thus an Angular-only version PR builds its one new picker line, alongside unchanged shared dependencies needed for base/CDK verification. A shared revision qualifies all majors. Unprepared source changes get full package coverage and cannot publish until their versions are prepared. Newer runs on the same ref cancel obsolete runs.
 
 | Job                       | Runner                          | Checks                                                                                                                              |
 | ------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -22,7 +22,7 @@ Pushes to `main`, pull requests targeting `main` and manual dispatch run the gat
 | `shared`                  | Linux, Node 24                  | Tooling/server contracts, all source/template lint, test types, source contracts and freshly installed shared-package contracts     |
 | `picker` × Angular major  | Windows, Node 24                | Build only that major's picker host; run every supported domain on Chromium/Firefox/WebKit with fixture/context/page reuse auditing |
 | `angular` × release major | Linux, pinned Node then Node 24 | Fresh isolated libraries, tarballs and base/CDK installs, public-import AOT and SSR, then packed startup on all three browsers      |
-| `showcase` × browser      | Linux, Node 24                  | Build all versioned testbeds and evergreen showcase; run that engine's version and catalogue journeys                               |
+| `showcase` × browser      | Linux, Node 24                  | Build the public showcase; check that engine's compiled controls and initial state on every public route                               |
 | `result`                  | Linux                           | Require every job and matrix to succeed, including failures, cancellations or unexpected skips                                      |
 
 Picker jobs pin `windows-2025-vs2026` and use two browser workers (`CI=true`); local picker runs keep six. Screenshots include all four month-boundary cases per engine. Firefox on Actions uses `baselines/win32-server2025/firefox`, since Windows Server text rasterization differs from local Windows; other engines and local Firefox keep `baselines/win32/<engine>`. Both variants remain shared across Angular versions and use the same strict comparison settings. Update server references only from reviewed screenshots captured on the pinned runner. Touch input runs Chromium only; desktop domains run all three engines. Package and showcase jobs use Linux and have no screenshot baseline dependency. The [test coverage index](TEST-DOMAINS.md) links the exact specs.
@@ -51,16 +51,16 @@ npm run test:packages:angular:version -- 22
 
 `prepare` replaces the chosen generated toolchain directory. `test:packages:angular:version` installs, builds, packs, AOT compiles and checks SSR for the selected major; it replaces that major's generated consumer. Switch back to modern Node for Playwright; `npm run test:packages:angular:reuse` rechecks those installed artifacts with AOT, SSR and browser journeys. Set `WKLY_TEST_ANGULAR` to that major and provide its pinned Node executable as described in the [test README](../projects/wkly-datetime-picker.tests/README.md#package-checks).
 
-The showcase's local browser suite can be restricted to one version:
+The showcase's local smoke suite can be restricted to one browser:
 
 ```sh
-npm run test:showcase -- --project=angular-22-chromium-showcase
+npm run test:showcase -- --project=chromium-showcase
 ```
 
 See [developer guide](README.DEV.md) for the common loop and [test project README](../projects/wkly-datetime-picker.tests/README.md) for suite layout.
 
 ## Adding a major
 
-Add `projects/wkly-datetime-picker.N/` and `projects/wkly-datetime-picker.runtime.N/`, register both in `pnpm-workspace.yaml`, then add the exact toolchain and runtime paths to `supported-angular.json`. Keep common behavior in shared packages and use the public API exercised by the compatibility consumer. Update the evergreen showcase's newest runtime import. Run `npm run test:tooling` and `npm run ci:matrix` before the package and browser checks. An unregistered numbered package fails planner validation.
+Add `projects/wkly-datetime-picker.N/` and `projects/wkly-datetime-picker.runtime.N/`, register both in `pnpm-workspace.yaml`, then add the exact toolchain dependencies to `supported-angular.json`. Keep common behavior in shared packages and use the public API exercised by the compatibility consumer. Update the evergreen showcase's newest runtime import. Run `npm run test:tooling` and `npm run ci:matrix` before the package and browser checks. An unregistered numbered package fails planner validation.
 
 For the complete local gate use `npm run test:release` (also `test:all`): it rebuilds every registered pinned compatibility toolchain and fresh consumer, including base-without-CDK, AOT, SSR and all three engines. `test:release -- --reuse-packed` is a weaker repeat check of existing artifacts. Stage/total timings are saved in `.test-build/checks/release/summary.json`. `test:pr` runs the full local behavior matrix without Angular package qualification; CI adds that qualification in parallel jobs. See the [developer guide](README.DEV.md#checks) for faster development/push commands.

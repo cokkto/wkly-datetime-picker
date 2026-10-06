@@ -91,7 +91,6 @@ summary:focus-visible {
   margin-top: -3px;
 }
 .header-caption,
-.version,
 .nav-caption,
 .eyebrow,
 .diagnostic-label {
@@ -99,27 +98,6 @@ summary:focus-visible {
   font-weight: 650;
   letter-spacing: 1.7px;
   color: #62716a;
-}
-.version {
-  margin-left: auto;
-  letter-spacing: 0.3px;
-  display: flex;
-  align-items: center;
-  gap: 0.85em;
-}
-.version select {
-  min-height: 36px;
-  padding: 4px 8px;
-  border: 1px solid #d7e0d3;
-  border-radius: 5px;
-  background: #fff;
-  color: #304b38;
-}
-.version i {
-  height: 6px;
-  width: 6px;
-  border-radius: 50%;
-  background: #488573;
 }
 .app-layout {
   display: grid;
@@ -589,13 +567,6 @@ dialog::backdrop {
     height: 70px;
     padding: 0 18px;
     gap: 15px;
-  }
-  .version {
-    display: flex;
-    margin-left: 0;
-  }
-  .version-label {
-    display: none;
   }
   .menu-toggle {
     display: block;

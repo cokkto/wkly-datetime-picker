@@ -33,7 +33,9 @@
         "projects/wkly-datetime-picker.showcase/node_modules/@angular/router"
       ]
     },
-    "types": []
+    "types": [],
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
   },
   "files": ["src/main.ts"],
   "include": ["src/**/*.d.ts"]

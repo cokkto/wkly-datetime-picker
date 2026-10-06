@@ -47,14 +47,11 @@ CommonJS/ESM import smoke checks: [imports.cjs](../projects/wkly-datetime-picker
 
 `npm run test:packages:angular` qualifies fresh libraries; `test:packages:angular:reuse` rechecks prepared artifacts. The [test README](../projects/wkly-datetime-picker.tests/README.md#package-checks) explains pinned Node executables.
 
-## Showcase browsers
+## Showcase smoke
 
-| Spec                                                                                     | Coverage                                                                                                                                                 |
-| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [testbeds.spec.cjs](../projects/wkly-datetime-picker.tests/showcase/testbeds.spec.cjs)   | Independently compiled versioned testbeds: four layout routes, controls, representative native/CDK/Material forms, commit/cancel/focus/reopen and reload |
-| [catalogue.spec.cjs](../projects/wkly-datetime-picker.tests/showcase/catalogue.spec.cjs) | Evergreen routes, direct reload, linked calendars and navigation to a versioned host                                                                     |
+[catalogue.spec.cjs](../projects/wkly-datetime-picker.tests/showcase/catalogue.spec.cjs) visits every public route and checks successful static document responses, page titles, compiled WKLY controls, initial value diagnostics and no browser errors. It provides one journey per engine (three total); Angular version compatibility and picker behavior are covered by the suites above. Controlled showcase testbed journeys have been removed.
 
-`npm run showcase:build` prepares assets; `npm run test:showcase` runs 39 journeys across all versions and Chromium/Firefox/WebKit.
+`npm run showcase:build` prepares assets; `npm run test:showcase` runs the minimal smoke gate. Build and test use the same `WKLY_BASE_PATH`. See [GitHub Pages setup](SHOWCASE.md).
 
 ## Tooling contracts
 
@@ -66,7 +63,7 @@ CommonJS/ESM import smoke checks: [imports.cjs](../projects/wkly-datetime-picker
 | [release.test.cjs](../scripts/release.test.cjs)               | Qualified artifact integrity, selected publication/recovery, monotonic tags, registry processing and authenticated trusted-publisher checks |
 | [release-plan.test.cjs](../scripts/release-plan.test.cjs)     | Shared/local revisions, input fingerprints, dependent shared versions, stale-plan rejection, previous receipts and immutable release records |
 | [lint.test.cjs](../scripts/lint.test.cjs)                       | Script and Angular template lint diagnostics                                     |
-| [showcase-server.test.cjs](../scripts/showcase-server.test.cjs) | Host routing, fallback and isolation                                             |
+| [showcase-server.test.cjs](../scripts/showcase-server.test.cjs) | Static routes, removed routes, subpath serving and invalid requests                                             |
 | [test-check.test.cjs](../scripts/test-check.test.cjs)           | Development/push/PR/release selection and fresh/reused package qualification     |
 | [test-host-server.test.cjs](../scripts/test-host-server.test.cjs) | Reused host routing after wider builds, missing-host startup failure and unrelated-server rejection |
 

@@ -12,11 +12,11 @@ npm test
 npm run showcase:start
 ```
 
-Use Node 24.15+ for the combined showcase build and Playwright driver. Compatibility builds use the per-major Node and TypeScript versions recorded in [`supported-angular.json`](../supported-angular.json); use the [compatibility guide](COMPATIBILITY-CI.md) for those isolated toolchains. The package manager is pinned in [`package.json`](../package.json).
+Use Node 24.15+ for the showcase build and Playwright driver. Compatibility builds use the per-major Node and TypeScript versions recorded in [`supported-angular.json`](../supported-angular.json); use the [compatibility guide](COMPATIBILITY-CI.md) for those isolated toolchains. The package manager is pinned in [`package.json`](../package.json).
 
-The watcher serves the evergreen showcase at `http://wkly.localhost:4200` (also `http://127.0.0.1:4200`), and versioned testbeds at `http://v11.wkly.localhost:4200` through `http://v22.wkly.localhost:4200`. Open a testbed's `/cases/empty/<example-id>` route for a minimal fixture. See [showcase usage](SHOWCASE.md) for layouts, host settings, and test controls.
+The watcher serves the public showcase at `http://wkly.localhost:4200` (also `http://127.0.0.1:4200`). Controlled showcase testbeds have been removed. See [showcase usage](SHOWCASE.md) for public routes, host settings, smoke coverage and GitHub Pages setup.
 
-Picker domain tests use the same versioned hostnames on port 4318, with `/index.html` serving each version's minimal fixture app. `WKLY_TEST_PORT` selects another port. Startup verifies each selected virtual host over loopback before launching browser workers; see the [test README](../projects/wkly-datetime-picker.tests/README.md).
+Picker domain tests use independent versioned hostnames on port 4318, with `/index.html` serving each version's minimal fixture app. `WKLY_TEST_PORT` selects another port. Startup verifies each selected virtual host over loopback before launching browser workers; see the [test README](../projects/wkly-datetime-picker.tests/README.md).
 
 ## Checks
 
@@ -27,7 +27,7 @@ Picker domain tests use the same versioned hostnames on port 4318, with `/index.
 | `npm run test:pr`                                                   | Full behavior gate for PRs: all registered Angular versions and engines, shared-package checks and showcase      |
 | `npm run test:release`                                              | Pre-release qualification: PR gate plus fresh Angular packages, isolated installs, base/CDK AOT, SSR and startup |
 | `npm run test:picker -- --project=angular-22-chromium-navigation`   | Focus one domain with native Playwright filters; rebuilds selected hosts unless explicitly marked prebuilt       |
-| `npm run test:showcase`                                             | Current showcase journeys; run `npm run showcase:build` first                                                    |
+| `npm run test:showcase`                                             | Current showcase smoke checks; run `npm run showcase:build` first                                                    |
 | `npm run test:contracts`                                            | Pure source contracts in UTC and America/New_York                                                                |
 | `npm run test:packages:shared`                                      | Fresh installed shared-package contracts                                                                         |
 | `npm run test:packages:angular`                                     | Fresh full Angular package qualification; requires pinned Node executables                                       |
@@ -62,7 +62,7 @@ Pass Playwright arguments after `--`. Use `--project` to select one Angular vers
 Run one showcase project (after `npm run showcase:build`):
 
 ```sh
-npm run test:showcase -- --project=angular-22-chromium-showcase
+npm run test:showcase -- --project=chromium-showcase
 ```
 
 Run all tests and record local elapsed time:

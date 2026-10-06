@@ -11,17 +11,17 @@ The [test coverage index](../../docs/TEST-DOMAINS.md) links every current spec a
 | `npm run test:pr`                                      | All versions/engines, source/installed shared contracts, picker and showcase |
 | `npm run test:release` / `npm run test:all`            | PR gate plus fresh Angular package qualification                             |
 | `npm run test:picker`                                  | Build selected hosts and run the picker domains                              |
-| `npm run showcase:build`, then `npm run test:showcase` | Build and test versioned showcase/catalogue journeys                         |
+| `npm run showcase:build`, then `npm run test:showcase` | Build and smoke-test the public showcase                         |
 | `npm run test:browsers:install`                        | Install Chromium, Firefox and WebKit                                         |
 
 Development and component commands accept `WKLY_TEST_ANGULAR` (for example `11,22`) and `WKLY_TEST_BROWSERS` (`chromium,firefox,webkit`). Push fixes oldest/newest Chromium; PR/release always select the full registry/engine matrix. Each profile rebuilds its selected hosts. Pass native Playwright filters after `--`:
 
 ```sh
 npm run test:picker -- --project=angular-22-chromium-navigation
-npm run test:showcase -- --project=angular-22-firefox-showcase
+npm run test:showcase -- --project=firefox-showcase
 ```
 
-The picker uses `http://v11.wkly.localhost:4318/index.html` through `http://v22.wkly.localhost:4318/index.html`, matching the showcase's versioned hostname structure. `WKLY_TEST_PORT` changes the port. Each host serves only that version's fixture app and assets; `http://127.0.0.1:4318/health` checks the server process. Startup checks send the selected version's Host header over loopback, so Node does not need DNS entries for `.localhost` subdomains.
+The picker uses independent hosts `http://v11.wkly.localhost:4318/index.html` through `http://v22.wkly.localhost:4318/index.html`. `WKLY_TEST_PORT` changes the port. Each host serves only that version's fixture app and assets; `http://127.0.0.1:4318/health` checks the server process. Startup checks send the selected version's Host header over loopback, so Node does not need DNS entries for `.localhost` subdomains.
 
 The server can be reused and serves every built registered Angular version, including hosts built after it starts. Startup checks every selected host before launching workers. If an older server reports healthy but cannot serve the selection, stop it and rerun, or set `WKLY_TEST_PORT` to an unused port. Packed/showcase ports default to 4321/4330 and accept `WKLY_PACKED_PORT`/`WKLY_SHOWCASE_PORT`.
 
