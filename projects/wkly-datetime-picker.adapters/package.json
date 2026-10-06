@@ -1,6 +1,6 @@
 {
   "name": "wkly-datetime-picker.adapters",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Calendar adapters and canonical UTC validation for WKLY",
   "license": "MIT",
   "sideEffects": false,
