@@ -1,3 +1,4 @@
+import type { WklyHourCycle } from "wkly-datetime-picker.adapters";
 import {
   AfterViewInit,
   ChangeDetectorRef,
@@ -107,6 +108,7 @@ export class WklyDateTimePickerComponent
   effectiveLocale = "en-US";
   effectiveOffset: WklyWeekOffset = 0;
   effectiveHourCycle: "h12" | "h24" = "h24";
+  private configuredHourCycle?: WklyHourCycle;
   direction = "ltr";
   rows: Row[] = [];
   weekdays: string[] = [];
@@ -286,17 +288,22 @@ export class WklyDateTimePickerComponent
       this.effectiveOffset = 0;
     }
     this.setSupportedScrollRange();
-    this.effectiveHourCycle =
-      this[WklyPickerInputsPropertyKeys.HourCycle] === "h12"
-        ? "h12"
-        : this[WklyPickerInputsPropertyKeys.HourCycle] === "locale"
-          ? new Intl.DateTimeFormat(this.effectiveLocale, {
-              hour: "numeric",
-              timeZone: "UTC",
-            }).resolvedOptions().hour12
-            ? "h12"
-            : "h24"
-          : "h24";
+    const hourCycle = this[WklyPickerInputsPropertyKeys.HourCycle];
+    // Host value/configuration feedback must retain the user's switchable format.
+    if (hourCycle !== "switchable" || this.configuredHourCycle !== hourCycle) {
+      this.effectiveHourCycle =
+        hourCycle === "h12"
+          ? "h12"
+          : hourCycle === "locale"
+            ? new Intl.DateTimeFormat(this.effectiveLocale, {
+                hour: "numeric",
+                timeZone: "UTC",
+              }).resolvedOptions().hour12
+              ? "h12"
+              : "h24"
+            : "h24";
+    }
+    this.configuredHourCycle = hourCycle;
     this.weekdays = Array.from({ length: 7 }, (_, i) =>
       this.adapter.formatWeekday(this.effectiveOffset + i, "short"),
     );
