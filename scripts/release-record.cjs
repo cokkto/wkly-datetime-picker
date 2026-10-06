@@ -47,14 +47,26 @@ function sameCandidates(original, candidate) {
 }
 
 function lookup(tag, runGh = gh) {
+  let release;
   try {
-    return JSON.parse(
-      runGh(["api", `repos/${process.env.GH_REPO}/releases/tags/${tag}`]),
+    // The REST tag endpoint only finds published releases. CLI lookup also
+    // resolves drafts, whose immutable manifests must survive retries.
+    release = JSON.parse(
+      runGh([
+        "release",
+        "view",
+        tag,
+        "--repo",
+        process.env.GH_REPO,
+        "--json",
+        "apiUrl",
+      ]),
     );
   } catch (error) {
-    if (/HTTP 404/.test(String(error.stderr))) return null;
+    if (/^release not found\s*$/m.test(String(error.stderr))) return null;
     throw error;
   }
+  return JSON.parse(runGh(["api", release.apiUrl]));
 }
 
 function retainedManifest(tag, destination, runGh = gh) {
@@ -153,6 +165,7 @@ function record(
       ]);
       existing = lookup(tag, runGh);
     }
+    assert.ok(existing, "Created draft release could not be found");
     if (existing.assets.some((asset) => asset.name === "manifest.json"))
       sameCandidates(retainedManifest(tag, destination, runGh), candidate);
     else {
@@ -171,6 +184,7 @@ function record(
     // Uploads can fail halfway through. Reconcile missing assets on every retry,
     // retaining existing bytes and the original immutable manifest.
     existing = lookup(tag, runGh);
+    assert.ok(existing, "Retained draft release could not be found");
     for (const pkg of candidate.packages) {
       const asset = existing.assets.find((item) => item.name === pkg.filename);
       if (!asset) continue;
