@@ -13,6 +13,8 @@ WKLY is an Angular date and time picker with a continuous, scrollable calendar. 
 - [Set application defaults](#set-application-defaults)
 - [Use public types and methods](#use-public-types-and-methods)
 
+Showcase: [https://cokkto.github.io/wkly-datetime-picker](https://cokkto.github.io/wkly-datetime-picker)
+
 ## Install and choose a version
 
 Install `@wkly/datetime-picker` with the same major version as your Angular application. Angular 11–22 have corresponding package version lines.
@@ -22,6 +24,8 @@ For Angular 19:
 ```sh
 npm install @wkly/datetime-picker@19.x.x
 ```
+
+The `latest` npm dist-tag follows the highest supported Angular major (currently 22). Use `@wkly/datetime-picker@latest` for that line, or `@wkly/datetime-picker@angular-N` for a specific supported major.
 
 For another supported Angular major, replace `19` with that number. Keep the major in your dependency range when updating.
 
@@ -299,7 +303,7 @@ The relative-day view uses `inDays` (default `"In {{days}} days"`), `days`, `end
 
 ## Use a different calendar
 
-The included calendar adapter is `WklyGregorianCalendarAdapter`, available from `wkly-datetime-picker.adapters`. It is selected automatically and supports Gregorian years `0000..9999` with localized labels. `WklyCalendarAbstractAdapter` is an optional base class for custom adapters, providing reusable locale formatters.
+The included calendar adapter is `WklyGregorianCalendarAdapter`, available from `@wkly/adapters`. It is selected automatically and supports Gregorian years `0000..9999` with localized labels. `WklyCalendarAbstractAdapter` is an optional base class for custom adapters, providing reusable locale formatters.
 
 For another calendar, supply a `WklyCalendarAdapter` through `[calendarAdapter]`. The [Hebrew adapter](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker.showcase/src/hebrew-adapter.ts) and [Hijri adapter](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker.showcase/src/hijri-adapter.ts) are available as source from Git; neither is shipped in npm packages. Copy their source into your application. Hebrew requires `@hebcal/core`; Hijri has no additional dependency beyond WKLY and the platform's `Intl` calendar formatting.
 
@@ -389,9 +393,9 @@ Use the public types when integrating with forms, application state, validation,
 | `WklyConfiguration`, `WklyStrings`, `WklyTranslations`, `WklyClock` | `@wkly/datetime-picker` | Type values supplied through injection tokens |
 | `WklyViewportChange`, `WklyCloseReason`, `WklyJumpOptions` | `@wkly/datetime-picker` | Handle navigation, dismissal, and programmatic jumps |
 | `WklyPresentationRef` | `@wkly/datetime-picker` | Access and destroy a presentation created through a presentation service |
-| `WklyCalendarAdapter`, `WklyCalendarDate`, `WklyCalendarMonth`, `WklyCalendarDateError` | `wkly-datetime-picker.adapters` | Implement another calendar and its validation |
-| `WklyDatePredicateContext`, `WklyTimePredicateContext`, `WklySelectionConfig` | `wkly-datetime-picker.adapters` | Work directly with predicate context and selection validation |
-| `WklyPickerInputs`, `WklyPickerOutputs` | `wkly-datetime-picker` | Describe the shared binding contracts when building presentation extensions |
+| `WklyCalendarAdapter`, `WklyCalendarDate`, `WklyCalendarMonth`, `WklyCalendarDateError` | `@wkly/adapters` | Implement another calendar and its validation |
+| `WklyDatePredicateContext`, `WklyTimePredicateContext`, `WklySelectionConfig` | `@wkly/adapters` | Work directly with predicate context and selection validation |
+| `WklyPickerInputs`, `WklyPickerOutputs` | `@wkly/presentation` | Describe the shared binding contracts when building presentation extensions |
 
 When importing an adapter or shared contract directly, declare its package as a direct dependency of your application.
 

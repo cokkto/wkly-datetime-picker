@@ -20,6 +20,7 @@ export class FixtureController {
   form: FormControl = new FormControl(null);
   binding: "form" | "input" = "form";
   fixtureId = 0;
+  private reflectValue = false;
   events: HostEvent[] = [];
   inputs: WklyPickerInputs = {
     mode: "datetime",
@@ -59,6 +60,7 @@ export class FixtureController {
     this.presentation = spec.presentation || "inline";
     this.fixtureId = id;
     this.binding = spec.binding || "form";
+    this.reflectValue = !!spec.reflectValue;
     this.patch(spec.inputs || {});
     if (spec.calendar)
       this.inputs.calendarAdapter = calendarAdapter(
@@ -83,6 +85,16 @@ export class FixtureController {
       name,
       value: value === undefined ? null : value,
     });
+    if (name === "valueChange" && this.reflectValue) {
+      // Like the showcase, reflect committed values through a fresh host configuration.
+      Promise.resolve().then(() => {
+        this.inputs = {
+          ...this.inputs,
+          value: value as WklyPickerInputs["value"],
+          viewportPreset: { ...this.inputs.viewportPreset },
+        };
+      });
+    }
   }
   get emissions(): number {
     return this.events.filter((event) => event.name === "valueChange").length;

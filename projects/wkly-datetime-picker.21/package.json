@@ -38,5 +38,24 @@
   },
   "scripts": {
     "build": "node ../../scripts/build.cjs wkly-datetime-picker.21"
-  }
+  },
+  "keywords": [
+    "calendar",
+    "date",
+    "date-picker",
+    "date-range",
+    "date-range-picker",
+    "time",
+    "time-picker",
+    "time-range",
+    "time-range-picker",
+    "datetime",
+    "datetime-picker",
+    "datetime-range",
+    "datetime-range-picker",
+    "angular",
+    "localization",
+    "utc"
+  ],
+  "homepage": "https://github.com/cokkto/wkly-datetime-picker#readme"
 }

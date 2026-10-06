@@ -7,6 +7,281 @@ const epoch = Date.UTC(2099, 11, 16) / 86400000;
 const day = (host: PickerFixture, date: number) =>
   host.picker.locator(`button.day[data-day="${date}"]`);
 
+type PairAction =
+  | { kind: "button"; name: string; method?: "tap" | "click" }
+  | { kind: "date"; date: string }
+  | { kind: "edit"; field: string; value: string; manual?: boolean }
+  | { kind: "drag"; field: string }
+  | { kind: "disabled-date" }
+  | { kind: "resize" };
+type PairState = {
+  value: string;
+  period: "AM" | "24" | "PM";
+  hour: string;
+  view?: "calendar" | "manual";
+  weekShift?: number;
+  landscape?: boolean;
+};
+type InteractionPair = {
+  name: string;
+  start: PairState;
+  actions: readonly [PairAction, PairAction];
+  expected: readonly [PairState, PairState];
+};
+const afternoon: PairState = { value, period: "24", hour: "13" };
+const morning: PairState = {
+  value: "2099-12-16T01:00:00.000Z",
+  period: "AM",
+  hour: "01",
+};
+const pm: PairState = { ...afternoon, period: "PM", hour: "01" };
+// Literal starting states and outcomes cover meaningful interactions, rather than all permutations.
+const interactionPairs: readonly InteractionPair[] = [
+  {
+    name: "24 to AM → hour increment retains AM",
+    start: afternoon,
+    actions: [
+      { kind: "button", name: "AM" },
+      { kind: "button", name: "Hour: next" },
+    ],
+    expected: [
+      morning,
+      { value: "2099-12-16T02:00:00.000Z", period: "AM", hour: "02" },
+    ],
+  },
+  {
+    name: "24 to AM → manual hour input retains AM",
+    start: afternoon,
+    actions: [
+      { kind: "button", name: "AM" },
+      { kind: "edit", field: "Hour", value: "03" },
+    ],
+    expected: [
+      morning,
+      { value: "2099-12-16T03:00:00.000Z", period: "AM", hour: "03" },
+    ],
+  },
+  {
+    name: "AM → PM by taps retains twelve-hour display",
+    start: afternoon,
+    actions: [
+      { kind: "button", name: "AM" },
+      { kind: "button", name: "PM" },
+    ],
+    expected: [morning, pm],
+  },
+  {
+    name: "AM → PM by mouse clicks retains twelve-hour display",
+    start: afternoon,
+    actions: [
+      { kind: "button", name: "AM", method: "click" },
+      { kind: "button", name: "PM", method: "click" },
+    ],
+    expected: [morning, pm],
+  },
+  {
+    name: "PM → date selection preserves time and removes old selection",
+    start: morning,
+    actions: [
+      { kind: "button", name: "PM" },
+      { kind: "date", date: "2099-12-17" },
+    ],
+    expected: [
+      pm,
+      { value: "2099-12-17T13:00:00.000Z", period: "PM", hour: "01" },
+    ],
+  },
+  {
+    name: "date selection → AM preserves the new selected day",
+    start: afternoon,
+    actions: [
+      { kind: "date", date: "2099-12-19" },
+      { kind: "button", name: "AM" },
+    ],
+    expected: [
+      { value: "2099-12-19T13:00:00.000Z", period: "24", hour: "13" },
+      { value: "2099-12-19T01:00:00.000Z", period: "AM", hour: "01" },
+    ],
+  },
+  {
+    name: "24 → PM restores twelve-hour display",
+    start: morning,
+    actions: [
+      { kind: "button", name: "24" },
+      { kind: "button", name: "PM" },
+    ],
+    expected: [{ ...morning, period: "24" }, pm],
+  },
+  {
+    name: "PM → 24 removes the PM pressed state",
+    start: morning,
+    actions: [
+      { kind: "button", name: "PM" },
+      { kind: "button", name: "24" },
+    ],
+    expected: [pm, afternoon],
+  },
+  {
+    name: "previous week → AM preserves selection",
+    start: afternoon,
+    actions: [
+      { kind: "button", name: "Previous week" },
+      { kind: "button", name: "AM" },
+    ],
+    expected: [{ ...afternoon, weekShift: -1 }, morning],
+  },
+  {
+    name: "next week → date selection preserves format",
+    start: pm,
+    actions: [
+      { kind: "button", name: "Next week" },
+      { kind: "date", date: "2099-12-23" },
+    ],
+    expected: [
+      { ...pm, weekShift: 1 },
+      { value: "2099-12-23T13:00:00.000Z", period: "PM", hour: "01" },
+    ],
+  },
+  {
+    name: "AM → manual mode and year input preserves AM",
+    start: afternoon,
+    actions: [
+      { kind: "button", name: "AM" },
+      { kind: "edit", field: "Year", value: "2098", manual: true },
+    ],
+    expected: [
+      morning,
+      {
+        value: "2098-12-16T01:00:00.000Z",
+        period: "AM",
+        hour: "01",
+        view: "manual",
+      },
+    ],
+  },
+  {
+    name: "previous year → AM preserves edited year",
+    start: { ...afternoon, view: "manual" },
+    actions: [
+      { kind: "button", name: "Year: previous" },
+      { kind: "button", name: "AM" },
+    ],
+    expected: [
+      {
+        value: "2098-12-16T13:00:00.000Z",
+        period: "24",
+        hour: "13",
+        view: "manual",
+      },
+      {
+        value: "2098-12-16T01:00:00.000Z",
+        period: "AM",
+        hour: "01",
+        view: "manual",
+      },
+    ],
+  },
+  {
+    name: "manual mode → day input updates classes on reopening",
+    start: pm,
+    actions: [
+      { kind: "button", name: "Manual date entry" },
+      { kind: "edit", field: "Day", value: "20" },
+    ],
+    expected: [
+      { ...pm, view: "manual" },
+      {
+        value: "2099-12-20T13:00:00.000Z",
+        period: "PM",
+        hour: "01",
+        view: "manual",
+      },
+    ],
+  },
+  {
+    name: "month increment → PM preserves new month",
+    start: {
+      value: "2099-11-16T01:00:00.000Z",
+      period: "AM",
+      hour: "01",
+      view: "manual",
+    },
+    actions: [
+      { kind: "button", name: "Month: next" },
+      { kind: "button", name: "PM" },
+    ],
+    expected: [
+      { ...morning, view: "manual" },
+      { ...pm, view: "manual" },
+    ],
+  },
+  {
+    name: "Now → AM preserves today's date and marker",
+    start: { value: "2098-12-16T13:00:00.000Z", period: "24", hour: "13" },
+    actions: [
+      { kind: "button", name: "Now" },
+      { kind: "button", name: "AM" },
+    ],
+    expected: [afternoon, morning],
+  },
+  {
+    name: "AM → Now preserves twelve-hour display",
+    start: { value: "2098-12-16T13:00:00.000Z", period: "24", hour: "13" },
+    actions: [
+      { kind: "button", name: "AM" },
+      { kind: "button", name: "Now" },
+    ],
+    expected: [
+      { value: "2098-12-16T01:00:00.000Z", period: "AM", hour: "01" },
+      pm,
+    ],
+  },
+  {
+    name: "resize → date selection preserves PM and classes",
+    start: pm,
+    actions: [{ kind: "resize" }, { kind: "date", date: "2099-12-19" }],
+    expected: [
+      { ...pm, landscape: true },
+      {
+        value: "2099-12-19T13:00:00.000Z",
+        period: "PM",
+        hour: "01",
+        landscape: true,
+      },
+    ],
+  },
+  {
+    name: "disabled day tap → PM leaves selected date unchanged",
+    start: morning,
+    actions: [{ kind: "disabled-date" }, { kind: "button", name: "PM" }],
+    expected: [morning, pm],
+  },
+  {
+    name: "hour drag → AM preserves dragged hour",
+    start: afternoon,
+    actions: [
+      { kind: "drag", field: "Hour" },
+      { kind: "button", name: "AM" },
+    ],
+    expected: [
+      { value: "2099-12-16T14:00:00.000Z", period: "24", hour: "14" },
+      { value: "2099-12-16T02:00:00.000Z", period: "AM", hour: "02" },
+    ],
+  },
+  {
+    name: "minute increment → PM preserves edited minutes",
+    start: morning,
+    actions: [
+      { kind: "button", name: "Minute: next" },
+      { kind: "button", name: "PM" },
+    ],
+    expected: [
+      { value: "2099-12-16T01:01:00.000Z", period: "AM", hour: "01" },
+      { value: "2099-12-16T13:01:00.000Z", period: "PM", hour: "01" },
+    ],
+  },
+];
+
 // Chromium's input pipeline exercises gesture handling and native scrolling;
 // DOM-dispatched TouchEvents would only exercise the component's handlers.
 async function drag(
@@ -80,47 +355,185 @@ test.describe("calendar taps", () => {
     spec: {
       value,
       disabledEpochDays: [epoch + 2],
+      reflectValue: true,
       inputs: {
         mode: "datetime",
         locale: "en-GB",
+        hourCycle: "switchable",
         viewportPreset: { kind: "weeks", visibleWeekCount: 4 },
       },
     },
   });
-  test("taps select once, disabled days stay inert and resizing preserves selection", async ({
+  test("interaction pairs preserve values and rendered selection across active controls", async ({
     host,
   }) => {
     expect(
       await host.page.evaluate(() => navigator.maxTouchPoints),
     ).toBeGreaterThan(0);
-    await day(host, epoch + 1).tap();
-    const selected = "2099-12-17T13:00:00.000Z";
-    await expect.poll(async () => (await host.snapshot()).value).toBe(selected);
-    // A physical tap must reach the disabled target; locator.tap deliberately waits for enabled state.
-    const disabled = (await day(host, epoch + 2).boundingBox())!;
-    await host.page.touchscreen.tap(
-      disabled.x + disabled.width / 2,
-      disabled.y + disabled.height / 2,
-    );
-    expect(emissions(await host.snapshot())).toEqual([selected]);
+    const button = (name: string) =>
+      host.picker.getByRole("button", { name, exact: true });
+    const input = (name: string) =>
+      host.picker.getByRole("textbox", { name, exact: true });
+    const activate = async (
+      target: Locator,
+      method: "tap" | "click" = "tap",
+    ) => {
+      if (method === "click") await target.click();
+      else await target.tap();
+    };
+    const perform = async (action: PairAction) => {
+      switch (action.kind) {
+        case "button":
+          await activate(button(action.name), action.method);
+          break;
+        case "date":
+          await day(host, Date.parse(action.date) / 86400000).tap();
+          break;
+        case "edit":
+          if (action.manual && (await button("Manual date entry").count()))
+            await button("Manual date entry").tap();
+          await input(action.field).tap();
+          await input(action.field).fill(action.value);
+          // Native blur completes pending typing without switching the current view.
+          await input(action.field === "Minute" ? "Hour" : "Minute").tap();
+          break;
+        case "drag":
+          await drag(host, input(action.field), [8, 25], async (index) => {
+            // Hold before release, as in the scroll tests, to avoid a native fling swallowing the next tap.
+            if (index === 1) await host.page.waitForTimeout(300);
+          });
+          break;
+        case "disabled-date": {
+          const target = day(host, epoch + 2);
+          await target.scrollIntoViewIfNeeded();
+          const box = (await target.boundingBox())!;
+          // Locator.tap waits for enabled state; send a physical tap to the disabled day.
+          await host.page.touchscreen.tap(
+            box.x + box.width / 2,
+            box.y + box.height / 2,
+          );
+          break;
+        }
+        case "resize":
+          await host.page.setViewportSize({ width: 844, height: 390 });
+          break;
+      }
+    };
+    const visibleWeekStart = () =>
+      host.picker.locator(".week-scroll").evaluate((scroll) => {
+        const top = scroll.getBoundingClientRect().top;
+        const first = Array.from(scroll.querySelectorAll(".week-row")).find(
+          (row) => row.getBoundingClientRect().bottom > top + 1,
+        )!;
+        return Number(first.querySelector<HTMLElement>(".day")!.dataset.day);
+      });
+    const assertState = async (state: PairState, initialWeek?: number) => {
+      await expect
+        .poll(async () => (await host.snapshot()).value)
+        .toBe(state.value);
+      const manual = state.view === "manual";
+      expect(host.page.viewportSize()).toEqual(
+        state.landscape
+          ? { width: 844, height: 390 }
+          : { width: 390, height: 844 },
+      );
+      if (state.weekShift !== undefined)
+        await expect
+          .poll(visibleWeekStart)
+          .toBe(initialWeek! + state.weekShift * 7);
+      await expect(host.picker.locator(".date-fields")).toHaveCount(
+        manual ? 1 : 0,
+      );
+      await expect(host.picker.getByRole("grid")).toHaveCount(manual ? 0 : 1);
+      await expect(
+        button(manual ? "Calendar view" : "Manual date entry"),
+      ).toBeVisible();
+      for (const period of ["AM", "24", "PM"]) {
+        await expect(button(period)).toBeEnabled();
+        await expect(button(period)).toHaveAttribute(
+          "aria-pressed",
+          String(period === state.period),
+        );
+        await expect(button(period)).toHaveCSS(
+          "background-color",
+          period === state.period ? "rgb(229, 241, 238)" : "rgba(0, 0, 0, 0)",
+        );
+      }
+      await expect(input("Hour")).toHaveValue(state.hour);
+      await expect(input("Minute")).toHaveValue(state.value.slice(14, 16));
+      await expect(
+        host.picker.locator('input[aria-invalid="true"]'),
+      ).toHaveCount(0);
+      if (manual) {
+        await expect(host.picker.locator(".day.selected")).toHaveCount(0);
+        await expect(input("Year")).toHaveValue(state.value.slice(0, 4));
+        await expect(input("Day")).toHaveValue(state.value.slice(8, 10));
+      } else {
+        const selectedDay = Date.parse(state.value.slice(0, 10)) / 86400000;
+        await expect(host.picker.locator(".day.selected")).toHaveCount(1);
+        await expect(day(host, selectedDay)).toHaveClass(/\bselected\b/);
+        await expect(day(host, selectedDay).locator("..")).toHaveAttribute(
+          "aria-selected",
+          "true",
+        );
+        await expect(day(host, selectedDay)).toHaveCSS(
+          "background-color",
+          "rgb(23, 108, 85)",
+        );
+        if (selectedDay === epoch)
+          await expect(day(host, selectedDay)).toHaveClass(/\btoday\b/);
+        else await expect(day(host, selectedDay)).not.toHaveClass(/\btoday\b/);
+        // Every old selection must lose both its CSS class and accessible selected state.
+        await expect(
+          host.picker.locator(`.day.selected:not([data-day="${selectedDay}"])`),
+        ).toHaveCount(0);
+        await expect(
+          host.picker.locator('[role="gridcell"][aria-selected="true"]'),
+        ).toHaveCount(1);
+        await expect(host.picker.locator(".week-row.no-label")).toHaveCount(0);
+      }
+    };
     const boot = await host.page.evaluate(
       () => window.wklyTestHost.identity().bootId,
     );
     try {
-      await host.page.setViewportSize({ width: 844, height: 390 });
-      await expect(day(host, epoch + 1)).toHaveClass(/selected/);
-      await host.page.setViewportSize({ width: 390, height: 844 });
-      await day(host, epoch + 3).tap();
-      await expect
-        .poll(async () => (await host.snapshot()).value)
-        .toBe("2099-12-19T13:00:00.000Z");
-      expect(
-        await host.page.evaluate(() => window.wklyTestHost.identity().bootId),
-      ).toBe(boot);
-      expect(emissions(await host.snapshot())).toEqual([
-        selected,
-        "2099-12-19T13:00:00.000Z",
-      ]);
+      for (const scenario of interactionPairs) {
+        await test.step(scenario.name, async () => {
+          await host.page.setViewportSize({ width: 390, height: 844 });
+          if (await button("Calendar view").count())
+            await button("Calendar view").tap();
+          await host.write(scenario.start.value);
+          await button(scenario.start.period).tap();
+          if (scenario.start.view === "manual")
+            await button("Manual date entry").tap();
+          await assertState(scenario.start);
+          const initialWeek =
+            scenario.start.view === "manual"
+              ? undefined
+              : await visibleWeekStart();
+          const expectedEmissions = [...emissions(await host.snapshot())];
+          let previous = scenario.start;
+          for (const [index, action] of scenario.actions.entries()) {
+            await perform(action);
+            const expected = scenario.expected[index];
+            await assertState(expected, initialWeek);
+            if (expected.value !== previous.value)
+              expectedEmissions.push(expected.value);
+            expect(emissions(await host.snapshot())).toEqual(expectedEmissions);
+            previous = expected;
+          }
+          // Reopening must apply selected classes to manually edited dates too.
+          if (previous.view === "manual") {
+            await button("Calendar view").tap();
+            await assertState({ ...previous, view: "calendar" });
+          }
+          expect(
+            await host.page.evaluate(
+              () => window.wklyTestHost.identity().bootId,
+            ),
+          ).toBe(boot);
+        });
+      }
     } finally {
       await host.page.setViewportSize({ width: 390, height: 844 });
     }

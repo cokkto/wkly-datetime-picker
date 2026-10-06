@@ -39,8 +39,10 @@ button {
   border-radius: 8px;
   cursor: pointer;
 }
-button:hover:not(:disabled):not([aria-disabled="true"]) {
-  background: var(--wkly-accent-color-alternate);
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled):not([aria-disabled="true"]):not(.selected) {
+    background: var(--wkly-accent-color-alternate);
+  }
 }
 button:disabled,
 button[aria-disabled="true"] {
@@ -304,9 +306,6 @@ footer {
   color: var(--wkly-accent-text-color);
   width: 100%;
   font-weight: 650;
-}
-.confirm:hover:not(:disabled) {
-  background: var(--wkly-accent-color-alternate);
 }
 @media (forced-colors: active) {
   .day.selected {

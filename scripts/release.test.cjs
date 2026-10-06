@@ -324,6 +324,7 @@ test("publication preflights all artifacts and submits the graph before waiting 
     let reads = 0;
     let submitted = 0;
     let verifiedConsumers = false;
+    let latestTag;
     await publish(output, {
       readMetadata: async (name) => {
         reads++;
@@ -358,6 +359,7 @@ test("publication preflights all artifacts and submits the graph before waiting 
         } else {
           assert.equal(submitted, toSubmit.length);
           assert.equal(args[0], "dist-tag");
+          if (args[3] === "latest") latestTag = args[2];
         }
       },
       pause: async () =>
@@ -370,6 +372,10 @@ test("publication preflights all artifacts and submits the graph before waiting 
     });
     assert.equal(submitted, toSubmit.length);
     assert.ok(verifiedConsumers);
+    assert.equal(
+      latestTag,
+      `${picker}@${plan.packages.filter((pkg) => pkg.name === picker).at(-1).version}`,
+    );
     assert.equal(
       JSON.parse(fs.readFileSync(path.join(output, "published.json"))).verified,
       true,
