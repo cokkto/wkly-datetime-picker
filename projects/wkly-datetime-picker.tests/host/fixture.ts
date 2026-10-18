@@ -48,6 +48,7 @@ export class FixtureController {
     ariaLabel: null,
     ariaDescribedBy: null,
     initialEpochDay: null,
+    nowUtcOffsetMinutes: null,
     closeOnBackdrop: true,
     validators: [],
     translations: null,

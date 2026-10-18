@@ -210,6 +210,10 @@ export class WklyDateTimePickerComponent
   }
   configure(): void {
     this.configErrors = [];
+    if (!Number.isSafeInteger(this.nowOffset))
+      this.configErrors.push(
+        error("configuration-error", this.nowOffset, "nowUtcOffsetMinutes"),
+      );
     [
       WklyPickerInputsPropertyKeys.ShowSeconds,
       WklyPickerInputsPropertyKeys.AllowRangeAcrossDisabled,
@@ -571,9 +575,24 @@ export class WklyDateTimePickerComponent
     this.onTouched();
     this[WklyPickerOutputsPropertyKeys.Closed].emit(reason);
   }
+  private get nowOffset(): number {
+    return (
+      this[WklyPickerInputsPropertyKeys.NowUtcOffsetMinutes] ??
+      this.defaults.nowUtcOffsetMinutes ??
+      0
+    );
+  }
   now(): void {
     if (this[WklyPickerInputsPropertyKeys.Disabled]) return;
-    const n = this.clock.now();
+    const offset = this.nowOffset;
+    // Shift only Now's wall-clock fields; other clock-based initialization stays UTC.
+    const n = new Date(this.clock.now().getTime() + offset * 60_000);
+    if (!Number.isSafeInteger(offset) || !Number.isFinite(n.getTime())) {
+      this.report([
+        error("configuration-error", offset, "nowUtcOffsetMinutes"),
+      ]);
+      return;
+    }
     const day = Math.floor(n.getTime() / 86400000);
     this.drafts = [0, 1].map((index) => ({
       ...this.clockDraft(day, n),

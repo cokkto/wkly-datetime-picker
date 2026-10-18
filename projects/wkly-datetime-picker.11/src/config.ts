@@ -78,6 +78,7 @@ export const WKLY_TRANSLATIONS = new InjectionToken<WklyTranslations>(
     "ariaLabel",
     "ariaDescribedBy",
     "initialEpochDay",
+    "nowUtcOffsetMinutes",
     "closeOnBackdrop",
     "validators",
     "translations",
@@ -132,6 +133,8 @@ export abstract class WklyPickerInputs
   @Input() [WklyPickerInputsPropertyKeys.AriaLabel]: string | null = null;
   @Input() [WklyPickerInputsPropertyKeys.AriaDescribedBy]: string | null = null;
   @Input() [WklyPickerInputsPropertyKeys.InitialEpochDay]: number | null = null;
+  @Input() [WklyPickerInputsPropertyKeys.NowUtcOffsetMinutes]: number | null =
+    null;
   @Input() [WklyPickerInputsPropertyKeys.CloseOnBackdrop] = true;
   @Input() [WklyPickerInputsPropertyKeys.Validators]: readonly ((
     value: WklyPickerValue,

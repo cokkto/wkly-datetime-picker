@@ -52,6 +52,8 @@ export interface WklyConfiguration {
   readonly locale?: string;
   readonly weekOffset?: WklyWeekOffset;
   readonly initialEpochDay?: number;
+  /** Signed minutes added to the clock only by the Now action. */
+  readonly nowUtcOffsetMinutes?: number;
 }
 export type WklyStrings = Readonly<Record<string, string>>;
 export type WklyTranslations = Readonly<Record<string, WklyStrings>>;
@@ -82,6 +84,7 @@ export enum WklyPickerInputsPropertyKeys {
   AriaLabel = "ariaLabel",
   AriaDescribedBy = "ariaDescribedBy",
   InitialEpochDay = "initialEpochDay",
+  NowUtcOffsetMinutes = "nowUtcOffsetMinutes",
   CloseOnBackdrop = "closeOnBackdrop",
   Validators = "validators",
   Translations = "translations",
@@ -120,6 +123,7 @@ export interface WklyPickerInputs {
   [WklyPickerInputsPropertyKeys.AriaLabel]: string | null;
   [WklyPickerInputsPropertyKeys.AriaDescribedBy]: string | null;
   [WklyPickerInputsPropertyKeys.InitialEpochDay]: number | null;
+  [WklyPickerInputsPropertyKeys.NowUtcOffsetMinutes]: number | null;
   [WklyPickerInputsPropertyKeys.CloseOnBackdrop]: boolean;
   [WklyPickerInputsPropertyKeys.Validators]: readonly ((
     value: WklyPickerValue,
@@ -226,6 +230,7 @@ export const INPUT_NAMES = [
   WklyPickerInputsPropertyKeys.AriaLabel,
   WklyPickerInputsPropertyKeys.AriaDescribedBy,
   WklyPickerInputsPropertyKeys.InitialEpochDay,
+  WklyPickerInputsPropertyKeys.NowUtcOffsetMinutes,
   WklyPickerInputsPropertyKeys.CloseOnBackdrop,
   WklyPickerInputsPropertyKeys.Validators,
   WklyPickerInputsPropertyKeys.Translations,
