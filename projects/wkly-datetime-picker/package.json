@@ -1,6 +1,6 @@
 {
   "name": "wkly-datetime-picker",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Angular-independent presentation configuration for WKLY",
   "license": "MIT",
   "sideEffects": false,

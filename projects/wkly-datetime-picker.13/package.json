@@ -1,6 +1,6 @@
 {
   "name": "wkly-datetime-picker.13",
-  "version": "13.0.0",
+  "version": "13.1.0",
   "description": "Angular 13 integration for WKLY date and time picker",
   "license": "MIT",
   "sideEffects": false,

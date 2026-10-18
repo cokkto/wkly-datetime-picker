@@ -1,6 +1,6 @@
 {
   "name": "wkly-datetime-picker.core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Calendar-neutral immutable week coordinates",
   "license": "MIT",
   "sideEffects": false,
