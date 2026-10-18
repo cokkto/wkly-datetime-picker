@@ -3,6 +3,7 @@ const path = require("node:path");
 const { createRequire } = require("node:module");
 const supported = require("../supported-angular.json");
 const metadata = require("../projects/wkly-datetime-picker.showcase/src/page-metadata.json");
+const siteMetadata = require("../projects/wkly-datetime-picker.showcase/src/site-metadata.json");
 const root = path.resolve(__dirname, "..");
 const output = path.resolve(root, process.env.WKLY_OUTPUT || "dist/showcase");
 const hostRoot = path.join(root, "projects/wkly-datetime-picker.showcase");
@@ -88,6 +89,25 @@ function assets() {
     path.join(hostRoot, "src/index.html"),
     "utf8",
   );
+  fs.copyFileSync(
+    path.join(hostRoot, "src/favicon.svg"),
+    path.join(output, "favicon.svg"),
+  );
+  const previewOutput = path.join(output, siteMetadata.image);
+  fs.mkdirSync(path.dirname(previewOutput), { recursive: true });
+  fs.copyFileSync(
+    path.join(hostRoot, "src", siteMetadata.image),
+    previewOutput,
+  );
+  // Share the overview copy with Angular so static and interactive content agree.
+  const overviewDescription = fs.readFileSync(
+    path.join(hostRoot, "src/overview-description.html"),
+    "utf8",
+  );
+  const overviewIntroduction = fs.readFileSync(
+    path.join(hostRoot, "src/overview-introduction.html"),
+    "utf8",
+  );
   const navigation = Object.entries(metadata)
     .map(
       ([route, page]) =>
@@ -96,10 +116,25 @@ function assets() {
     .join("");
   for (const [route, page] of Object.entries(metadata)) {
     const url = siteUrl ? new URL(route ? route + "/" : "", siteUrl).href : "";
+    const description = `${siteMetadata.description} ${page.description}`;
+    const image = siteUrl
+      ? new URL(siteMetadata.image, siteUrl).href
+      : basePath + siteMetadata.image;
     const tags =
-      `<meta name="description" content="${escapeHtml(page.description)}">` +
+      `<meta name="description" content="${escapeHtml(description)}">` +
       `<meta property="og:type" content="website"><meta property="og:title" content="${escapeHtml(page.title)}">` +
-      `<meta property="og:description" content="${escapeHtml(page.description)}">` +
+      `<meta property="og:site_name" content="${escapeHtml(siteMetadata.name)}">` +
+      `<meta property="og:description" content="${escapeHtml(description)}">` +
+      `<meta property="og:image" content="${escapeHtml(image)}">` +
+      `<meta property="og:image:type" content="image/png">` +
+      `<meta property="og:image:width" content="${siteMetadata.imageWidth}">` +
+      `<meta property="og:image:height" content="${siteMetadata.imageHeight}">` +
+      `<meta property="og:image:alt" content="${escapeHtml(siteMetadata.imageAlt)}">` +
+      `<meta name="twitter:card" content="summary_large_image">` +
+      `<meta name="twitter:title" content="${escapeHtml(page.title)}">` +
+      `<meta name="twitter:description" content="${escapeHtml(description)}">` +
+      `<meta name="twitter:image" content="${escapeHtml(image)}">` +
+      `<meta name="twitter:image:alt" content="${escapeHtml(siteMetadata.imageAlt)}">` +
       (url
         ? `<link rel="canonical" href="${escapeHtml(url)}"><meta property="og:url" content="${escapeHtml(url)}">`
         : "");
@@ -113,7 +148,7 @@ function assets() {
       )
       .replace(
         "<wkly-showcase></wkly-showcase>",
-        `<wkly-showcase><main><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.description)}</p><nav aria-label="Examples"><ul>${navigation}</ul></nav><p><a href="https://github.com/cokkto/wkly-datetime-picker">Documentation and source</a></p></main></wkly-showcase>`,
+        `<wkly-showcase><main><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.description)}</p>${route ? "" : overviewIntroduction}<nav aria-label="Examples"><ul>${navigation}</ul></nav>${route ? "" : overviewDescription}<p><a href="https://github.com/cokkto/wkly-datetime-picker">Documentation and source</a></p></main></wkly-showcase>`,
       );
     const directory = path.join(output, route);
     fs.mkdirSync(directory, { recursive: true });

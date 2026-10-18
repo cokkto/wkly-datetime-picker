@@ -54,6 +54,7 @@ function createCheckPlan(profile, callerEnv = process.env, flags = []) {
   if (profile !== "dev") {
     add("Tooling contracts", [
       "--test",
+      "scripts/angular-build.test.cjs",
       "scripts/compatibility.test.cjs",
       "scripts/lint.test.cjs",
       "scripts/showcase-server.test.cjs",

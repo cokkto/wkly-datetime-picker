@@ -36,6 +36,7 @@ for (const mode of ["date-range", "datetime-range"] as const) {
           hourCycle: "h24",
           showSeconds: true,
           required: true,
+          nowUtcOffsetMinutes: 345,
         },
         clock: "2099-12-16T13:37:42.000Z",
         value: null,
@@ -88,7 +89,11 @@ for (const mode of ["date-range", "datetime-range"] as const) {
       await host.picker
         .getByRole("button", { name: "Now", exact: true })
         .click();
-      await valueIs(host, defaults);
+      const nowTime = mode === "date-range" ? "00:00:00" : "19:15:40";
+      await valueIs(host, [
+        `2099-12-16T${nowTime}.000Z`,
+        `2099-12-16T${nowTime}.000Z`,
+      ]);
     });
 
     test("date defaults use the explicit anchor, including epoch day zero", async ({
@@ -994,3 +999,100 @@ for (const mode of ["datetime", "time"] as const) {
     });
   });
 }
+
+test.describe("Now offset", () => {
+  test.use({
+    suite: "time",
+    spec: {
+      config: { nowUtcOffsetMinutes: 180 },
+      inputs: {
+        locale: "en-GB",
+        hourCycle: "h24",
+        showSeconds: true,
+        minuteStep: 15,
+        secondStep: 5,
+      },
+      clock: "2099-12-16T13:37:42.000Z",
+    },
+  });
+  test("injected offset, explicit zero, reset and dynamic offsets affect only subsequent Now actions", async ({
+    host,
+  }) => {
+    const now = host.picker.getByRole("button", { name: "Now", exact: true });
+    const expected: string[] = [];
+    for (const [offset, value] of [
+      [null, "2099-12-16T16:30:40.000Z"],
+      [0, "2099-12-16T13:30:40.000Z"],
+      [840, "2099-12-17T03:30:40.000Z"],
+      [-840, "2099-12-15T23:30:40.000Z"],
+      [345, "2099-12-16T19:15:40.000Z"],
+      [-210, "2099-12-16T10:00:40.000Z"],
+      [null, "2099-12-16T16:30:40.000Z"],
+    ] as const) {
+      const before = await host.snapshot();
+      await host.inputs({ nowUtcOffsetMinutes: offset });
+      await valueIs(host, before.value);
+      expect(emissions(await host.snapshot())).toEqual(expected);
+      await now.click();
+      await valueIs(host, value);
+      expect(codes(await host.snapshot())).toEqual([]);
+      expected.push(value);
+      expect(emissions(await host.snapshot())).toEqual(expected);
+      await expect(
+        host.picker.locator(
+          `button.day[data-day="${Math.floor(Date.parse(value) / 86400000)}"]`,
+        ),
+      ).toHaveClass(/selected/);
+    }
+  });
+  test("invalid offsets and shifted bounds reject Now without replacing the committed value", async ({
+    host,
+  }) => {
+    const value = "2099-12-16T13:00:00.000Z";
+    await host.write(value);
+    const now = host.picker.getByRole("button", { name: "Now", exact: true });
+    for (const offset of [0.5, Number.MAX_SAFE_INTEGER, Infinity, NaN]) {
+      await host.inputs({ nowUtcOffsetMinutes: offset });
+      await now.click();
+      await valueIs(host, value);
+      expect(codes(await host.snapshot())).toContain("configuration-error");
+      expect(emissions(await host.snapshot())).toEqual([]);
+    }
+    await host.inputs({
+      nowUtcOffsetMinutes: 180,
+      max: "2099-12-16T16:00:00.000Z",
+    });
+    await now.click();
+    expect(codes(await host.snapshot())).toContain("above-maximum");
+    await valueIs(host, value);
+    expect(emissions(await host.snapshot())).toEqual([]);
+    await host.inputs({ max: null });
+    await now.click();
+    await valueIs(host, "2099-12-16T16:30:40.000Z");
+    expect(codes(await host.snapshot())).toEqual([]);
+  });
+  test("Now keeps mode normalization for shifted dates, times and ranges", async ({
+    host,
+  }) => {
+    for (const mode of [
+      "date",
+      "time",
+      "date-range",
+      "time-range",
+      "datetime-range",
+    ] as const) {
+      await host.inputs({ mode, nowUtcOffsetMinutes: 840 });
+      await host.write(null);
+      await host.picker
+        .getByRole("button", { name: "Now", exact: true })
+        .click();
+      const value = mode.startsWith("time")
+        ? "0000-01-01T03:30:40.000Z"
+        : mode.startsWith("date-range") || mode === "date"
+          ? "2099-12-17T00:00:00.000Z"
+          : "2099-12-17T03:30:40.000Z";
+      await valueIs(host, mode.endsWith("range") ? [value, value] : value);
+      expect(codes(await host.snapshot())).toEqual([]);
+    }
+  });
+});

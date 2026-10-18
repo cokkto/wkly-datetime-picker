@@ -51,6 +51,7 @@ for (const presentation of ["native", "cdk", "material"] as const) {
       suite: presentation,
       spec: {
         presentation,
+        config: { nowUtcOffsetMinutes: 180 },
         inputs: { mode: "datetime", locale: "en-GB" },
         value: initial,
       },
@@ -260,10 +261,10 @@ for (const presentation of ["native", "cdk", "material"] as const) {
           .click();
         await closed(host, "now");
         const iso = mode.startsWith("time")
-          ? "0000-01-01T13:00:00.000Z"
+          ? "0000-01-01T16:00:00.000Z"
           : mode === "date-range"
             ? "2099-12-16T00:00:00.000Z"
-            : initial;
+            : "2099-12-16T16:00:00.000Z";
         const expected = mode.endsWith("range") ? [iso, iso] : iso;
         expect((await host.snapshot()).value).toEqual(expected);
         expect(emissions(await host.snapshot()).slice(before)).toEqual([
@@ -276,6 +277,15 @@ for (const presentation of ["native", "cdk", "material"] as const) {
         await closed(host, "submit");
         expect(emissions(await host.snapshot())).toHaveLength(before + 1);
       }
+      await host.inputs({ mode: "datetime", nowUtcOffsetMinutes: 0 });
+      await open(host);
+      // Updating a live trigger must reach its already-open picker.
+      await host.inputs({ nowUtcOffsetMinutes: -345 });
+      await dialog(host)
+        .getByRole("button", { name: "Now", exact: true })
+        .click();
+      await closed(host, "now");
+      expect((await host.snapshot()).value).toBe("2099-12-16T07:15:00.000Z");
     });
 
     test("disabled triggers cannot open; writes update an open picker without emitting", async ({

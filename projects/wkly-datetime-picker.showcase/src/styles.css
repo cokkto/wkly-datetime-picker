@@ -64,6 +64,17 @@ summary:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+}
+.website-link {
+  margin-left: auto;
+  color: #176c55;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.website-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 .brand-mark {
   display: flex;
@@ -143,10 +154,39 @@ nav a.active:after {
 nav a:hover {
   background: #edf1e9;
 }
+.sidebar-package,
+.sidebar-article,
 .sidebar-note {
-  margin: 64px 14px 0;
+  margin: 28px 14px 0;
   border-top: 1px solid #dce4dc;
   padding-top: 24px;
+}
+.sidebar-article {
+  margin-top: 32px;
+}
+.sidebar-package .eyebrow,
+.sidebar-article .eyebrow {
+  font-size: 9px;
+}
+.sidebar-package a,
+.sidebar-article a {
+  display: block;
+  margin-top: 12px;
+  color: #176c55;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.sidebar-package a:hover,
+.sidebar-article a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sidebar-article p {
+  color: #6a786e;
+  font-size: 11px;
+  line-height: 1.9;
+  margin-bottom: 0;
 }
 .tiny-grid {
   font-size: 30px;
@@ -157,10 +197,16 @@ nav a:hover {
 .sidebar-note strong {
   font-size: 12px;
 }
-.sidebar-note p {
+.sidebar-note ul {
   font-size: 11px;
   line-height: 1.9;
   color: #6a786e;
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.sidebar-note li + li {
+  margin-top: 6px;
 }
 .utc-label {
   font-size: 9px;
@@ -175,13 +221,13 @@ main {
   margin: auto;
 }
 .hero {
-  padding: 24px 0 40px;
+  padding: 0 0 20px;
 }
 .eyebrow {
   color: #507c66;
 }
 .hero h1 {
-  font-size: clamp(42px, 4.5vw, 66px);
+  font-size: clamp(42px, 4vw, 66px);
   line-height: 1.09;
   letter-spacing: -3px;
   font-weight: 500;
@@ -196,13 +242,6 @@ main {
   color: #617167;
   font-size: 15px;
   line-height: 1.9;
-}
-.hero-actions {
-  display: flex;
-  align-items: center;
-  gap: 25px;
-  margin-top: 26px;
-  font-size: 12px;
 }
 .primary {
   display: inline-flex;
@@ -235,9 +274,18 @@ main {
 }
 .overview-layout {
   display: grid;
-  grid-template-columns: minmax(250px, 1fr) minmax(340px, 40.85em);
-  gap: 48px;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 430px);
+  gap: 40px;
   align-items: start;
+}
+.overview-copy,
+.overview-layout > demo-panel {
+  min-width: 0;
+}
+.overview-links > h2,
+.installation > h2 {
+  text-transform: uppercase;
+  margin: 0 0 16px;
 }
 .feature-list {
   margin-top: 12px;
@@ -249,7 +297,7 @@ main {
   border-bottom: 1px solid #dde4da;
   padding: 16px 0;
 }
-.feature-list h2 {
+.feature-list h3 {
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 4px;
@@ -267,27 +315,59 @@ main {
   margin-left: auto;
   color: #7b8e7e;
 }
-.package-note {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: center;
-  font-size: 9px;
-  color: #6d7a70;
-  letter-spacing: 1px;
-  margin: 40px 0;
-  padding: 20px 0;
-  border-block: 1px solid #dfe5db;
+showcase-description,
+showcase-introduction {
+  display: block;
 }
-.package-note code {
+.overview-description {
+  margin-top: 32px;
+}
+.overview-description p,
+.hero .overview-introduction,
+.installation p {
+  max-width: 78ch;
+  color: #617167;
+  font-size: 14px;
+  line-height: 1.9;
+  margin: 0 0 18px;
+}
+.overview-description strong {
+  color: #274f3d;
+  font-weight: 650;
+}
+.hero .overview-introduction {
+  margin-top: 28px;
+}
+.overview-introduction strong {
+  color: #274f3d;
+  font-weight: 650;
+}
+.installation {
+  border-top: 1px solid #dfe5db;
+  margin-top: 32px;
+  padding-top: 28px;
+}
+.installation a {
+  color: #176c55;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.installation p code {
   background: #edf1e9;
-  padding: 5px;
-  font-size: 0.85em;
-  letter-spacing: 0;
+  padding: 2px 4px;
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
 }
-.package-note > span {
-  flex-basis: 100%;
-  letter-spacing: 0;
+.installation pre {
+  margin: 20px 0 0;
+  padding: 22px;
+  border: 1px solid #dce4da;
+  border-radius: 10px;
+  background: #edf1e9;
+  color: #274f3d;
+  font-size: 12px;
+  line-height: 1.75;
+  overflow-x: auto;
 }
 .back-link {
   font-size: 11px;
@@ -512,6 +592,16 @@ input {
   margin-top: 48px;
   padding: 22px 0;
   border-top: 1px solid #dce4d7;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  line-height: 1.8;
+}
+.app-footer > span:first-child {
+  flex: 1 1 360px;
+  max-width: 78ch;
+}
+.app-footer > span:last-child {
+  white-space: nowrap;
 }
 .menu-toggle {
   display: none;
@@ -524,22 +614,6 @@ dialog::backdrop {
   box-shadow: 0 15px 65px #17382733;
   border-radius: 14px;
 }
-@media (min-width: 1450px) {
-  .hero {
-    padding-top: 0em;
-  }
-  .overview-layout {
-    margin-top: 0;
-    grid-template-columns: 1fr 430px;
-  }
-  .overview-layout > div {
-    padding-top: 0;
-  }
-  .overview-layout demo-panel {
-    margin-top: -15em;
-    align-self: start;
-  }
-}
 @media (max-width: 1050px) {
   main {
     padding: 32px 24px;
@@ -548,12 +622,19 @@ dialog::backdrop {
     grid-template-columns: 200px minmax(0, 1fr);
   }
   .overview-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 30px;
+  }
+  .overview-copy {
+    display: contents;
   }
   .overview-layout > demo-panel {
     max-width: 430px;
-    grid-row: 1;
+    width: 100%;
+    grid-row: 2;
+  }
+  .overview-description {
+    margin-top: 0;
   }
   .header-caption {
     display: none;
@@ -565,12 +646,30 @@ dialog::backdrop {
 @media (max-width: 700px) {
   .app-header {
     height: 70px;
-    padding: 0 18px;
-    gap: 15px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .brand {
+    gap: 8px;
+  }
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 26px;
+  }
+  .brand strong {
+    font-size: 20px;
+  }
+  .brand strong span {
+    font-size: 0.65em;
+  }
+  .website-link {
+    font-size: 11px;
   }
   .menu-toggle {
     display: block;
-    margin-left: auto;
+    margin-left: 0;
     min-width: var(--wkly-size-unit);
     min-height: var(--wkly-size-unit);
     background: transparent;
@@ -607,10 +706,6 @@ dialog::backdrop {
   }
   .hero p {
     font-size: 13px;
-  }
-  .hero-actions {
-    gap: 14px;
-    font-size: 0.85em;
   }
   .primary {
     gap: 14px;
@@ -649,11 +744,12 @@ dialog::backdrop {
     padding-inline: 0;
   }
   .page-heading,
-  .hero,
   .back-link,
-  .overview-layout > div,
-  .app-footer,
-  .package-note {
+  .app-footer {
+    margin-inline: 12px;
+  }
+  .overview-copy > :not(showcase-description),
+  .overview-description {
     margin-inline: 12px;
   }
   .demo-panel {
@@ -662,9 +758,6 @@ dialog::backdrop {
   }
   .hero h1 {
     font-size: 42px;
-  }
-  .hero-actions {
-    flex-wrap: wrap;
   }
   .picker-stage {
     padding: 0.85em 0;

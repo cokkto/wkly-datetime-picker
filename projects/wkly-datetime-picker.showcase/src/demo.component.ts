@@ -65,6 +65,7 @@ export class DemoComponent implements OnInit, OnDestroy {
   presetName = "full-month";
   hourCycle: any = "h24";
   seconds = false;
+  showLocalTime = true;
   showWeekNumbers = true;
   minuteStep = 1;
   weekOffset: any = null;
@@ -130,6 +131,9 @@ export class DemoComponent implements OnInit, OnDestroy {
       hourCycle: this.hourCycle,
       showSeconds: this.seconds,
       minuteStep: this.minuteStep,
+      nowUtcOffsetMinutes: this.showLocalTime
+        ? -new Date().getTimezoneOffset()
+        : 0,
       min: this.min,
       max: this.max,
       required: this.required,
@@ -185,6 +189,7 @@ export class DemoComponent implements OnInit, OnDestroy {
     this.mode = this.config.mode || "datetime";
     this.locale = this.config.locale || "en-GB";
     this.seconds = !!this.config.seconds;
+    this.showLocalTime = true;
     this.showWeekNumbers = true;
     this.hourCycle = this.config.hourCycle || "h24";
     this.preset = this.config.preset || { kind: "full-month" };

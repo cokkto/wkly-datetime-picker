@@ -90,6 +90,14 @@
       <label class="check"
         ><input
           type="checkbox"
+          [(ngModel)]="showLocalTime"
+          [ngModelOptions]="{ standalone: true }"
+        />
+        Show local time</label
+      >
+      <label class="check"
+        ><input
+          type="checkbox"
           [(ngModel)]="seconds"
           [ngModelOptions]="{ standalone: true }"
         />
@@ -142,6 +150,13 @@
           placeholder="ISO string, JSON tuple, or null" /></label
       ><button type="button" (click)="applyValue()">Apply value</button>
     </div>
+    <p>
+      Show local time affects only Now. Bind
+      <code>[nowUtcOffsetMinutes]="offset"</code>, with
+      <code>offset = -new Date().getTimezoneOffset()</code> for the browser's
+      current local time, or <code>0</code> for UTC. Now emits those wall-clock
+      fields with a <code>Z</code> suffix.
+    </p>
   </details>
   <div class="picker-stage">
     <wkly-runtime

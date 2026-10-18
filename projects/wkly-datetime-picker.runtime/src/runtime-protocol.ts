@@ -20,6 +20,7 @@ export interface RuntimeConfig {
   weekLabelMode: "locale" | "hidden";
   viewportPreset: WklyViewportPreset;
   initialEpochDay: number | null;
+  nowUtcOffsetMinutes: number;
   hourCycle: WklyHourCycle;
   showSeconds: boolean;
   minuteStep: number;
