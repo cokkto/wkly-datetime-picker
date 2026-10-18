@@ -147,6 +147,9 @@ export abstract class WklyPickerInputs implements WklyPickerSignalInputsAndOutpu
   protected readonly initialEpochDayInput = input<number | null>(null, {
     alias: "initialEpochDay",
   });
+  protected readonly nowUtcOffsetMinutesInput = input<number | null>(null, {
+    alias: "nowUtcOffsetMinutes",
+  });
   protected readonly closeOnBackdropInput = input(true, {
     alias: "closeOnBackdrop",
     transform: booleanAttribute,
@@ -195,6 +198,8 @@ export abstract class WklyPickerInputs implements WklyPickerSignalInputsAndOutpu
     this.ariaDescribedByInput;
   readonly [WklyPickerInputsPropertyKeys.InitialEpochDay] =
     this.initialEpochDayInput;
+  readonly [WklyPickerInputsPropertyKeys.NowUtcOffsetMinutes] =
+    this.nowUtcOffsetMinutesInput;
   readonly [WklyPickerInputsPropertyKeys.CloseOnBackdrop] =
     this.closeOnBackdropInput;
   readonly [WklyPickerInputsPropertyKeys.Validators] = this.validatorsInput;

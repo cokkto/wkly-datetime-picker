@@ -200,7 +200,7 @@ test("a presentation-only change keeps unrelated shared versions and package doc
   }
 });
 
-test("workflow/test/project-readme changes do not bump versions; deletions and secondary manifests do", () => {
+test("workflow/test/integration-readme changes do not bump versions; deletions and secondary manifests do", () => {
   const f = fixture();
   try {
     f.write(".github/workflows/publish.yml", "workflow\n");
@@ -222,6 +222,26 @@ test("workflow/test/project-readme changes do not bump versions; deletions and s
       path.join(f.directory, "projects/wkly-datetime-picker.19/src/index.ts"),
     );
     assert.deepEqual(f.plan().release.angular, ["19"]);
+  } finally {
+    f.dispose();
+  }
+});
+
+test("published shared READMEs trigger revisions for their package and dependents", () => {
+  const f = fixture();
+  try {
+    f.write("projects/wkly-datetime-picker/README.md", "presentation guide\n");
+    assert.deepEqual(
+      f.plan().release.publish.map((pkg) => pkg.internal),
+      [
+        "wkly-datetime-picker",
+        "wkly-datetime-picker.11",
+        "wkly-datetime-picker.19",
+        "wkly-datetime-picker.22",
+      ],
+    );
+    f.write("projects/wkly-datetime-picker.core/README.md", "core guide\n");
+    assert.equal(f.plan().release.publish.length, 6);
   } finally {
     f.dispose();
   }
@@ -340,6 +360,10 @@ test("planned revisions reach public manifests and exact dependencies, with stab
       path.join(f.directory, "projects/wkly-datetime-picker.19/package.json"),
     );
     assert.equal(publicManifest.name, "@wkly/datetime-picker");
+    assert.equal(
+      publicManifest.homepage,
+      "https://github.com/cokkto/wkly-datetime-picker#readme",
+    );
     assert.equal(publicManifest.version, "19.3.0");
     assert.deepEqual(publicManifest.dependencies, {
       "@wkly/core": "0.1.1",

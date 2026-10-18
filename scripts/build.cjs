@@ -1,5 +1,5 @@
 // Build shared packages before Angular packages. Published artifacts receive the
-// consumer README and API reference; project-local READMEs remain source docs.
+// package's consumer README and the shared API reference.
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
@@ -129,7 +129,10 @@ for (const name of [
     );
   }
   fs.copyFileSync("LICENSE", out + "/LICENSE");
-  fs.copyFileSync("README.md", out + "/README.md");
+  fs.copyFileSync(
+    angularPackages.includes(name) ? "README.md" : project + "/README.md",
+    out + "/README.md",
+  );
   fs.copyFileSync("docs/API.md", out + "/API.md");
   const builtManifest = JSON.parse(fs.readFileSync(out + "/package.json"));
   delete builtManifest.scripts;

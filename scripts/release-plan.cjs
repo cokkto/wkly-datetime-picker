@@ -75,7 +75,7 @@ function snapshot(directory = root) {
       (file) =>
         file.startsWith(`projects/${internal}/`) &&
         file !== `projects/${internal}/package.json` &&
-        file !== `projects/${internal}/README.md`,
+        (shared[internal] || file !== `projects/${internal}/README.md`),
     );
     const angular = internal.match(/^wkly-datetime-picker\.(\d+)$/)?.[1];
     if (angular)

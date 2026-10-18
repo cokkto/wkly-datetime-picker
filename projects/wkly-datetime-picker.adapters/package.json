@@ -1,6 +1,6 @@
 {
   "name": "wkly-datetime-picker.adapters",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Calendar adapters and canonical UTC validation for WKLY",
   "license": "MIT",
   "sideEffects": false,
@@ -19,5 +19,26 @@
   },
   "scripts": {
     "build": "node ../../scripts/build.cjs wkly-datetime-picker.adapters"
-  }
+  },
+  "keywords": [
+    "calendar",
+    "calendar-adapter",
+    "date",
+    "date-picker",
+    "date-range",
+    "date-range-picker",
+    "time",
+    "time-picker",
+    "time-range",
+    "time-range-picker",
+    "datetime",
+    "datetime-picker",
+    "datetime-range",
+    "datetime-range-picker",
+    "angular",
+    "localization",
+    "utc",
+    "validation"
+  ],
+  "homepage": "https://github.com/cokkto/wkly-datetime-picker#readme"
 }

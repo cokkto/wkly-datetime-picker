@@ -1,6 +1,6 @@
 {
   "name": "wkly-datetime-picker",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Angular-independent presentation configuration for WKLY",
   "license": "MIT",
   "sideEffects": false,
@@ -19,5 +19,24 @@
   },
   "scripts": {
     "build": "node ../../scripts/build.cjs wkly-datetime-picker"
-  }
+  },
+  "keywords": [
+    "calendar",
+    "date",
+    "date-picker",
+    "date-range",
+    "date-range-picker",
+    "time",
+    "time-picker",
+    "time-range",
+    "time-range-picker",
+    "datetime",
+    "datetime-picker",
+    "datetime-range",
+    "datetime-range-picker",
+    "angular",
+    "localization",
+    "utc"
+  ],
+  "homepage": "https://github.com/cokkto/wkly-datetime-picker#readme"
 }

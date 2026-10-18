@@ -39,7 +39,7 @@ npm run release:prepare -- .test-build/release-plan.json .test-build/previous-re
 
 Preparation requires a matching verified receipt covering every previously selected artifact. The GitHub workflow additionally requires that previous release to be finalized. A draft or missing receipt blocks new versions until recovery finishes. Release preparation and publication share a non-cancelling concurrency group.
 
-Fingerprints cover package sources/configuration, normalized manifests without versions or stripped build scripts, toolchains, the build/public-name scripts, root README, API reference and license. Changed exact shared dependencies propagate new shared artifact versions. Test-only, showcase-only, workflow and source-local README edits do not increment package versions. Line endings are normalized across Windows and Linux. New Angular lines need an explicit metadata baseline migration along with their registry entry.
+Fingerprints cover package sources/configuration, normalized manifests without versions or stripped build scripts, toolchains, the build/public-name scripts, root README, API reference and license. Changed exact shared dependencies propagate new shared artifact versions. Shared package READMEs are included in their own artifacts and fingerprints; the root README is published with every Angular picker line. Test-only, showcase-only, workflow and numbered integration source-local README edits do not increment package versions. Line endings are normalized across Windows and Linux. New Angular lines need an explicit metadata baseline migration along with their registry entry.
 
 The preparation workflow uses the repository GitHub token to push its release branch and explicitly dispatches compatibility CI for that branch. Its summary links to PR creation. Optional automatic PR creation requires the repository variable `WKLY_RELEASE_CREATE_PR=true` and Actions settings permitting GitHub Actions to create pull requests. That setting additionally permits Actions to approve PR reviews; the workflow does not enable it. No additional npm secret is needed.
 
@@ -62,6 +62,8 @@ The workflow uses GitHub-hosted runners, Node 24.15.0, npm 11.21.0, and `id-toke
 ## Tags and recovery
 
 Before npm writes, publication creates an annotated `wkly-release-<release-id>` tag at the qualified source and a draft GitHub release retaining the immutable manifest and tarballs. A retry validates retained bytes and fills any missing assets without replacing existing ones. The initial release retains its original `npm-release-80eec1db6981` tag.
+
+Release lookup uses `gh release view` to resolve both drafts and published releases, then reads assets through the release ID. GitHub's REST release-by-tag endpoint only resolves published releases; using it for draft recovery would hide the pending release.
 
 Publication submits only selected candidates: changed core, adapters, presentation, then affected picker lines in ascending Angular order. It submits the candidates before waiting for public metadata, allowing npm to process versions concurrently. Unselected shared dependencies must already exist with identical integrity. Shared packages use `latest`; picker lines use `angular-11` through `angular-22`. Picker `latest` advances only when the newest supported line is part of the plan; an older Angular-only fix preserves it. Tags cannot move backwards. Consumers should pin their Angular major.
 

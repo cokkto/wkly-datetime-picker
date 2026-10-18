@@ -1,6 +1,6 @@
 {
   "name": "wkly-datetime-picker.core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Calendar-neutral immutable week coordinates",
   "license": "MIT",
   "sideEffects": false,
@@ -16,5 +16,26 @@
   },
   "scripts": {
     "build": "node ../../scripts/build.cjs wkly-datetime-picker.core"
-  }
+  },
+  "keywords": [
+    "calendar",
+    "calendar-math",
+    "epoch-day",
+    "week",
+    "date",
+    "date-picker",
+    "date-range",
+    "date-range-picker",
+    "time",
+    "time-picker",
+    "time-range",
+    "time-range-picker",
+    "datetime",
+    "datetime-picker",
+    "datetime-range",
+    "datetime-range-picker",
+    "angular",
+    "utc"
+  ],
+  "homepage": "https://github.com/cokkto/wkly-datetime-picker#readme"
 }

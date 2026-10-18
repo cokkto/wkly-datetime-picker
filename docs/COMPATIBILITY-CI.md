@@ -2,7 +2,7 @@
 
 `supported-angular.json` is the source of truth for supported Angular majors, their numbered packages, runtime entries, and pinned Node, Angular, TypeScript, and CDK toolchains. It currently registers 11–22. The workflow is [`.github/workflows/compatibility.yml`](../.github/workflows/compatibility.yml); the planner and runner are [`scripts/compatibility.cjs`](../scripts/compatibility.cjs). This workflow tests public npm artifacts and does not publish or change versions. The manually dispatched [publication workflow](PUBLICATION.md) consumes its qualified tarballs.
 
-Angular 22 pins `@angular/build` directly at the same version as `@angular-devkit/build-angular`. Keep these pins aligned: the direct dependency avoids npm's nested build/Vite/SSL peer placement failure during fresh strict installs, including packed consumers.
+Angular 20 and 22 pin `@angular/build` directly at the same version as `@angular-devkit/build-angular`. Keep these pins aligned: the direct dependency avoids npm's nested builder peer placement failures during fresh strict installs, including packed consumers. Angular 20 can otherwise select newer optional `@angular/localize` or `@angular/service-worker` patches that require a different compiler or core patch; Angular 22 encounters a build/Vite/SSL peer conflict.
 
 ## Public package and version lines
 

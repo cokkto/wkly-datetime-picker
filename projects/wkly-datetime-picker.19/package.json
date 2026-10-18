@@ -1,6 +1,6 @@
 {
   "name": "wkly-datetime-picker.19",
-  "version": "19.0.0",
+  "version": "19.1.0",
   "description": "Angular 19 integration for WKLY date and time picker",
   "license": "MIT",
   "sideEffects": false,
@@ -38,5 +38,24 @@
   },
   "scripts": {
     "build": "node ../../scripts/build.cjs wkly-datetime-picker.19"
-  }
+  },
+  "keywords": [
+    "calendar",
+    "date",
+    "date-picker",
+    "date-range",
+    "date-range-picker",
+    "time",
+    "time-picker",
+    "time-range",
+    "time-range-picker",
+    "datetime",
+    "datetime-picker",
+    "datetime-range",
+    "datetime-range-picker",
+    "angular",
+    "localization",
+    "utc"
+  ],
+  "homepage": "https://github.com/cokkto/wkly-datetime-picker#readme"
 }

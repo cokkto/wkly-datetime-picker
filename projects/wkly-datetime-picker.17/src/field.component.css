@@ -44,6 +44,8 @@ button:disabled,
 input:disabled {
   opacity: 0.45;
 }
-button:hover:not(:disabled) {
-  background: var(--wkly-range-color, #e5f1ee);
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) {
+    background: var(--wkly-range-color, #e5f1ee);
+  }
 }

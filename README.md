@@ -13,6 +13,8 @@ WKLY is an Angular date and time picker with a continuous, scrollable calendar. 
 - [Set application defaults](#set-application-defaults)
 - [Use public types and methods](#use-public-types-and-methods)
 
+Showcase: [https://cokkto.github.io/wkly-datetime-picker](https://cokkto.github.io/wkly-datetime-picker)
+
 ## Install and choose a version
 
 Install `@wkly/datetime-picker` with the same major version as your Angular application. Angular 11–22 have corresponding package version lines.
@@ -22,6 +24,8 @@ For Angular 19:
 ```sh
 npm install @wkly/datetime-picker@19.x.x
 ```
+
+The `latest` npm dist-tag follows the highest supported Angular major (currently 22). Use `@wkly/datetime-picker@latest` for that line, or `@wkly/datetime-picker@angular-N` for a specific supported major.
 
 For another supported Angular major, replace `19` with that number. Keep the major in your dependency range when updating.
 
@@ -72,7 +76,7 @@ An empty selection is `null`. A completed range is an ordered readonly pair.
 
 In manual entry for `date-range` and `datetime-range`, the End section lets you switch between calendar-date fields and **In X days**. The number always reflects the current end date relative to the start date, including calendar selections and programmatic writes. Enter or step through integers from `-9999` to `9999`; `0` selects the same calendar date as Start. Endpoint times are preserved. A negative count previews an earlier end date, then swaps the endpoints when the field edit settles (typing: one second, wheel: 140 ms, touch: release, or Enter/blur). Both views use the same validation and keep the same height.
 
-Entering manual mode initializes missing range endpoints so you can edit only End. An empty range uses `initialEpochDay` from the picker or application configuration, falling back to the current UTC day. Its time uses the same initialization as **Now**, including current UTC hours, minutes and visible seconds rounded to their configured steps. A partial range copies its selected endpoint to the missing endpoint; supplied selections and edited drafts are preserved. Valid defaults commit inline, while dialogs and overlays wait for Confirm.
+Entering manual mode initializes missing range endpoints so you can edit only End. An empty range uses `initialEpochDay` from the picker or application configuration, falling back to the current UTC day. Its time uses current UTC hours, minutes and visible seconds rounded to their configured steps, independently of `nowUtcOffsetMinutes`. A partial range copies its selected endpoint to the missing endpoint; supplied selections and edited drafts are preserved. Valid defaults commit inline, while dialogs and overlays wait for Confirm.
 
 **Values are Gregorian UTC ISO strings.** WKLY does not convert timezones. Date selections use midnight, and time selections use the fixed date `0000-01-01`. Milliseconds must be `.000`; seconds must be `00` unless shown. Convert your application's timezone outside the picker. These rules also apply when the display uses a different calendar.
 
@@ -132,12 +136,36 @@ An epoch day is an integer day index, with `1970-01-01 = 0`. Disabled-date callb
 | `weekLabelFormatter` | `null` | Override week labels with a callback receiving the week and adapter |
 | `ariaLabel` | `null` | Replace the default accessible name, “Date and time picker” |
 | `ariaDescribedBy` | `null` | Associate help or error text by element ID |
+| `nowUtcOffsetMinutes` | `null`: use application setting, then `0` | Shift only **Now** by signed integer minutes; positive values are ahead of UTC |
 | `initialEpochDay` | `null` | Set the initial calendar position and empty manual range date; otherwise use the application default or UTC today |
 | `weekCacheSize` | `256` | Limit cached weeks; `0` disables caching |
 | `overscanWeeks` | `3` | Render extra weeks on either side of the viewport; supported range is `0..50` |
 | `closeOnBackdrop` | `true` | Allow a dialog or overlay to close when its backdrop is clicked |
 
 For a compact four-week view, bind `[viewportPreset]="{ kind: 'weeks', visibleWeekCount: 4 }"`. For a month with surrounding weeks, use `{ kind: 'full-month-and-around', extraWeeksBefore: 1, extraWeeksAfter: 1 }`. Fixed week counts support `1..52`; surrounding counts support `0..52`.
+
+### Use browser-local time for Now
+
+Set `nowUtcOffsetMinutes` to shift only the **Now** action. Positive integers add minutes to the current instant before the picker extracts UTC date/time fields. For example, `16:00Z` with `180` selects and emits `19:00Z`; crossing midnight changes the selected date. Existing step rounding, hidden-field normalization and validation still apply.
+
+```ts
+// Host component; refresh this value when the application's needs require it.
+nowOffset = -new Date().getTimezoneOffset();
+```
+
+```html
+<wkly-datetime-picker [nowUtcOffsetMinutes]="nowOffset" />
+```
+
+Native `Date.getTimezoneOffset()` uses the opposite sign, hence the negation. Alternatively, provide an application default:
+
+```ts
+{ provide: WKLY_CONFIG, useValue: { nowUtcOffsetMinutes: 180 } }
+```
+
+An explicit input, including `0`, overrides the provider. Set the input to `null` to restore the application setting, falling back to `0`. Updating the input affects the next Now action without changing the current selection or emitting a value. Noninteger or unsafe numbers report `configuration-error`.
+
+The emitted `Z` string encodes the shifted wall-clock fields; it does not represent the original current instant. Your application owns any subsequent timezone interpretation. WKLY uses the configured number without detecting a timezone or resolving daylight-saving rules. This option does not change existing values, calendar/manual edits, today highlighting, the initial anchor, or empty manual-range defaults.
 
 ### Outputs
 
@@ -299,7 +327,7 @@ The relative-day view uses `inDays` (default `"In {{days}} days"`), `days`, `end
 
 ## Use a different calendar
 
-The included calendar adapter is `WklyGregorianCalendarAdapter`, available from `wkly-datetime-picker.adapters`. It is selected automatically and supports Gregorian years `0000..9999` with localized labels. `WklyCalendarAbstractAdapter` is an optional base class for custom adapters, providing reusable locale formatters.
+The included calendar adapter is `WklyGregorianCalendarAdapter`, available from `@wkly/adapters`. It is selected automatically and supports Gregorian years `0000..9999` with localized labels. `WklyCalendarAbstractAdapter` is an optional base class for custom adapters, providing reusable locale formatters.
 
 For another calendar, supply a `WklyCalendarAdapter` through `[calendarAdapter]`. The [Hebrew adapter](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker.showcase/src/hebrew-adapter.ts) and [Hijri adapter](https://github.com/cokkto/wkly-datetime-picker/blob/main/projects/wkly-datetime-picker.showcase/src/hijri-adapter.ts) are available as source from Git; neither is shipped in npm packages. Copy their source into your application. Hebrew requires `@hebcal/core`; Hijri has no additional dependency beyond WKLY and the platform's `Intl` calendar formatting.
 
@@ -347,7 +375,7 @@ Provide these tokens at application level to share configuration across pickers.
 
 | Token | Value type and default | Purpose |
 | --- | --- | --- |
-| `WKLY_CONFIG` | `WklyConfiguration`; `{}` | Default `locale`, `weekOffset`, and `initialEpochDay` |
+| `WKLY_CONFIG` | `WklyConfiguration`; `{}` | Default `locale`, `weekOffset`, `initialEpochDay`, and `nowUtcOffsetMinutes` |
 | `WKLY_TRANSLATIONS` | `WklyTranslations`; `{}` | A language-to-label catalog shared across pickers |
 | `WKLY_LOCALIZATION` | `WklyStrings`; `{}` | Override individual action or validation labels, regardless of locale |
 | `WKLY_CLOCK` | `WklyClock`; `{ now: () => new Date() }` | Supply the clock used for today and Now; useful for deterministic tests |
@@ -389,9 +417,9 @@ Use the public types when integrating with forms, application state, validation,
 | `WklyConfiguration`, `WklyStrings`, `WklyTranslations`, `WklyClock` | `@wkly/datetime-picker` | Type values supplied through injection tokens |
 | `WklyViewportChange`, `WklyCloseReason`, `WklyJumpOptions` | `@wkly/datetime-picker` | Handle navigation, dismissal, and programmatic jumps |
 | `WklyPresentationRef` | `@wkly/datetime-picker` | Access and destroy a presentation created through a presentation service |
-| `WklyCalendarAdapter`, `WklyCalendarDate`, `WklyCalendarMonth`, `WklyCalendarDateError` | `wkly-datetime-picker.adapters` | Implement another calendar and its validation |
-| `WklyDatePredicateContext`, `WklyTimePredicateContext`, `WklySelectionConfig` | `wkly-datetime-picker.adapters` | Work directly with predicate context and selection validation |
-| `WklyPickerInputs`, `WklyPickerOutputs` | `wkly-datetime-picker` | Describe the shared binding contracts when building presentation extensions |
+| `WklyCalendarAdapter`, `WklyCalendarDate`, `WklyCalendarMonth`, `WklyCalendarDateError` | `@wkly/adapters` | Implement another calendar and its validation |
+| `WklyDatePredicateContext`, `WklyTimePredicateContext`, `WklySelectionConfig` | `@wkly/adapters` | Work directly with predicate context and selection validation |
+| `WklyPickerInputs`, `WklyPickerOutputs` | `@wkly/presentation` | Describe the shared binding contracts when building presentation extensions |
 
 When importing an adapter or shared contract directly, declare its package as a direct dependency of your application.
 

@@ -1,3 +1,4 @@
+import type { WklyHourCycle } from "wkly-datetime-picker.adapters";
 import {
   AfterViewInit,
   ChangeDetectorRef,
@@ -105,6 +106,7 @@ export class WklyDateTimePickerComponent
   effectiveLocale = "en-US";
   effectiveOffset: WklyWeekOffset = 0;
   effectiveHourCycle: "h12" | "h24" = "h24";
+  private configuredHourCycle?: WklyHourCycle;
   direction = "ltr";
   rows: Row[] = [];
   weekdays: string[] = [];
@@ -234,6 +236,10 @@ export class WklyDateTimePickerComponent
   }
   configure(): void {
     this.configErrors = [];
+    if (!Number.isSafeInteger(this.nowOffset))
+      this.configErrors.push(
+        error("configuration-error", this.nowOffset, "nowUtcOffsetMinutes"),
+      );
     this.effectiveLocale =
       this[WklyPickerInputsPropertyKeys.Locale]() ||
       this.defaults.locale ||
@@ -303,17 +309,22 @@ export class WklyDateTimePickerComponent
       this.effectiveOffset = 0;
     }
     this.setSupportedScrollRange();
-    this.effectiveHourCycle =
-      this[WklyPickerInputsPropertyKeys.HourCycle]() === "h12"
-        ? "h12"
-        : this[WklyPickerInputsPropertyKeys.HourCycle]() === "locale"
-          ? new Intl.DateTimeFormat(this.effectiveLocale, {
-              hour: "numeric",
-              timeZone: "UTC",
-            }).resolvedOptions().hour12
-            ? "h12"
-            : "h24"
-          : "h24";
+    const hourCycle = this[WklyPickerInputsPropertyKeys.HourCycle]();
+    // Host value/configuration feedback must retain the user's switchable format.
+    if (hourCycle !== "switchable" || this.configuredHourCycle !== hourCycle) {
+      this.effectiveHourCycle =
+        hourCycle === "h12"
+          ? "h12"
+          : hourCycle === "locale"
+            ? new Intl.DateTimeFormat(this.effectiveLocale, {
+                hour: "numeric",
+                timeZone: "UTC",
+              }).resolvedOptions().hour12
+              ? "h12"
+              : "h24"
+            : "h24";
+    }
+    this.configuredHourCycle = hourCycle;
     this.weekdays = Array.from({ length: 7 }, (_, i) =>
       this.adapter.formatWeekday(this.effectiveOffset + i, "short"),
     );
@@ -581,9 +592,24 @@ export class WklyDateTimePickerComponent
     this.onTouched();
     this[WklyPickerOutputsPropertyKeys.Closed].emit(reason);
   }
+  private get nowOffset(): number {
+    return (
+      this[WklyPickerInputsPropertyKeys.NowUtcOffsetMinutes]() ??
+      this.defaults.nowUtcOffsetMinutes ??
+      0
+    );
+  }
   now(): void {
     if (this.isDisabled()) return;
-    const n = this.clock.now();
+    const offset = this.nowOffset;
+    // Shift only Now's wall-clock fields; other clock-based initialization stays UTC.
+    const n = new Date(this.clock.now().getTime() + offset * 60_000);
+    if (!Number.isSafeInteger(offset) || !Number.isFinite(n.getTime())) {
+      this.report([
+        error("configuration-error", offset, "nowUtcOffsetMinutes"),
+      ]);
+      return;
+    }
     const day = Math.floor(n.getTime() / 86400000);
     this.drafts = [0, 1].map((index) => ({
       ...this.clockDraft(day, n),

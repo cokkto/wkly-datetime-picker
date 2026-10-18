@@ -22,6 +22,7 @@ const {
 } = require("./public-packages.cjs");
 const supported = require("../supported-angular.json");
 const { record } = require("./release-record.cjs");
+const { releaseTag } = require("./release-plan.cjs");
 const { createHash } = require("node:crypto");
 
 test("tarball normalization preserves the npm tar payload and removes compression variants", () => {
@@ -324,6 +325,7 @@ test("publication preflights all artifacts and submits the graph before waiting 
     let reads = 0;
     let submitted = 0;
     let verifiedConsumers = false;
+    let latestTag;
     await publish(output, {
       readMetadata: async (name) => {
         reads++;
@@ -358,6 +360,7 @@ test("publication preflights all artifacts and submits the graph before waiting 
         } else {
           assert.equal(submitted, toSubmit.length);
           assert.equal(args[0], "dist-tag");
+          if (args[3] === "latest") latestTag = args[2];
         }
       },
       pause: async () =>
@@ -370,6 +373,10 @@ test("publication preflights all artifacts and submits the graph before waiting 
     });
     assert.equal(submitted, toSubmit.length);
     assert.ok(verifiedConsumers);
+    assert.equal(
+      latestTag,
+      `${picker}@${plan.packages.filter((pkg) => pkg.name === picker).at(-1).version}`,
+    );
     assert.equal(
       JSON.parse(fs.readFileSync(path.join(output, "published.json"))).verified,
       true,
@@ -613,11 +620,28 @@ test("draft retention recovers a partial upload, retains failure progress, and f
         return "";
       },
       runGh: (args) => {
-        if (args[0] === "api") {
+        if (args[0] === "release" && args[1] === "view") {
+          assert.equal(args[2], releaseTag(selection.id));
+          assert.deepEqual(args.slice(3), [
+            "--repo",
+            "example/wkly",
+            "--json",
+            "apiUrl",
+          ]);
           if (!exists)
             throw Object.assign(new Error("Not found"), {
-              stderr: "Not Found (HTTP 404)",
+              stderr: "release not found\n",
             });
+          return JSON.stringify({
+            apiUrl: "https://api.github.com/repos/example/wkly/releases/1",
+          });
+        }
+        if (args[0] === "api") {
+          // GitHub's tag endpoint cannot find drafts. Read the resolved ID.
+          assert.equal(
+            args[1],
+            "https://api.github.com/repos/example/wkly/releases/1",
+          );
           return JSON.stringify({
             draft,
             assets: [...assets].map(([name, bytes]) => ({

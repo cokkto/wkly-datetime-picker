@@ -31,6 +31,7 @@ export interface FixtureSpec {
   inputs?: PublicInputs;
   value?: WklyPickerValue;
   binding?: "form" | "input";
+  reflectValue?: boolean;
   clock?: string;
   disabledEpochDays?: number[];
 }
