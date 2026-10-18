@@ -1,6 +1,7 @@
 import { DOCUMENT } from "@angular/common";
 import { Title, Meta } from "@angular/platform-browser";
 import metadata from "./page-metadata.json";
+import siteMetadata from "./site-metadata.json";
 import { Component, Inject } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import { decodeIso } from "wkly-datetime-picker.adapters";
@@ -73,13 +74,16 @@ export class PageComponent {
     this.page = PAGES[this.routeName] || null;
     const pageMetadata =
       metadata[this.routeName as keyof typeof metadata] || metadata[""];
+    const description = `${siteMetadata.description} ${pageMetadata.description}`;
     title.setTitle(pageMetadata.title);
-    meta.updateTag({ name: "description", content: pageMetadata.description });
+    meta.updateTag({ name: "description", content: description });
     meta.updateTag({ property: "og:title", content: pageMetadata.title });
     meta.updateTag({
       property: "og:description",
-      content: pageMetadata.description,
+      content: description,
     });
+    meta.updateTag({ name: "twitter:title", content: pageMetadata.title });
+    meta.updateTag({ name: "twitter:description", content: description });
     const canonical = document.querySelector<HTMLLinkElement>(
       'link[rel="canonical"]',
     );

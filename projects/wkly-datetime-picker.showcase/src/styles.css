@@ -64,6 +64,17 @@ summary:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+}
+.website-link {
+  margin-left: auto;
+  color: #176c55;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.website-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 .brand-mark {
   display: flex;
@@ -143,10 +154,35 @@ nav a.active:after {
 nav a:hover {
   background: #edf1e9;
 }
+.sidebar-article,
 .sidebar-note {
-  margin: 64px 14px 0;
+  margin: 28px 14px 0;
   border-top: 1px solid #dce4dc;
   padding-top: 24px;
+}
+.sidebar-article {
+  margin-top: 32px;
+}
+.sidebar-article .eyebrow {
+  font-size: 9px;
+}
+.sidebar-article a {
+  display: block;
+  margin-top: 12px;
+  color: #176c55;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.sidebar-article a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sidebar-article p {
+  color: #6a786e;
+  font-size: 11px;
+  line-height: 1.9;
+  margin-bottom: 0;
 }
 .tiny-grid {
   font-size: 30px;
@@ -266,6 +302,32 @@ main {
 .feature-list > a > span:last-child {
   margin-left: auto;
   color: #7b8e7e;
+}
+showcase-description {
+  display: block;
+}
+.overview-description {
+  border-top: 1px solid #dfe5db;
+  margin-top: 48px;
+  padding-top: 32px;
+}
+.overview-description h2 {
+  font-size: clamp(23px, 2.4vw, 30px);
+  font-weight: 500;
+  letter-spacing: -0.7px;
+  line-height: 1.3;
+  margin: 12px 0 24px;
+}
+.overview-description p {
+  max-width: 78ch;
+  color: #617167;
+  font-size: 14px;
+  line-height: 1.9;
+  margin: 0 0 18px;
+}
+.overview-description strong {
+  color: #274f3d;
+  font-weight: 650;
 }
 .package-note {
   display: flex;
@@ -565,12 +627,30 @@ dialog::backdrop {
 @media (max-width: 700px) {
   .app-header {
     height: 70px;
-    padding: 0 18px;
-    gap: 15px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .brand {
+    gap: 8px;
+  }
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 26px;
+  }
+  .brand strong {
+    font-size: 20px;
+  }
+  .brand strong span {
+    font-size: 0.65em;
+  }
+  .website-link {
+    font-size: 11px;
   }
   .menu-toggle {
     display: block;
-    margin-left: auto;
+    margin-left: 0;
     min-width: var(--wkly-size-unit);
     min-height: var(--wkly-size-unit);
     background: transparent;
@@ -654,6 +734,9 @@ dialog::backdrop {
   .overview-layout > div,
   .app-footer,
   .package-note {
+    margin-inline: 12px;
+  }
+  .overview-description {
     margin-inline: 12px;
   }
   .demo-panel {

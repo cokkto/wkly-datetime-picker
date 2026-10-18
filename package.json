@@ -12,6 +12,7 @@
     "showcase:start": "node scripts/serve.cjs",
     "showcase": "node scripts/serve.cjs",
     "showcase:build": "node scripts/showcase-build.cjs",
+    "showcase:preview": "node scripts/showcase-preview.cjs",
     "pack:check": "node scripts/pack.cjs",
     "test": "node scripts/test-check.cjs dev",
     "test:dev": "node scripts/test-check.cjs dev",

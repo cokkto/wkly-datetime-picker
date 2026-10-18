@@ -16,5 +16,6 @@ Run scripts through the root [`package.json`](../package.json) when a matching n
 | `lint.cjs`, `lint.test.cjs` | Lint source, templates, and tooling |
 | `showcase-build.cjs`, `serve.cjs`, `showcase-server.cjs`, `showcase-server.test.cjs` | Compile and serve the public showcase and static route documents; test subpath serving |
 | `playwright.cjs` | Launch native Playwright commands with the locked workspace toolchain |
+| `showcase-preview.cjs` | Capture the shared social preview PNG from the compiled showcase's real calendar |
 
 `npm run test:visuals:update` changes screenshot baselines. Review those images before committing them.

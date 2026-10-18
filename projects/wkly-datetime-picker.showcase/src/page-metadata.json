@@ -1,38 +1,38 @@
 {
   "": {
     "title": "WKLY — Angular date and time picker",
-    "description": "A continuous week-based Angular date and time picker with ranges, UTC values, localization, calendar adapters, dialogs and CDK overlays."
+    "description": "Explore six selection modes, localization, calendar adapters, validation, and inline, dialog or overlay presentations."
   },
   "single": {
     "title": "Date and time selections | WKLY Angular picker",
-    "description": "Select a date, a time, or both. Every completed inline selection is available immediately as a canonical UTC value."
+    "description": "Try the date picker, time picker, and combined date and time picker, with manual entry, seconds, and 12-hour or 24-hour time."
   },
   "ranges": {
     "title": "Date and time ranges | WKLY Angular picker",
-    "description": "Choose two endpoints in one calendar. Reverse selections are ordered automatically, and incomplete ranges stay in the draft."
+    "description": "Try date range, time range, and date and time range selection, with automatic endpoint ordering and separate start and end times."
   },
   "presentations": {
     "title": "Inline, dialog and overlay presentations | WKLY Angular picker",
-    "description": "The same picker, four ways to present it. Dialogs and overlays keep edits private until you confirm."
+    "description": "Compare inline, native dialog, input-anchored CDK overlay, and Angular Material presentations, including confirm and cancel behavior."
   },
   "localization": {
     "title": "Localization and RTL | WKLY Angular picker",
-    "description": "Explore calendar systems, reading direction, localized digits, and regional week starts side by side."
+    "description": "Compare Hebrew, Arabic, and US English examples with translated labels, localized digits, RTL layouts, and regional week and clock formats."
   },
   "calendars": {
     "title": "Gregorian, Hebrew and Hijri calendars | WKLY Angular picker",
-    "description": "All three representations share the same epoch day. Select any calendar to update its companions."
+    "description": "Select a day in linked Gregorian, Hebrew, and civil Hijri calendars while preserving the same Gregorian UTC value."
   },
   "validation": {
     "title": "Validation and Angular forms | WKLY Angular picker",
-    "description": "Impossible dates remain editable. Constraints apply equally to the calendar, typed fields, Now, and programmatic values."
+    "description": "Explore Angular forms validation, date and time bounds, disabled days, range constraints, and editable invalid manual input."
   },
   "virtualization": {
     "title": "Virtual scrolling calendar | WKLY Angular picker",
-    "description": "Jump decades in one operation. The calendar only renders the visible weeks and a small overscan buffer."
+    "description": "Compare full-month, surrounding-week, and compact four-week views, with continuous calendar scrolling and direct jumps across decades."
   },
   "styling": {
     "title": "Picker colors and sizing | WKLY Angular picker",
-    "description": "CSS color tokens and a size multiplier fit the picker to your interface. Touch targets stay at least 44 pixels."
+    "description": "Compare green, indigo, dark, and larger picker styles using CSS color tokens and size multipliers with accessible touch targets."
   }
 }
