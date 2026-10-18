@@ -14,7 +14,7 @@ All routes share the committed 1440 × 756 PNG at `src/metaimages/wkly.png`, cap
 
 The local server serves `wkly.localhost:4200` and localhost/127.0.0.1 aliases. It serves generated routes directly, returns 404 for unknown routes/assets/hosts and blocks access to obsolete runtime assets. Versioned subdomains are no longer showcase hosts. `--prebuilt` does not load build tools. `WKLY_OUTPUT` changes the output directory (use the same value for build and serve), `PORT` changes the port, and `WKLY_DOMAIN` changes the local hostname. The dev server watches source/templates and logs rebuilds; refresh manually after `Rebuilt`.
 
-Every example's "Configure this example" controls include "Show local time", checked by default and restored by Reset example. The host supplies `nowUtcOffsetMinutes` as `-new Date().getTimezoneOffset()` when checked, and `0` when unchecked. The checkbox affects subsequent Now actions only; a short example explains the binding and the shifted UTC wire value.
+Every example's "Configure this example" controls include "Show local time", checked by default and restored by Reset example. The host supplies `nowUtcOffsetMinutes` as `-new Date().getTimezoneOffset()` when checked, and `0` when unchecked. The checkbox affects subsequent Now actions only. An information button beside it opens a native popover explaining the binding and shifted UTC wire value; Escape or clicking outside dismisses it. Each demo has its own popover ID.
 
 ## GitHub Pages
 
