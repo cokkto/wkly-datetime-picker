@@ -49,7 +49,7 @@ CommonJS/ESM import smoke checks: [imports.cjs](../projects/wkly-datetime-picker
 
 ## Showcase smoke
 
-[catalogue.spec.cjs](../projects/wkly-datetime-picker.tests/showcase/catalogue.spec.cjs) visits every public route and checks successful static document responses, page titles, compiled WKLY controls, initial value diagnostics, checked local-time controls on every example, the overview's local/UTC Now behavior and no browser errors. It provides one journey per engine (three total); Angular version compatibility and picker behavior are covered by the suites above. Controlled showcase testbed journeys have been removed.
+[catalogue.spec.cjs](../projects/wkly-datetime-picker.tests/showcase/catalogue.spec.cjs) visits every public route and checks successful static document responses, page titles, compiled WKLY controls, initial value diagnostics, checked local-time controls on every example and no browser errors. It provides one journey per engine (three total); Angular version compatibility and picker behavior are covered by the suites above. Controlled showcase testbed journeys have been removed.
 
 `npm run showcase:build` prepares assets; `npm run test:showcase` runs the minimal smoke gate. Build and test use the same `WKLY_BASE_PATH`. See [GitHub Pages setup](SHOWCASE.md).
 

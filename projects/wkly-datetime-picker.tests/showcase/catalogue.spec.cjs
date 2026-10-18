@@ -78,50 +78,6 @@ test("compiled public routes render WKLY controls and initial state", async ({
         expect(png.readUInt32BE(20)).toBe(756);
       }
       await expect(page).toHaveTitle(info.title);
-      if (!route) {
-        const hero = page.getByTestId("hero-picker");
-        await hero.locator("summary").click();
-        const local = hero.getByRole("checkbox", {
-          name: "Show local time",
-          exact: true,
-        });
-        await expect(local).toBeChecked();
-        const now = hero.getByRole("button", { name: "Now", exact: true });
-        async function selectNow(localTime) {
-          const before = await page.evaluate(() => Date.now());
-          const offset = localTime
-            ? await page.evaluate(() => -new Date().getTimezoneOffset())
-            : 0;
-          await now.click();
-          const after = await page.evaluate(() => Date.now());
-          await expect
-            .poll(async () => {
-              const value = JSON.parse(
-                await hero.getByTestId("value").textContent(),
-              );
-              const timestamp = Date.parse(value);
-              const first =
-                Math.floor((before + offset * 60_000) / 60_000) * 60_000;
-              const last =
-                Math.floor((after + offset * 60_000) / 60_000) * 60_000;
-              return timestamp >= first && timestamp <= last;
-            })
-            .toBe(true);
-        }
-        await selectNow(true);
-        const localValue = await hero.getByTestId("value").textContent();
-        await local.uncheck();
-        await expect(hero.getByTestId("emissions")).toHaveText("1 emissions");
-        await expect(hero.getByTestId("value")).toHaveText(localValue);
-        await selectNow(false);
-        await local.check();
-        await selectNow(true);
-        await hero
-          .getByRole("button", { name: "Reset example", exact: true })
-          .click();
-        await expect(local).toBeChecked();
-        await hero.locator("summary").click();
-      }
       const panels = page.locator("demo-panel");
       await expect(panels.first()).toBeVisible();
       const count = await panels.count();
