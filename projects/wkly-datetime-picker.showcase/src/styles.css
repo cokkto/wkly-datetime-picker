@@ -154,6 +154,7 @@ nav a.active:after {
 nav a:hover {
   background: #edf1e9;
 }
+.sidebar-package,
 .sidebar-article,
 .sidebar-note {
   margin: 28px 14px 0;
@@ -163,9 +164,11 @@ nav a:hover {
 .sidebar-article {
   margin-top: 32px;
 }
+.sidebar-package .eyebrow,
 .sidebar-article .eyebrow {
   font-size: 9px;
 }
+.sidebar-package a,
 .sidebar-article a {
   display: block;
   margin-top: 12px;
@@ -174,6 +177,7 @@ nav a:hover {
   font-weight: 600;
   line-height: 1.6;
 }
+.sidebar-package a:hover,
 .sidebar-article a:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -193,10 +197,16 @@ nav a:hover {
 .sidebar-note strong {
   font-size: 12px;
 }
-.sidebar-note p {
+.sidebar-note ul {
   font-size: 11px;
   line-height: 1.9;
   color: #6a786e;
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.sidebar-note li + li {
+  margin-top: 6px;
 }
 .utc-label {
   font-size: 9px;
@@ -211,13 +221,13 @@ main {
   margin: auto;
 }
 .hero {
-  padding: 24px 0 40px;
+  padding: 0 0 20px;
 }
 .eyebrow {
   color: #507c66;
 }
 .hero h1 {
-  font-size: clamp(42px, 4.5vw, 66px);
+  font-size: clamp(42px, 4vw, 66px);
   line-height: 1.09;
   letter-spacing: -3px;
   font-weight: 500;
@@ -232,13 +242,6 @@ main {
   color: #617167;
   font-size: 15px;
   line-height: 1.9;
-}
-.hero-actions {
-  display: flex;
-  align-items: center;
-  gap: 25px;
-  margin-top: 26px;
-  font-size: 12px;
 }
 .primary {
   display: inline-flex;
@@ -271,9 +274,18 @@ main {
 }
 .overview-layout {
   display: grid;
-  grid-template-columns: minmax(250px, 1fr) minmax(340px, 40.85em);
-  gap: 48px;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 430px);
+  gap: 40px;
   align-items: start;
+}
+.overview-copy,
+.overview-layout > demo-panel {
+  min-width: 0;
+}
+.overview-links > h2,
+.installation > h2 {
+  text-transform: uppercase;
+  margin: 0 0 16px;
 }
 .feature-list {
   margin-top: 12px;
@@ -285,7 +297,7 @@ main {
   border-bottom: 1px solid #dde4da;
   padding: 16px 0;
 }
-.feature-list h2 {
+.feature-list h3 {
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 4px;
@@ -303,22 +315,16 @@ main {
   margin-left: auto;
   color: #7b8e7e;
 }
-showcase-description {
+showcase-description,
+showcase-introduction {
   display: block;
 }
 .overview-description {
-  border-top: 1px solid #dfe5db;
-  margin-top: 48px;
-  padding-top: 32px;
+  margin-top: 32px;
 }
-.overview-description h2 {
-  font-size: clamp(23px, 2.4vw, 30px);
-  font-weight: 500;
-  letter-spacing: -0.7px;
-  line-height: 1.3;
-  margin: 12px 0 24px;
-}
-.overview-description p {
+.overview-description p,
+.hero .overview-introduction,
+.installation p {
   max-width: 78ch;
   color: #617167;
   font-size: 14px;
@@ -329,27 +335,39 @@ showcase-description {
   color: #274f3d;
   font-weight: 650;
 }
-.package-note {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: center;
-  font-size: 9px;
-  color: #6d7a70;
-  letter-spacing: 1px;
-  margin: 40px 0;
-  padding: 20px 0;
-  border-block: 1px solid #dfe5db;
+.hero .overview-introduction {
+  margin-top: 28px;
 }
-.package-note code {
+.overview-introduction strong {
+  color: #274f3d;
+  font-weight: 650;
+}
+.installation {
+  border-top: 1px solid #dfe5db;
+  margin-top: 32px;
+  padding-top: 28px;
+}
+.installation a {
+  color: #176c55;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.installation p code {
   background: #edf1e9;
-  padding: 5px;
-  font-size: 0.85em;
-  letter-spacing: 0;
+  padding: 2px 4px;
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
 }
-.package-note > span {
-  flex-basis: 100%;
-  letter-spacing: 0;
+.installation pre {
+  margin: 20px 0 0;
+  padding: 22px;
+  border: 1px solid #dce4da;
+  border-radius: 10px;
+  background: #edf1e9;
+  color: #274f3d;
+  font-size: 12px;
+  line-height: 1.75;
+  overflow-x: auto;
 }
 .back-link {
   font-size: 11px;
@@ -574,6 +592,16 @@ input {
   margin-top: 48px;
   padding: 22px 0;
   border-top: 1px solid #dce4d7;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  line-height: 1.8;
+}
+.app-footer > span:first-child {
+  flex: 1 1 360px;
+  max-width: 78ch;
+}
+.app-footer > span:last-child {
+  white-space: nowrap;
 }
 .menu-toggle {
   display: none;
@@ -586,22 +614,6 @@ dialog::backdrop {
   box-shadow: 0 15px 65px #17382733;
   border-radius: 14px;
 }
-@media (min-width: 1450px) {
-  .hero {
-    padding-top: 0em;
-  }
-  .overview-layout {
-    margin-top: 0;
-    grid-template-columns: 1fr 430px;
-  }
-  .overview-layout > div {
-    padding-top: 0;
-  }
-  .overview-layout demo-panel {
-    margin-top: -15em;
-    align-self: start;
-  }
-}
 @media (max-width: 1050px) {
   main {
     padding: 32px 24px;
@@ -610,12 +622,19 @@ dialog::backdrop {
     grid-template-columns: 200px minmax(0, 1fr);
   }
   .overview-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 30px;
+  }
+  .overview-copy {
+    display: contents;
   }
   .overview-layout > demo-panel {
     max-width: 430px;
-    grid-row: 1;
+    width: 100%;
+    grid-row: 2;
+  }
+  .overview-description {
+    margin-top: 0;
   }
   .header-caption {
     display: none;
@@ -688,10 +707,6 @@ dialog::backdrop {
   .hero p {
     font-size: 13px;
   }
-  .hero-actions {
-    gap: 14px;
-    font-size: 0.85em;
-  }
   .primary {
     gap: 14px;
     padding: 12px;
@@ -729,13 +744,11 @@ dialog::backdrop {
     padding-inline: 0;
   }
   .page-heading,
-  .hero,
   .back-link,
-  .overview-layout > div,
-  .app-footer,
-  .package-note {
+  .app-footer {
     margin-inline: 12px;
   }
+  .overview-copy > :not(showcase-description),
   .overview-description {
     margin-inline: 12px;
   }
@@ -745,9 +758,6 @@ dialog::backdrop {
   }
   .hero h1 {
     font-size: 42px;
-  }
-  .hero-actions {
-    flex-wrap: wrap;
   }
   .picker-stage {
     padding: 0.85em 0;

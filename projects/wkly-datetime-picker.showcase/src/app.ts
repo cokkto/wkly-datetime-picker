@@ -6,10 +6,18 @@ import { RuntimeModule } from "../../wkly-datetime-picker.runtime.22/src/runtime
 import { PageComponent } from "./page.component";
 import { AppComponent } from "./app.component";
 import { PAGES } from "./pages";
-import { OverviewDescriptionComponent } from "./overview-description.component";
+import {
+  OverviewDescriptionComponent,
+  OverviewIntroductionComponent,
+} from "./overview-description.component";
 
 @NgModule({
-  declarations: [AppComponent, PageComponent, OverviewDescriptionComponent],
+  declarations: [
+    AppComponent,
+    PageComponent,
+    OverviewDescriptionComponent,
+    OverviewIntroductionComponent,
+  ],
   imports: [
     BrowserModule,
     RuntimeModule,

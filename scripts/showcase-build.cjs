@@ -104,6 +104,10 @@ function assets() {
     path.join(hostRoot, "src/overview-description.html"),
     "utf8",
   );
+  const overviewIntroduction = fs.readFileSync(
+    path.join(hostRoot, "src/overview-introduction.html"),
+    "utf8",
+  );
   const navigation = Object.entries(metadata)
     .map(
       ([route, page]) =>
@@ -144,7 +148,7 @@ function assets() {
       )
       .replace(
         "<wkly-showcase></wkly-showcase>",
-        `<wkly-showcase><main><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.description)}</p><nav aria-label="Examples"><ul>${navigation}</ul></nav>${route ? "" : overviewDescription}<p><a href="https://github.com/cokkto/wkly-datetime-picker">Documentation and source</a></p></main></wkly-showcase>`,
+        `<wkly-showcase><main><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.description)}</p>${route ? "" : overviewIntroduction}<nav aria-label="Examples"><ul>${navigation}</ul></nav>${route ? "" : overviewDescription}<p><a href="https://github.com/cokkto/wkly-datetime-picker">Documentation and source</a></p></main></wkly-showcase>`,
       );
     const directory = path.join(output, route);
     fs.mkdirSync(directory, { recursive: true });

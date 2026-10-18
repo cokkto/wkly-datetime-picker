@@ -3,6 +3,71 @@ const supported = require("../supported-angular.json");
 const fs = require("fs");
 const path = require("path");
 const root = path.resolve(__dirname, "..");
+function inlineComponentResources(ts, file, source, resources) {
+  const tree = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+  const components = new Set();
+  const namespaces = new Set();
+  for (const statement of tree.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      statement.moduleSpecifier.text !== "@angular/core"
+    )
+      continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (bindings && ts.isNamespaceImport(bindings))
+      namespaces.add(bindings.name.text);
+    else if (bindings && ts.isNamedImports(bindings))
+      for (const binding of bindings.elements)
+        if ((binding.propertyName || binding.name).text === "Component")
+          components.add(binding.name.text);
+  }
+  const edits = [];
+  const readResource = (ref) => {
+    const resource = path.resolve(path.dirname(file), ref.text);
+    resources.add(resource);
+    return JSON.stringify(fs.readFileSync(resource, "utf8"));
+  };
+  function visit(node) {
+    if (ts.isDecorator(node) && ts.isCallExpression(node.expression)) {
+      const call = node.expression;
+      const callee = call.expression;
+      const isComponent =
+        (ts.isIdentifier(callee) && components.has(callee.text)) ||
+        (ts.isPropertyAccessExpression(callee) &&
+          ts.isIdentifier(callee.expression) &&
+          namespaces.has(callee.expression.text) &&
+          callee.name.text === "Component");
+      const metadata = call.arguments[0];
+      if (isComponent && metadata && ts.isObjectLiteralExpression(metadata)) {
+        for (const property of metadata.properties) {
+          if (!ts.isPropertyAssignment(property)) continue;
+          const name = property.name;
+          if (!ts.isIdentifier(name) && !ts.isStringLiteral(name)) continue;
+          const value = property.initializer;
+          let replacement;
+          if (name.text === "templateUrl" && ts.isStringLiteralLike(value))
+            replacement = "template: " + readResource(value);
+          if (
+            name.text === "styleUrls" &&
+            ts.isArrayLiteralExpression(value) &&
+            value.elements.every(ts.isStringLiteralLike)
+          )
+            replacement =
+              "styles: [" + value.elements.map(readResource).join(",") + "]";
+          if (replacement !== undefined)
+            edits.push([property.getStart(tree), property.end, replacement]);
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(tree);
+  // Replace only metadata spans, preserving sample strings, comments and source formatting.
+  for (const [start, end, replacement] of edits.sort((a, b) => b[0] - a[0]))
+    source = source.slice(0, start) + replacement + source.slice(end);
+  return source;
+}
+
 function angularPlugin(ts, configPath, compilerCli, major = 22) {
   return {
     name: "angular-ts",
@@ -11,6 +76,7 @@ function angularPlugin(ts, configPath, compilerCli, major = 22) {
       const resources = new Set();
       build.onStart(() => {
         emitted = new Map();
+        resources.clear();
         const config = ts.readConfigFile(configPath, ts.sys.readFile);
         if (config.error)
           throw new Error(
@@ -35,36 +101,7 @@ function angularPlugin(ts, configPath, compilerCli, major = 22) {
             return source;
           // Angular 11-13 predate the standalone metadata flag used by shared fixtures.
           if (major < 14) source = source.replace(/standalone: false,?/g, "");
-          for (const match of source.matchAll(
-            /(?:templateUrl:\s*|styleUrls:\s*\[)([^\n]+)/g,
-          )) {
-            for (const ref of match[1].matchAll(/['"]([^'"]+)['"]/g))
-              resources.add(path.resolve(path.dirname(file), ref[1]));
-          }
-          source = source.replace(
-            /templateUrl:\s*(['"])([^'"]+)\1/g,
-            (_, quote, ref) =>
-              "template: " +
-              JSON.stringify(
-                fs.readFileSync(path.resolve(path.dirname(file), ref), "utf8"),
-              ),
-          );
-          return source.replace(
-            /styleUrls:\s*\[([^\]]+)\]/g,
-            (_, files) =>
-              "styles: [" +
-              [...files.matchAll(/(['"])([^'"]+)\1/g)]
-                .map((m) =>
-                  JSON.stringify(
-                    fs.readFileSync(
-                      path.resolve(path.dirname(file), m[2]),
-                      "utf8",
-                    ),
-                  ),
-                )
-                .join(",") +
-              "]",
-          );
+          return inlineComponentResources(ts, file, source, resources);
         };
         host.writeFile = (file, contents) =>
           emitted.set(

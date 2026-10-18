@@ -22,48 +22,78 @@
     ></demo-panel>
   </div>
 </ng-container>
-<ng-template #overview
-  ><header class="hero">
-    <span class="eyebrow">WKLY / ANGULAR DATE & TIME PICKER</span>
-    <h1>A fresh perspective<br />on <em>time.</em></h1>
-    <p>
-      One continuous calendar. Any date, any time.<br />A week-based picker
-      built to feel natural everywhere.
-    </p>
-    <div class="hero-actions">
-      <a routerLink="/single" class="primary"
-        >Explore the picker <span>↗</span></a
-      ><a routerLink="/presentations">See presentations →</a>
-    </div>
-    <div class="feature-pills">
-      <span>Angular 11–22</span><span>UTC by design</span
-      ><span>Touch & keyboard</span>
-    </div>
-  </header>
+<ng-template #overview>
   <div class="overview-layout">
-    <div>
-      <span class="eyebrow">EXPLORE THE POSSIBILITIES</span>
-      <div class="feature-list">
-        <a
-          *ngFor="let route of routes; let i = index"
-          [routerLink]="'/' + route"
-          ><span class="feature-index">0{{ i + 1 }}</span>
-          <div>
-            <h2>{{ labels[route] }}</h2>
-            <p>{{ summaries[route] }}</p>
-          </div>
-          <span>↗</span></a
-        >
-      </div>
+    <div class="overview-copy">
+      <header class="hero">
+        <span class="eyebrow">WKLY / ANGULAR DATE & TIME RANGE PICKER</span>
+        <h1>A fresh perspective<br />on <em>time.</em></h1>
+        <p>
+          One continuous calendar. Any date, any time.<br />A week-based picker
+          built to feel natural everywhere.
+        </p>
+        <div class="feature-pills">
+          <span>Angular 11–22</span><span>UTC by design</span
+          ><span>Touch & keyboard</span>
+        </div>
+        <showcase-introduction></showcase-introduction>
+      </header>
+      <section class="overview-links" aria-labelledby="overview-links-title">
+        <h2 class="eyebrow" id="overview-links-title">
+          Explore the possibilities
+        </h2>
+        <div class="feature-list">
+          <a
+            *ngFor="let route of routes; let i = index"
+            [routerLink]="'/' + route"
+            ><span class="feature-index">0{{ i + 1 }}</span>
+            <div>
+              <h3>{{ labels[route] }}</h3>
+              <p>{{ summaries[route] }}</p>
+            </div>
+            <span>↗</span></a
+          >
+        </div>
+      </section>
+      <showcase-description></showcase-description>
+      <section class="installation" aria-labelledby="installation-title">
+        <h2 class="eyebrow" id="installation-title">Simple to install</h2>
+        <p>
+          Install <code>@wkly/datetime-picker</code> with the same major version
+          as your Angular application (11–22). For Angular 19, choose
+          <code>@wkly/datetime-picker@19</code>.
+          <a
+            href="https://github.com/cokkto/wkly-datetime-picker#install-and-choose-a-version"
+            >Read the documentation ↗</a
+          >
+        </p>
+        <p>Import the picker module, then bind your selected value:</p>
+        <pre
+          ngNonBindable
+        ><code>// booking.component.ts (standalone Angular component)
+import &#123; Component &#125; from '&#64;angular/core';
+import &#123;
+  WklyDateTimePickerModule,
+  WklyPickerValue,
+&#125; from '&#64;wkly/datetime-picker';
+
+&#64;Component(&#123;
+  selector: 'app-booking',
+  standalone: true,
+  imports: [WklyDateTimePickerModule],
+  templateUrl: './booking.component.html',
+&#125;)
+export class BookingComponent &#123;
+  value: WklyPickerValue = null;
+&#125;</code></pre>
+        <pre ngNonBindable><code>&lt;!-- booking.component.html --&gt;
+&lt;wkly-datetime-picker
+  mode="datetime"
+  [(value)]="value"
+  ariaLabel="Booking date and time"&gt;
+&lt;/wkly-datetime-picker&gt;</code></pre>
+      </section>
     </div>
     <demo-panel [config]="heroDemo"></demo-panel>
-  </div>
-  <showcase-description></showcase-description>
-  <div class="package-note">
-    <code>npm install @wkly/datetime-picker@N</code>
-    <span>Choose N to match your Angular major (11–22).</span>
-    <a href="https://github.com/cokkto/wkly-datetime-picker"
-      >Documentation &amp; source ↗</a
-    >
   </div>
 </ng-template>
