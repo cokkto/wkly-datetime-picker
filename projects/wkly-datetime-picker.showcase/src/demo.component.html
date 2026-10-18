@@ -87,14 +87,38 @@
           <option [ngValue]="30">30</option>
         </select></label
       >
-      <label class="check"
-        ><input
-          type="checkbox"
-          [(ngModel)]="showLocalTime"
-          [ngModelOptions]="{ standalone: true }"
-        />
-        Show local time</label
-      >
+      <div class="local-time-control">
+        <label class="check"
+          ><input
+            type="checkbox"
+            [(ngModel)]="showLocalTime"
+            [ngModelOptions]="{ standalone: true }"
+          />
+          Show local time</label
+        >
+        <button
+          type="button"
+          class="info-button"
+          [attr.popovertarget]="'local-time-info-' + config.id"
+          aria-label="More information about local time"
+        >
+          ⓘ
+        </button>
+        <div
+          [id]="'local-time-info-' + config.id"
+          class="info-popover"
+          popover="auto"
+          role="note"
+          aria-label="About local time"
+        >
+          Show local time affects only Now. Bind
+          <pre>[nowUtcOffsetMinutes]="offset"</pre>
+          with
+          <pre>offset = -new Date().getTimezoneOffset()</pre>
+          for the browser's current local time, or <strong>0</strong> for UTC.
+          Now emits those wall-clock fields with a Z&nbsp;suffix.
+        </div>
+      </div>
       <label class="check"
         ><input
           type="checkbox"
@@ -150,13 +174,6 @@
           placeholder="ISO string, JSON tuple, or null" /></label
       ><button type="button" (click)="applyValue()">Apply value</button>
     </div>
-    <p>
-      Show local time affects only Now. Bind
-      <code>[nowUtcOffsetMinutes]="offset"</code>, with
-      <code>offset = -new Date().getTimezoneOffset()</code> for the browser's
-      current local time, or <code>0</code> for UTC. Now emits those wall-clock
-      fields with a <code>Z</code> suffix.
-    </p>
   </details>
   <div class="picker-stage">
     <wkly-runtime

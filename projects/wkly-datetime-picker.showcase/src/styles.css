@@ -468,6 +468,54 @@ input {
   width: 16px;
   height: 16px;
 }
+.local-time-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.info-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 18px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px;
+}
+.info-popover {
+  padding: 0.5rem 0.75rem;
+  width: 440px;
+  max-width: min(50vw, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  background: Canvas;
+  color: CanvasText;
+  box-shadow: 0 2px 8px #0002;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.info-popover pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 8px 0;
+}
+/* Native popovers center by default when anchor positioning is unavailable. */
+@supports (position-area: bottom) {
+  .info-popover {
+    inset: auto;
+    margin: 8px 0;
+    position-area: bottom;
+    position-try-fallbacks: flip-block, flip-inline;
+  }
+}
+@media (max-width: 700px) {
+  .info-popover {
+    max-width: calc(100vw - 32px);
+  }
+}
 .picker-stage {
   padding: 18px 14px;
 }

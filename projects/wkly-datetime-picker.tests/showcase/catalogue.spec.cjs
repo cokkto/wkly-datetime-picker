@@ -93,6 +93,30 @@ test("compiled public routes render WKLY controls and initial state", async ({
             exact: true,
           }),
         ).toBeChecked();
+        if (index === 0) {
+          const info = panel.getByRole("button", {
+            name: "More information about local time",
+          });
+          const popover = panel.locator('[popover="auto"]');
+          await expect(popover).toBeHidden();
+          const before = await panel.getByTestId("value").textContent();
+          const height = await panel.evaluate(
+            (element) => element.getBoundingClientRect().height,
+          );
+          await info.click();
+          await expect(popover).toBeVisible();
+          await expect(popover).toContainText(
+            "offset = -new Date().getTimezoneOffset()",
+          );
+          expect(
+            await panel.evaluate(
+              (element) => element.getBoundingClientRect().height,
+            ),
+          ).toBe(height);
+          await expect(panel.getByTestId("value")).toHaveText(before);
+          await page.keyboard.press("Escape");
+          await expect(popover).toBeHidden();
+        }
         await panel.locator("summary").click();
       }
     });
