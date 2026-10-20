@@ -10,6 +10,26 @@ import { ShowcaseHebrewCalendarAdapter } from "./hebrew-adapter";
 import { PairedSelectionService } from "./paired-selection.service";
 import { ShowcaseHijriCalendarAdapter } from "./hijri-adapter";
 import { PAGES } from "./pages";
+import singleDocumentation from "./content/single.html";
+import rangesDocumentation from "./content/ranges.html";
+import presentationsDocumentation from "./content/presentations.html";
+import localizationDocumentation from "./content/localization.html";
+import calendarsDocumentation from "./content/calendars.html";
+import validationDocumentation from "./content/validation.html";
+import virtualizationDocumentation from "./content/virtualization.html";
+import stylingDocumentation from "./content/styling.html";
+
+// Load prose as HTML text so the Angular examples remain code, not live templates.
+const DOCUMENTATION: Record<string, string> = {
+  single: singleDocumentation,
+  ranges: rangesDocumentation,
+  presentations: presentationsDocumentation,
+  localization: localizationDocumentation,
+  calendars: calendarsDocumentation,
+  validation: validationDocumentation,
+  virtualization: virtualizationDocumentation,
+  styling: stylingDocumentation,
+};
 
 @Component({
   selector: "showcase-page",
@@ -19,6 +39,7 @@ import { PAGES } from "./pages";
 export class PageComponent {
   routeName: string;
   page: (typeof PAGES)[string] | null;
+  documentation: string;
   routes = Object.keys(PAGES);
   labels: Record<string, string> = {
     single: "Single selections",
@@ -72,6 +93,7 @@ export class PageComponent {
   ) {
     this.routeName = route.snapshot.data.page || "";
     this.page = PAGES[this.routeName] || null;
+    this.documentation = DOCUMENTATION[this.routeName] || "";
     const pageMetadata =
       metadata[this.routeName as keyof typeof metadata] || metadata[""];
     const description = `${siteMetadata.description} ${pageMetadata.description}`;

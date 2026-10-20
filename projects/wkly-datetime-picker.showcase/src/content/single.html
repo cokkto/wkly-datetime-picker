@@ -1,0 +1,63 @@
+<h2>Configure date and time selection</h2>
+<p>
+  Choose <code>mode="date"</code> for a day without a time,
+  <code>time</code> for a clock time without a selected day, or
+  <code>datetime</code> for both. A date emits a string such as
+  <code>2099-12-16T00:00:00.000Z</code>. Time mode uses the fixed date
+  <code>0000-01-01</code>, for example <code>0000-01-01T13:00:00.000Z</code>. An
+  empty selection is <code>null</code>.
+</p>
+<h3>Angular example: appointment time</h3>
+<p>
+  This standalone component uses five-minute increments. Import
+  <code>WklyDateTimePickerModule</code> in the host component or NgModule;
+  <code>[(value)]</code> receives successful commits through
+  <code>valueChange</code>. Inline edits commit when a valid action completes.
+</p>
+<pre
+  tabindex="0"
+><code class="language-typescript">import { Component } from '@angular/core';
+import { WklyDateTimePickerModule, WklyPickerValue } from '@wkly/datetime-picker';
+
+@Component({
+  selector: 'app-appointment',
+  standalone: true,
+  imports: [WklyDateTimePickerModule],
+  template: `
+    &lt;wkly-datetime-picker
+      mode="datetime"
+      [(value)]="appointment"
+      hourCycle="h24"
+      [minuteStep]="5"
+      ariaLabel="Appointment date and time"&gt;
+    &lt;/wkly-datetime-picker&gt;
+  `,
+})
+export class AppointmentComponent {
+  appointment: WklyPickerValue = '2099-12-16T13:00:00.000Z';
+}</code></pre>
+<h3>Manual entry and time display</h3>
+<p>
+  Manual fields use the same constraints as calendar selection. An impossible
+  date or a minute outside the configured step remains editable and does not
+  replace the committed value. Both <code>minuteStep</code> and
+  <code>secondStep</code> must be positive integer divisors of 60. Set
+  <code>[showSeconds]="true"</code> to edit seconds; otherwise they must be
+  <code>00</code>. Milliseconds are always <code>.000</code>.
+</p>
+<p>
+  <code>hourCycle</code> accepts <code>locale</code>, <code>h12</code>,
+  <code>h24</code>, or <code>switchable</code>. AM/PM changes the time presentation, but not
+  the underlying value. Values remain canonical Gregorian UTC strings. The
+  demonstrations' “Show local time” option shifts only the Now action's
+  wall-clock fields and still emits a Z suffix; it does not convert existing
+  selections. Your application owns timezone interpretation and conversion.
+</p>
+<p>
+  See <a href="ranges/">date and time ranges</a> for two endpoints, or the
+  <a
+    href="https://github.com/cokkto/wkly-datetime-picker/blob/main/docs/API.md#angular"
+    >Angular input and output reference</a
+  >
+  for the full configuration.
+</p>

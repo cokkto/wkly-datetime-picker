@@ -1,0 +1,65 @@
+<h2>Configure a continuous week viewport</h2>
+<p>
+  Months have different lengths and occupy different numbers of calendar rows.
+  Consecutive weeks each contain seven days, so they give scrolling a consistent
+  structure. Month names and boundaries still help people read the calendar;
+  they are derived from the adapter rather than defining where the timeline
+  stops. Crossing into January is simply moving to the next part of that
+  sequence.
+</p>
+<h3>Angular example: four visible weeks</h3>
+<p>
+  Bind <code>viewportPreset</code> to choose the visible layout. The button
+  below calls the public <code>scrollToValue</code> method. Navigation leaves
+  the selected value unchanged unless a jump explicitly requests selection.
+</p>
+<pre
+  tabindex="0"
+><code class="language-typescript">import { Component } from '@angular/core';
+import { WklyDateTimePickerModule, WklyPickerValue } from '@wkly/datetime-picker';
+
+@Component({
+  selector: 'app-week-viewport',
+  standalone: true,
+  imports: [WklyDateTimePickerModule],
+  template: `
+    &lt;wkly-datetime-picker #picker mode="date" [(value)]="value"
+      [viewportPreset]="{ kind: 'weeks', visibleWeekCount: 4 }"
+      [overscanWeeks]="3" [weekCacheSize]="256"&gt;
+    &lt;/wkly-datetime-picker&gt;
+    &lt;button type="button"
+      (click)="picker.scrollToValue('1969-12-16T00:00:00.000Z')"&gt;
+      Jump before 1970
+    &lt;/button&gt;
+  `,
+})
+export class WeekViewportComponent {
+  value: WklyPickerValue = '2099-12-16T00:00:00.000Z';
+}</code></pre>
+<h3>Month layouts and bounded rendering</h3>
+<p>
+  <code>{ kind: 'full-month' }</code> fits the anchor month and initially hides
+  days outside it in the boundary weeks. For surrounding context, use
+  <code
+    >{ kind: 'full-month-and-around', extraWeeksBefore: 1, extraWeeksAfter: 1
+    }</code
+  >. Fixed week counts support 1–52 rows; extra weeks before or after support
+  0–52 each. These are views of the same timeline, not separate calendars.
+</p>
+<p>
+  The picker renders a bounded group of rows around the viewport and recenters
+  its scroll region as you move. <code>overscanWeeks</code> adds buffer rows on
+  either side, defaults to 3, and accepts 0–50. The week generator caches at
+  most <code>weekCacheSize</code> entries, 256 by default; zero disables that
+  cache. A distant jump calculates its destination without visiting every
+  intervening month. Navigation still respects adapter bounds, and the
+  containing layout can limit visible height.
+</p>
+<p>
+  Compare <a href="calendars/">calendar adapters on the shared timeline</a>, or
+  read the
+  <a
+    href="https://github.com/cokkto/wkly-datetime-picker/blob/main/docs/API.md#angular"
+    >viewport inputs and jump method reference</a
+  >.
+</p>

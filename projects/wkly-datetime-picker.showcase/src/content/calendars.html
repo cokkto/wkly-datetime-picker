@@ -1,0 +1,60 @@
+<h2>Choose a calendar interpretation</h2>
+<p>
+  A month is useful to read, but its shape depends on the calendar. WKLY gives
+  navigation a steadier unit: a row of seven consecutive days. Each day has an
+  integer coordinate, with <code>1970-01-01</code> as zero. A calendar adapter
+  converts that coordinate to calendar fields and supplies month information,
+  formatting, and date validation. Scrolling can keep the same week structure
+  when those fields change.
+</p>
+<h3>Angular example: an explicit Gregorian adapter</h3>
+<p>
+  Gregorian is the default. This example supplies it explicitly to show the
+  public adapter input and its separate import. When supplying an adapter,
+  choose its locale as well as the picker's locale.
+</p>
+<pre
+  tabindex="0"
+><code class="language-typescript">import { Component } from '@angular/core';
+import { WklyGregorianCalendarAdapter } from '@wkly/adapters';
+import { WklyDateTimePickerModule, WklyPickerValue } from '@wkly/datetime-picker';
+
+@Component({
+  selector: 'app-calendar-picker',
+  standalone: true,
+  imports: [WklyDateTimePickerModule],
+  template: `
+    &lt;wkly-datetime-picker
+      mode="date" locale="en-US"
+      [calendarAdapter]="calendar" [(value)]="value"&gt;
+    &lt;/wkly-datetime-picker&gt;
+  `,
+})
+export class CalendarPickerComponent {
+  calendar = new WklyGregorianCalendarAdapter('en-US');
+  value: WklyPickerValue = '2024-03-25T00:00:00.000Z';
+}</code></pre>
+<h3>Hebrew and civil Hijri source examples</h3>
+<p>
+  The three demonstrations synchronize through the Gregorian UTC value, so their
+  different date labels identify the same underlying day. The Hebrew example
+  handles leap years with an extra month and uses
+  <code>@hebcal/core</code>. The Hijri example uses tabular
+  <code>islamic-civil</code> arithmetic and <code>Intl</code> formatting. It
+  does not model observed lunar dates or the Umm al-Qura calendar.
+</p>
+<p>
+  Neither example adapter is bundled in npm. Their source is linked below;
+  adapting it for an application requires its imports and dependencies too. Both
+  support Gregorian <code>1900-01-01</code> through <code>2100-12-31</code>,
+  inclusive. The published Gregorian adapter supports years 0–9999. Adapter
+  bounds apply to selection and navigation; changing the adapter does not extend
+  its conversion range or perform timezone conversion.
+</p>
+<p>
+  Read the
+  <a
+    href="https://github.com/cokkto/wkly-datetime-picker/blob/main/docs/CORE-AND-ADAPTERS.md"
+    >calendar contracts and source adapter links</a
+  >, or compare <a href="virtualization/">week-based viewport layouts</a>.
+</p>

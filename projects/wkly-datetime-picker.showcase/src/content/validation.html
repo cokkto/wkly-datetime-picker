@@ -1,0 +1,72 @@
+<h2>Validate selections with Angular forms</h2>
+<p>
+  <code>required</code> rejects an empty selection. <code>min</code> and
+  <code>max</code> are inclusive canonical values in the selected mode's format.
+  Disabled-date callbacks receive an epoch day and calendar context;
+  disabled-time callbacks receive seconds since midnight. These constraints
+  apply to calendar selection, manual entry, Now, and validation of values
+  supplied by the application.
+</p>
+<h3>Angular reactive forms example</h3>
+<p>
+  Import both modules and let the form control own the value. This booking
+  window excludes Sundays and the noon hour. Call
+  <code>appointment.setValue(null)</code> to clear it and
+  <code>appointment.disable()</code> to disable the picker through the form.
+</p>
+<pre
+  tabindex="0"
+><code class="language-typescript">import { Component } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import {
+  WklyDateTimePickerModule, WklyPickerValue,
+  WklyDisabledDatePredicate, WklyDisabledTimePredicate,
+} from '@wkly/datetime-picker';
+
+@Component({
+  selector: 'app-validated-booking',
+  standalone: true,
+  imports: [ReactiveFormsModule, WklyDateTimePickerModule],
+  template: `
+    &lt;wkly-datetime-picker
+      mode="datetime" [formControl]="appointment" [required]="true"
+      min="2099-12-01T00:00:00.000Z"
+      max="2100-01-31T23:59:00.000Z"
+      [isDateDisabled]="sunday" [isTimeDisabled]="noon"&gt;
+    &lt;/wkly-datetime-picker&gt;
+    &lt;p role="status"&gt;Form status: {{ appointment.status }}&lt;/p&gt;
+  `,
+})
+export class ValidatedBookingComponent {
+  appointment = new FormControl&lt;WklyPickerValue&gt;(null);
+  sunday: WklyDisabledDatePredicate = (day) =&gt;
+    new Date(day * 86400000).getUTCDay() === 0;
+  noon: WklyDisabledTimePredicate = (seconds) =&gt;
+    seconds &gt;= 12 * 3600 &amp;&amp; seconds &lt; 13 * 3600;
+}</code></pre>
+<h3>Draft errors and committed values</h3>
+<p>
+  The picker implements Angular's value accessor and validator contracts. A
+  manual February 31 stays visible as an invalid draft; it does not silently
+  become a March date or replace the last committed value. The form can
+  therefore be invalid while its control still holds the previous selection.
+  <code>validationChange</code> reports structured errors, including endpoint
+  and field information where available. Typed times also obey minute and second
+  steps.
+</p>
+<p>
+  Ranges check both endpoints and, by default, disabled values between them.
+  <code>allowRangeAcrossDisabled</code> relaxes only the crossing rule.
+  <code>rangeValidator</code> can add a whole-range constraint; use
+  <code>validators</code> for other selection rules. Programmatic writes are
+  validated without calling the registered user-change callback. Keep save
+  actions tied to the form's validity as well as its current value.
+</p>
+<p>
+  See <a href="ranges/">range editing behavior</a> and the
+  <a
+    href="https://github.com/cokkto/wkly-datetime-picker/blob/main/docs/API.md#adapters"
+    >validation types and error codes</a
+  >. The generic <code>FormControl</code> example uses Angular's typed forms
+  available from Angular 14; on earlier versions use an untyped control.
+</p>
