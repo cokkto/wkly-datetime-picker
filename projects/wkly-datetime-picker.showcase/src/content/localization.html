@@ -1,0 +1,71 @@
+<h2>Configure locale, labels, and reading direction</h2>
+<p>
+  Set <code>locale</code> to choose localized digits and date labels. Register
+  its Angular locale data so the picker can resolve regional week starts.
+  Without an explicit input, locale comes from <code>WKLY_CONFIG</code>, then
+  Angular's <code>LOCALE_ID</code>. The Gregorian adapter follows the effective
+  locale; a supplied calendar adapter uses its own locale for calendar labels.
+  The Arabic and Hebrew demonstrations also use right-to-left layout.
+</p>
+<h3>Angular example: localized controls</h3>
+<p>
+  This catalog changes two controls; missing labels fall back to built-in
+  English. The showcase supplies fuller Arabic and Hebrew catalogs. Locale data
+  and control translations have separate jobs, so registering one does not
+  supply the other.
+</p>
+<pre
+  tabindex="0"
+><code class="language-typescript">import { Component } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import ar from '@angular/common/locales/ar';
+import {
+  WklyDateTimePickerModule, WklyPickerValue, WklyTranslations,
+} from '@wkly/datetime-picker';
+
+registerLocaleData(ar);
+
+@Component({
+  selector: 'app-localized-picker',
+  standalone: true,
+  imports: [WklyDateTimePickerModule],
+  template: `
+    &lt;wkly-datetime-picker
+      locale="ar" mode="datetime" [(value)]="value"
+      hourCycle="locale" [weekOffset]="2"
+      [translations]="translations"&gt;
+    &lt;/wkly-datetime-picker&gt;
+  `,
+})
+export class LocalizedPickerComponent {
+  value: WklyPickerValue = null;
+  translations: WklyTranslations = {
+    ar: { confirm: 'تأكيد', now: 'الآن' },
+  };
+}</code></pre>
+<h3>Week starts, clocks, and stored values</h3>
+<p>
+  Here <code>[weekOffset]="2"</code> means Saturday. WKLY offsets are measured
+  from Thursday, so Monday is <code>4</code> and Sunday is <code>3</code>. Omit
+  the input to follow application or locale settings.
+  <code>hourCycle="locale"</code> follows the locale's clock convention;
+  <code>h12</code>, <code>h24</code>, and <code>switchable</code> override it.
+  Manual fields accept recognized localized decimal digits.
+</p>
+<p>
+  The <code>translations</code> input replaces the injected
+  <code>WKLY_TRANSLATIONS</code> catalog. Label lookup tries the full locale,
+  broader language tags, then English. <code>WKLY_LOCALIZATION</code> supplies
+  per-instance overrides ahead of that lookup. Changing display locale does not
+  convert a stored value to another timezone: the selected value remains a
+  canonical Gregorian UTC ISO string. A different calendar requires a
+  <a href="calendars/">calendar adapter</a>, independently of translation.
+</p>
+<p>
+  See the
+  <a
+    href="https://github.com/cokkto/wkly-datetime-picker#choose-a-locale-and-time-format"
+    >locale and translation guide</a
+  >
+  for application-wide configuration.
+</p>
