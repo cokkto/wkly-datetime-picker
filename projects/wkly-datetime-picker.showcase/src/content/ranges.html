@@ -1,0 +1,67 @@
+<h2>Configure and edit a range</h2>
+<p>
+  <code>date-range</code> stores two midnight UTC dates;
+  <code>time-range</code> stores two clock times on <code>0000-01-01</code>;
+  <code>datetime-range</code> keeps a date and time at each endpoint. A
+  completed selection is an ordered readonly pair of canonical ISO strings. An
+  empty selection is <code>null</code>, and an incomplete calendar selection
+  stays in the draft. Equal endpoints are allowed.
+</p>
+<h3>Angular example: booking window</h3>
+<p>
+  Use <code>WklyPickerValue</code> for a two-way binding because the output can
+  also be <code>null</code>. Here the initial pair supplies independent start
+  and end times, with inclusive bounds for both endpoints.
+</p>
+<pre
+  tabindex="0"
+><code class="language-typescript">import { Component } from '@angular/core';
+import { WklyDateTimePickerModule, WklyPickerValue } from '@wkly/datetime-picker';
+
+@Component({
+  selector: 'app-booking-window',
+  standalone: true,
+  imports: [WklyDateTimePickerModule],
+  template: `
+    &lt;wkly-datetime-picker
+      mode="datetime-range"
+      [(value)]="booking"
+      [minuteStep]="15"
+      min="2099-12-01T00:00:00.000Z"
+      max="2099-12-31T23:45:00.000Z"&gt;
+    &lt;/wkly-datetime-picker&gt;
+  `,
+})
+export class BookingWindowComponent {
+  booking: WklyPickerValue = [
+    '2099-12-16T09:00:00.000Z',
+    '2099-12-17T17:00:00.000Z',
+  ];
+}</code></pre>
+<h3>Endpoint ordering and validation</h3>
+<p>
+  Selecting the end date before the start date swaps the endpoints. Manual edits
+  use the same ordering when the field edit completes. For date and date-time
+  ranges, the Manual section also offers “<strong>In&nbsp;X&nbsp;days</strong>”
+  mode: a signed calendar-day difference from Start date, for user's
+  convenience. Typing a negative number previews the earlier end until Enter,
+  blur, or the one-second typing delay completes the edit. Entering manual mode
+  fills missing date-range endpoints; valid defaults can commit immediately
+  inline.
+</p>
+<p>
+  Disabled endpoints always fail validation. By default a range also cannot
+  cross disabled dates or times. <code>[allowRangeAcrossDisabled]="true"</code>
+  permits crossing them but keeps endpoint checks. Use
+  <code>rangeValidator</code> for rules on a complete ordered pair. A time range
+  is ordered within one fixed day; use a date-time range for an interval that
+  crosses midnight. Invalid drafts keep the previous committed start-end pair.
+</p>
+<p>
+  Try the <a href="validation/">validation and forms examples</a>, and see the
+  <a
+    href="https://github.com/cokkto/wkly-datetime-picker#configure-selection-and-validation"
+    >selection constraint reference</a
+  >
+  for callback inputs.
+</p>

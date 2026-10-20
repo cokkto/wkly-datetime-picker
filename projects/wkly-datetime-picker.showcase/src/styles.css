@@ -49,6 +49,10 @@ summary:focus-visible {
   outline: 3px solid #4e79c5;
   outline-offset: 3px;
 }
+.feature-documentation pre:focus-visible {
+  outline: 3px solid #4e79c5;
+  outline-offset: 3px;
+}
 .app-header {
   height: 88px;
   background: #fff;
@@ -398,6 +402,57 @@ showcase-introduction {
 }
 .demo-grid > .full-row {
   grid-column: 1 / -1;
+}
+.feature-documentation {
+  min-width: 0;
+  max-width: 80ch;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid #dfe5db;
+  font-size: 14px;
+  line-height: 1.85;
+  color: #52635e;
+}
+.feature-documentation h2,
+.feature-documentation h3 {
+  color: #20332d;
+  font-weight: 550;
+  line-height: 1.35;
+}
+.feature-documentation h2 {
+  margin: 0 0 20px;
+  font-size: 25px;
+}
+.feature-documentation h3 {
+  margin: 28px 0 12px;
+  font-size: 18px;
+}
+.feature-documentation p {
+  margin: 0 0 18px;
+}
+.feature-documentation a {
+  color: #176c55;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.feature-documentation p code {
+  background: #edf1e9;
+  padding: 2px 4px;
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+.feature-documentation pre {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 18px;
+  margin: 20px 0;
+  border: 1px solid #dce4da;
+  border-radius: 10px;
+  background: #edf1e9;
+  color: #274f3d;
+  font-size: 12px;
+  line-height: 1.75;
+  tab-size: 2;
 }
 .demo-panel {
   background: #fff;

@@ -45,6 +45,7 @@ const builds = [
       minify: process.env.WKLY_E2E !== "1",
       target: "es2018",
       conditions: ["style"],
+      loader: { ".html": "text" },
       tsconfig: hostConfig,
       plugins: [
         runtimeDependenciesPlugin(runtimeRoot, hostRoot),
@@ -108,6 +109,12 @@ function assets() {
     path.join(hostRoot, "src/overview-introduction.html"),
     "utf8",
   );
+  const introductions = JSON.parse(
+    fs.readFileSync(
+      path.join(hostRoot, "src/content/introductions.json"),
+      "utf8",
+    ),
+  );
   const navigation = Object.entries(metadata)
     .map(
       ([route, page]) =>
@@ -115,6 +122,11 @@ function assets() {
     )
     .join("");
   for (const [route, page] of Object.entries(metadata)) {
+    // The route copy is shared with the live page, including selectable code.
+    const introduction = route ? introductions[route] : page.description;
+    const documentation = route
+      ? `<section class="feature-documentation" aria-label="Configuration and usage">${fs.readFileSync(path.join(hostRoot, "src/content", `${route}.html`), "utf8")}</section>`
+      : overviewDescription;
     const url = siteUrl ? new URL(route ? route + "/" : "", siteUrl).href : "";
     const description = `${siteMetadata.description} ${page.description}`;
     const image = siteUrl
@@ -148,7 +160,7 @@ function assets() {
       )
       .replace(
         "<wkly-showcase></wkly-showcase>",
-        `<wkly-showcase><main><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.description)}</p>${route ? "" : overviewIntroduction}<nav aria-label="Examples"><ul>${navigation}</ul></nav>${route ? "" : overviewDescription}<p><a href="https://github.com/cokkto/wkly-datetime-picker">Documentation and source</a></p></main></wkly-showcase>`,
+        `<wkly-showcase><main><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(introduction)}</p>${route ? "" : overviewIntroduction}<nav aria-label="Examples"><ul>${navigation}</ul></nav>${documentation}<p><a href="https://github.com/cokkto/wkly-datetime-picker">Documentation and source</a></p></main></wkly-showcase>`,
       );
     const directory = path.join(output, route);
     fs.mkdirSync(directory, { recursive: true });

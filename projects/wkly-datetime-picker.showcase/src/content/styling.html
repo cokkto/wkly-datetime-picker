@@ -1,0 +1,55 @@
+<h2>Set colors and dimensions with CSS</h2>
+<p>
+  The picker reads CSS custom properties from its host element. Set a few colors
+  for a variation of the default theme, or also set surfaces, muted text,
+  borders, errors, and focus colors for a dark interface. The examples above
+  keep the same picker behavior while changing those values. Check text and
+  focus visibility against your chosen backgrounds.
+</p>
+<h3>CSS example: a scoped inline picker</h3>
+<p>
+  Add a class to one inline picker and put this rule in its host component's
+  stylesheet. Import <code>WklyDateTimePickerModule</code> in that component or
+  its NgModule. No theme package is needed.
+</p>
+<pre
+  tabindex="0"
+><code class="language-html">&lt;wkly-datetime-picker class="booking-calendar" mode="date"&gt;
+&lt;/wkly-datetime-picker&gt;</code></pre>
+<pre
+  tabindex="0"
+><code class="language-css">wkly-datetime-picker.booking-calendar {
+  --wkly-background-color: #ffffff;
+  --wkly-text-color: #20243a;
+  --wkly-accent-color: #5146a5;
+  --wkly-accent-color-alternate: #dcd8f2;
+  --wkly-accent-text-color: #ffffff;
+  --wkly-range-color: #eeecf8;
+  --wkly-size-multiplier: 1.15;
+}</code></pre>
+<h3>Dialogs, overlays, and available space</h3>
+<p>
+  A dialog or CDK overlay creates its picker outside the trigger's DOM subtree.
+  A class or CSS variable on that trigger will not theme the new picker. To
+  style those presentations, place a
+  <code>wkly-datetime-picker { ... }</code> rule in the application's global
+  stylesheet. Keep the CDK overlay's structural stylesheet as well; picker color
+  variables do not replace it.
+</p>
+<p>
+  <code>--wkly-size-multiplier</code> scales text within a 1–1.5 clamp.
+  <code>--wkly-size-unit</code>, whose default is <code>3.5em</code>, supplies
+  base dimensions for controls and calendar cells. Day buttons fill their
+  columns, so their width depends on the containing layout. Check touch targets
+  on the devices you support after changing sizing. Larger text, longer
+  translated labels, and more visible weeks can all require more room.
+</p>
+<p>
+  See <a href="presentations/">inline and transient presentations</a> for their
+  setup, and the
+  <a
+    href="https://github.com/cokkto/wkly-datetime-picker#customize-the-appearance"
+    >complete CSS custom property reference</a
+  >
+  for the remaining tokens.
+</p>

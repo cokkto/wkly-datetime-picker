@@ -1,0 +1,64 @@
+<h2>Present the picker in an Angular application</h2>
+<p>
+  An inline picker stays in the page and commits valid completed actions
+  immediately. A native dialog gives the task a modal surface without an
+  additional UI package. An input-anchored overlay fits a form where the picker
+  should appear only when needed. Both transient presentations edit a draft:
+  Confirm commits it; Close, Escape, or backdrop dismissal discards it.
+</p>
+<h3>Angular example: inline, dialog, and CDK overlay</h3>
+<p>
+  The base module provides the component and native dialog directive. For the
+  overlay, install <code>@angular/cdk</code> with the same major as Angular,
+  import the optional module below, and include
+  <code>@angular/cdk/overlay-prebuilt.css</code> in your global stylesheet.
+  Inline and native dialog usage do not require CDK.
+</p>
+<pre
+  tabindex="0"
+><code class="language-typescript">import { Component } from '@angular/core';
+import { WklyDateTimePickerModule, WklyPickerValue } from '@wkly/datetime-picker';
+import { WklyDateTimePickerOverlayModule } from '@wkly/datetime-picker/cdk-overlay';
+
+@Component({
+  selector: 'app-picker-presentations',
+  standalone: true,
+  imports: [WklyDateTimePickerModule, WklyDateTimePickerOverlayModule],
+  template: `
+    &lt;wkly-datetime-picker mode="datetime" [(value)]="value"&gt;
+    &lt;/wkly-datetime-picker&gt;
+
+    &lt;button type="button" wklyDateTimePickerDialog
+      mode="datetime" [(value)]="value"&gt;Choose date and time&lt;/button&gt;
+
+    &lt;input aria-label="Appointment date and time"
+      wklyDateTimePickerOverlay mode="datetime" [(value)]="value"&gt;
+  `,
+})
+export class PickerPresentationsComponent {
+  value: WklyPickerValue = null;
+}</code></pre>
+<h3>When a transient selection commits</h3>
+<p>
+  There are two useful exceptions to waiting for Confirm. In
+  <code>mode="date"</code>, choosing a calendar day automatically submits a
+  valid selection. Now also validates and submits immediately. Manual entry
+  otherwise waits for Confirm. Set <code>[closeOnBackdrop]="false"</code> if a
+  backdrop click should leave the draft open, and inspect <code>closed</code>
+  when your application needs the close reason.
+</p>
+<p>
+  Trigger inputs are readonly displays; editing happens inside the picker. The
+  Material example adds a Material form field around that input, so it also
+  needs Angular Material. Material does not provide the calendar. Transient
+  pickers are created outside the trigger's DOM subtree, which also affects
+  <a href="styling/">where their theme styles belong</a>.
+</p>
+<p>
+  The
+  <a
+    href="https://github.com/cokkto/wkly-datetime-picker/blob/main/docs/API.md#optional-cdk-entry-point"
+    >optional CDK API reference</a
+  >
+  documents the overlay directive and service.
+</p>

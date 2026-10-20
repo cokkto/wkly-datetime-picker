@@ -1,4 +1,5 @@
 import { DemoConfig } from "./demo.component";
+import introductions from "./content/introductions.json";
 
 /** Demo definitions are data so routes and navigation share the same catalog. */
 export const PAGES: Record<
@@ -7,8 +8,7 @@ export const PAGES: Record<
 > = {
   single: {
     title: "One moment, your way.",
-    description:
-      "Select a date, a time, or both. Every completed inline selection is available immediately as a canonical UTC value.",
+    description: introductions.single,
     demos: [
       {
         id: "datetime",
@@ -36,8 +36,7 @@ export const PAGES: Record<
   },
   ranges: {
     title: "Make room for a range.",
-    description:
-      "Choose two endpoints in one calendar. Reverse selections are ordered automatically, and incomplete ranges stay in the draft.",
+    description: introductions.ranges,
     demos: [
       {
         id: "datetime-range",
@@ -63,8 +62,7 @@ export const PAGES: Record<
   },
   presentations: {
     title: "At home in any interface.",
-    description:
-      "The same picker, four ways to present it. Dialogs and overlays keep edits private until you confirm.",
+    description: introductions.presentations,
     demos: [
       {
         id: "inline",
@@ -94,8 +92,7 @@ export const PAGES: Record<
   },
   localization: {
     title: "Local language. Shared time.",
-    description:
-      "Explore calendar systems, reading direction, localized digits, and regional week starts side by side.",
+    description: introductions.localization,
     demos: [
       {
         id: "hebrew",
@@ -131,8 +128,7 @@ export const PAGES: Record<
   },
   calendars: {
     title: "Three calendars. One day.",
-    description:
-      "All three representations share the same epoch day. Select any calendar to update its companions.",
+    description: introductions.calendars,
     demos: [
       {
         id: "gregorian-pair",
@@ -166,8 +162,7 @@ export const PAGES: Record<
   },
   validation: {
     title: "Keep the draft. Tell the truth.",
-    description:
-      "Impossible dates remain editable. Constraints apply equally to the calendar, typed fields, Now, and programmatic values.",
+    description: introductions.validation,
     demos: [
       {
         id: "constraints",
@@ -203,8 +198,7 @@ export const PAGES: Record<
   },
   virtualization: {
     title: "Weeks without boundaries.",
-    description:
-      "Jump decades in one operation. The calendar only renders the visible weeks and a small overscan buffer.",
+    description: introductions.virtualization,
     demos: [
       {
         id: "virtual-month",
@@ -236,8 +230,7 @@ export const PAGES: Record<
   },
   styling: {
     title: "A small, useful palette.",
-    description:
-      "CSS color tokens and a size multiplier fit the picker to your interface. Touch targets stay at least 44 pixels.",
+    description: introductions.styling,
     demos: [
       {
         id: "default-style",
