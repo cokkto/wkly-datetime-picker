@@ -52,7 +52,7 @@ async function main() {
       preview.innerHTML = `
         <div class="preview-copy">
           <div class="preview-brand"><h1>WKLY</h1></div>
-          <p class="preview-product">date time<br><em>picker</em></p>
+          <p class="preview-product">date time range<br><em>picker</em></p>
           <p class="preview-tagline">A continuous<br>view of time.</p>
         </div>
         <div class="preview-calendar"></div>`;

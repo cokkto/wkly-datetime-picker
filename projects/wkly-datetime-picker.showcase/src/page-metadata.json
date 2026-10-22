@@ -1,38 +1,38 @@
 {
   "": {
     "title": "WKLY — Angular date and time picker",
-    "description": "Explore six selection modes, localization, calendar adapters, validation, and inline, dialog or overlay presentations."
+    "description": "Selection modes, localization, adapters, validation, inline, dialog, overlay presentations."
   },
   "single": {
     "title": "Date and time selections | WKLY Angular picker",
-    "description": "Try the date picker, time picker, and combined date and time picker, with manual entry, seconds, and 12-hour or 24-hour time."
+    "description": "Date picker, time picker, datetime picker, manual input, seconds, 12-hour or 24-hour time."
   },
   "ranges": {
     "title": "Date and time ranges | WKLY Angular picker",
-    "description": "Try date range, time range, and date and time range selection, with automatic endpoint ordering and separate start and end times."
+    "description": "Date range, time range, date and time range selection, automatic endpoint ordering."
   },
   "presentations": {
     "title": "Inline, dialog and overlay presentations | WKLY Angular picker",
-    "description": "Compare inline, native dialog, input-anchored CDK overlay, and Angular Material presentations, including confirm and cancel behavior."
+    "description": "Inline, native dialog, input-anchored Angular CDK overlay,  confirm and cancel behavior."
   },
   "localization": {
     "title": "Localization and RTL | WKLY Angular picker",
-    "description": "Compare Hebrew, Arabic, and US English examples with translated labels, localized digits, RTL layouts, and regional week and clock formats."
+    "description": "Hebrew, Arabic, English, translated labels, localized digits, RTL layouts, regional formats."
   },
   "calendars": {
     "title": "Gregorian, Hebrew and Hijri calendars | WKLY Angular picker",
-    "description": "Select a day in linked Gregorian, Hebrew, and civil Hijri calendars while preserving the same Gregorian UTC value."
+    "description": "Linked Gregorian, Hebrew, and civil Hijri calendars preserving the same Gregorian UTC value."
   },
   "validation": {
     "title": "Validation and Angular forms | WKLY Angular picker",
-    "description": "Explore Angular forms validation, date and time bounds, disabled days, range constraints, and editable invalid manual input."
+    "description": "Angular forms validation, date and time bounds, disabled days, range constraints."
   },
   "virtualization": {
     "title": "Virtual scrolling calendar | WKLY Angular picker",
-    "description": "Compare full-month, surrounding-week, and compact four-week views, with continuous calendar scrolling and direct jumps across decades."
+    "description": "Full-month, surrounding-week, compact four-week views, with continuous calendar scrolling."
   },
   "styling": {
     "title": "Picker colors and sizing | WKLY Angular picker",
-    "description": "Compare green, indigo, dark, and larger picker styles using CSS color tokens and size multipliers with accessible touch targets."
+    "description": "Light and dark themes, CSS color tokens and size multipliers with accessible touch targets."
   }
 }

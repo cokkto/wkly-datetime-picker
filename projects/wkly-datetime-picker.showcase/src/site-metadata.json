@@ -1,8 +1,8 @@
 {
-  "name": "WKLY · Angular date and time picker",
-  "description": "WKLY is a week-based Angular date and time picker with UTC ISO values.",
+  "name": "WKLY · Angular date time range picker",
+  "description": "WKLY week-based Angular date time range picker with UTC ISO values.",
   "image": "metaimages/wkly.png",
-  "imageAlt": "WKLY Angular date and time picker showcase with a continuous week calendar and a selected day in green.",
+  "imageAlt": "WKLY Angular date time range picker showcase with a continuous week calendar and a selected day in green.",
   "imageWidth": 1440,
   "imageHeight": 756
 }
